@@ -1,0 +1,6 @@
+{
+  //"tailwindCSS.experimental.configFile": "packages/ui/src/styles/globals.css",
+  "biome.enabled": false,
+  "eslint.enable": true,
+  "prettier.enable": true,
+}

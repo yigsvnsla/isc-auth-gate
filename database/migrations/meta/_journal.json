@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1769460269218,
+      "tag": "0000_new_killer_shrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770016420980,
+      "tag": "0001_clean_jigsaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773026109558,
+      "tag": "0002_fixed_yellowjacket",
+      "breakpoints": true
+    }
+  ]
+}
