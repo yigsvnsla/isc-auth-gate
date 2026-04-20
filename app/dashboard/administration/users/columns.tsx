@@ -1,15 +1,12 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { authClient } from "@workspace/auth-config/lib/client";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
+import { authClient } from "@/lib/auth-client";
 
-import { Badge } from "@workspace/ui/components/badge";
-import { Button } from "@workspace/ui/components/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   CircleCheckIcon,
   CircleXIcon,
@@ -20,18 +17,22 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { shortName } from "@workspace/ui/lib/utils";
+import { shortName } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 const ActionsCell = ({ userId }: { userId: string }) => {
   const pathname = usePathname();
   return (
     <div className="flex gap-2">
-      <Button asChild variant="outline" size="icon">
-        <Link href={`${pathname}${userId}`}>
-          <SearchIcon className="size-4" />
-        </Link>
-      </Button>
+      <Button
+        variant="outline"
+        size="icon"
+        render={
+          <Link href={`${pathname}${userId}`}>
+            <SearchIcon className="size-4" />
+          </Link>
+        }
+      />
     </div>
   );
 };

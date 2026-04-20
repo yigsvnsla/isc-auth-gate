@@ -1,5 +1,6 @@
+'use client";';
+
 import * as React from "react";
-import { Command } from "lucide-react";
 
 // import { NavProjects } from "@/components/nav-projects";
 // import { NavSecondary } from "@/components/nav-secondary";
@@ -12,11 +13,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@workspace/ui/components/sidebar";
+} from "@/components/ui/sidebar";
 
 import { NavUserSkeleton } from "./nav-user-skeleton";
 import { NavUserContainer } from "./nav-user-container";
 import { NavMainContainer } from "./nav-main-container";
+import { CommandIcon } from "lucide-react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -24,17 +26,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <a href="#">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Command className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Acme Inc</span>
-                  <span className="truncate text-xs">Enterprise</span>
-                </div>
-              </a>
-            </SidebarMenuButton>
+            <SidebarMenuButton
+              size="lg"
+              render={
+                <a href="#">
+                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <CommandIcon className="size-4" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-medium">ISC Gate</span>
+                    <span className="truncate text-xs">Enterprise</span>
+                  </div>
+                </a>
+              }
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -47,9 +52,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        <React.Suspense fallback={<NavUserSkeleton />}>
+        {/* <React.Suspense fallback={<NavUserSkeleton />}>
           <NavUserContainer />
-        </React.Suspense>
+        </React.Suspense> */}
       </SidebarFooter>
     </Sidebar>
   );

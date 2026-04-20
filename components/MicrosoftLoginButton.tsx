@@ -1,31 +1,36 @@
-//import { authClient } from "@workspace/auth-config/lib/client";
+import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { FC } from "react";
 import useSWRMutation from "swr/mutation";
 
 export const MicrosoftLoginButton: FC = () => {
-  // const mutation = useSWRMutation("/sign-up/social", () =>
-  //   toast.promise(
-  //     authClient.signIn.social({
-  //       provider: "microsoft",
-
-  //       callbackURL: "http://localhost:3001/dashboard",
-  //     }),
-  //     {
-  //       position: "top-center",
-  //       loading: "Ingresando con Microsoft...",
-  //       error: "Error al ingresar",
-  //     },
-  //   ),
-  // );
+  const { trigger, isMutating } = useSWRMutation("/sign-up/social", () =>
+    toast.promise(
+      authClient.signIn.social({
+        provider: "microsoft",
+        callbackURL: "/dashboard",
+      }),
+      {
+        position: "top-center",
+        loading: "Ingresando con Microsoft...",
+        error: "Error al ingresar",
+      },
+    ),
+  );
 
   async function onSubmit() {
-    // await mutation.trigger();
+    await trigger();
   }
 
   return (
-    <Button className="cursor-pointer" variant="outline" type="button" onClick={onSubmit}>
+    <Button
+      className="cursor-pointer"
+      variant="outline"
+      type="button"
+      onClick={onSubmit}
+      disabled={isMutating}
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="256px"
@@ -54,7 +59,7 @@ export const MicrosoftLoginButton: FC = () => {
           />
         </g>
       </svg>
-      Ingresar con Microsoft
+      Ingresar con Microsoft 
     </Button>
   );
 };

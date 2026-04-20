@@ -7,7 +7,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@workspace/ui/components/sidebar"
+} from "@/components/ui/sidebar"
 
 export function NavSecondary({
   items,
@@ -25,7 +25,7 @@ export function NavSecondary({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild size="sm">
+              <SidebarMenuButton size="sm">
                 <a href={item.url}>
                   <item.icon />
                   <span>{item.title}</span>

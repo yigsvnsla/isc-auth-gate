@@ -1,7 +1,7 @@
 "use server";
 
 import { AppSidebar } from "@/components/app-sidebar";
-import { authClient } from "@workspace/auth-config/lib/client";
+import { authClient } from "@/lib/auth-client";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,13 +9,13 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@workspace/ui/components/breadcrumb";
-import { Separator } from "@workspace/ui/components/separator";
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@workspace/ui/components/sidebar";
+} from "@/components/ui/sidebar";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { PropsWithChildren } from "react";

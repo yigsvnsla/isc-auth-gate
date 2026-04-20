@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@workspace/auth-config/lib/client";
+import { authClient } from "@/lib/auth-client";
 import { FC, useState } from "react";
 import useSWR from "swr";
 import { columns } from "./columns";
@@ -15,8 +15,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
-import { Button } from "@workspace/ui/components/button";
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import {
   ChevronsLeft,
   ChevronLeft,
@@ -33,7 +33,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
+} from "@/components/ui/table";
 import {
   Empty,
   EmptyHeader,
@@ -41,7 +41,7 @@ import {
   EmptyTitle,
   EmptyDescription,
   EmptyContent,
-} from "@workspace/ui/components/empty";
+} from "@/components/ui/empty";
 
 export const UsersDataTable: FC = () => {
   // const [totalUsers, setTotalUsers] = useState(0);
@@ -259,7 +259,7 @@ export const UsersDataTable: FC = () => {
 //   getPaginationRowModel,
 //   useReactTable,
 // } from "@tanstack/react-table";
-// import { Button } from "@workspace/ui/components/button";
+// import { Button } from "@/components/ui/button";
 // import {
 //   Empty,
 //   EmptyContent,
@@ -267,7 +267,7 @@ export const UsersDataTable: FC = () => {
 //   EmptyHeader,
 //   EmptyMedia,
 //   EmptyTitle,
-// } from "@workspace/ui/components/empty";
+// } from "@/components/ui/empty";
 // import {
 //   Table,
 //   TableBody,
@@ -275,7 +275,7 @@ export const UsersDataTable: FC = () => {
 //   TableHead,
 //   TableHeader,
 //   TableRow,
-// } from "@workspace/ui/components/table";
+// } from "@/components/ui/table";
 // import {
 //   CalendarIcon,
 //   RefreshCcwIcon,
@@ -284,7 +284,7 @@ export const UsersDataTable: FC = () => {
 //   UsersIcon,
 // } from "lucide-react";
 // import { UserDataTablePagination } from "./pagination";
-// import { Input } from "@workspace/ui/components/input";
+// import { Input } from "@/components/ui/input";
 
 // interface DataTableProps<TData, TValue> {
 //   columns: ColumnDef<TData, TValue>[];

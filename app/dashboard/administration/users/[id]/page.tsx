@@ -5,8 +5,8 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@workspace/ui/components/avatar";
-import { Button } from "@workspace/ui/components/button";
+} from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { shortName } from "@workspace/ui/lib/utils";
 import {
   CalendarIcon,
@@ -31,19 +31,19 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@workspace/ui/components/tabs";
-import { Badge } from "@workspace/ui/components/badge";
-import { Skeleton } from "@workspace/ui/components/skeleton";
+} from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@workspace/ui/components/card";
+} from "@/components/ui/card";
 
 import { useCopyToClipboard } from "@workspace/ui/hooks/use-copy-to-clipboard";
-import { toast } from "@workspace/ui/components/sonner";
+import { toast } from "@/components/ui/sonner";
 
 import { format, formatDistanceToNowStrict } from "date-fns";
 import {
@@ -53,7 +53,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
+} from "@/components/ui/table";
 import {
   flexRender,
   getCoreRowModel,
@@ -67,7 +67,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@workspace/ui/components/empty";
+} from "@/components/ui/empty";
 import { columns } from "./columns";
 import {
   Select,
@@ -75,7 +75,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select";
+} from "@/components/ui/select";
 
 export default function UserIdPage() {
   const [copy] = useCopyToClipboard();

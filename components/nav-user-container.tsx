@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@workspace/auth-config/lib/client";
+import { authClient } from "@/lib/auth-client";
 import { NavUser } from "./nav-user";
 import useSWR from "swr";
 import { NavUserSkeleton } from "./nav-user-skeleton";

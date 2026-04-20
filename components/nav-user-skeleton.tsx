@@ -1,11 +1,11 @@
 
-import { DropdownMenu } from "@workspace/ui/components/dropdown-menu";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from "@workspace/ui/components/sidebar";
-import { Skeleton } from "@workspace/ui/components/skeleton";
+} from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronsUpDown } from "lucide-react";
 
 export const NavUserSkeleton = () => {

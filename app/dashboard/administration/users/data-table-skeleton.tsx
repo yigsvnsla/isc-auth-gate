@@ -1,4 +1,4 @@
-import { Skeleton } from "@workspace/ui/components/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -6,7 +6,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@workspace/ui/components/table";
+} from "@/components/ui/table";
 
 import { useId } from "react";
 
