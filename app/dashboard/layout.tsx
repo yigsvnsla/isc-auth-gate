@@ -1,7 +1,6 @@
 "use server";
 
 import { AppSidebar } from "@/components/app-sidebar";
-import { authClient } from "@/lib/auth-client";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,67 +10,38 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { cookies, headers } from "next/headers";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { redirect } from "next/navigation";
 import { PropsWithChildren } from "react";
+import { auth } from "@/lib/auth";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default async function DashboardLayout({ children }: PropsWithChildren) {
-  // const _headers = await headers();
+  // You can also just pass the role directly
+  const userHasPermission = await auth.api.userHasPermission({
+    body: {
+      role: "admin",
+      permissions: {
+        auth: ["access"], // This must match the structure in your access control
+      },
+    },
+  });
 
-  // const { data: session, error: errorSession } = await authClient.getSession({
-  //   fetchOptions: {
-  //     headers: _headers,
-  //   },
-  // });
-
-  // if (!session || errorSession) redirect("/auth/sign-in");
-
-  // const { data: permission, error: errorPermission } =
-  //   await authClient.admin.hasPermission({
-  //     role: "admin",
-  //     userId: session.user.id,
-  //     permissions: {
-  //       auth: ["access"],
-  //     },
-  //     fetchOptions: {
-  //       headers: _headers,
-  //       credentials: "same-origin",
-  //     },
-  //   });
-
-  // console.log({
-  //   data: permission,
-  //   error: errorPermission,
-  //   //headers: JSON.stringify(_headers),
-  // });
-
-  // if (!permission || errorPermission) {
-  //   // no es lo mejor que se me ocurra, pero es para mostrar el error en la pantalla de login
-
-  //   const params = new URLSearchParams({
-  //     message: errorPermission?.message ?? "",
-  //     code: String(errorPermission?.code ?? ""),
-  //     status: String(errorPermission?.status ?? ""),
-  //     statusText: errorPermission?.statusText ?? "",
-  //   });
-
-  //   redirect(`/auth/sign-in?${params.toString()}`);
-  // }
-
-  const cookieStore = await cookies();
-  const defaultOpen = Boolean(cookieStore.get("sidebar_state")?.value);
+  if (
+    !userHasPermission ||
+    userHasPermission.error ||
+    !userHasPermission.success
+  ) {
+    // no es lo mejor que se me ocurra, pero es para mostrar el error en la pantalla de login
+    redirect(`/auth/sign-in`, "replace");
+  }
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
+    <>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
-          <div className="flex items-center gap-2 px-4">
+          <div className="flex items-center gap-2 px-4 w-full">
             <SidebarTrigger className="-ml-1" />
             <Separator
               orientation="vertical"
@@ -90,12 +60,19 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
+
+            <Separator
+              orientation="vertical"
+              className="ml-auto data-[orientation=vertical]:h-7"
+            />
+
+            <ThemeToggle />
           </div>
         </header>
         <section className="flex flex-1 flex-col gap-4 p-4 container mx-auto">
           {children}
         </section>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }

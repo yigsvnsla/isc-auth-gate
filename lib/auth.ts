@@ -102,7 +102,7 @@ export const auth = betterAuth({
 
   plugins: [
     adminPlugin({
-      adminUserIds: ["5RfQlRTKmUCC2H5EyAnHAgSLwxelZsz9-"],
+      adminUserIds: ["5RfQlRTKmUCC2H5EyAnHAgSLwxelZsz9"],
       ac: accessControl,
       roles: { admin, user, moderator },
     }),

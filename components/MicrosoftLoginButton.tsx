@@ -10,6 +10,8 @@ export const MicrosoftLoginButton: FC = () => {
       authClient.signIn.social({
         provider: "microsoft",
         callbackURL: "/dashboard",
+        
+        
       }),
       {
         position: "top-center",

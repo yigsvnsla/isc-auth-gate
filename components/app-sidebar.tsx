@@ -52,9 +52,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        {/* <React.Suspense fallback={<NavUserSkeleton />}>
+        <React.Suspense fallback={<NavUserSkeleton />}>
           <NavUserContainer />
-        </React.Suspense> */}
+        </React.Suspense>
       </SidebarFooter>
     </Sidebar>
   );

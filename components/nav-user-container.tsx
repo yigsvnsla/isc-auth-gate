@@ -8,10 +8,7 @@ import { NavUserSkeleton } from "./nav-user-skeleton";
 export const NavUserContainer = () => {
   const { data, isLoading } = useSWR(
     "/api/get-session",
-    async () => {
-      const session = await authClient.getSession();
-      return session?.data;
-    },
+    async () => await authClient.getSession({}, { throw: true }),
     { suspense: true, fallbackData: null },
   );
 

@@ -1,6 +1,11 @@
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
 
-export default function Page() {
+export default async function Page() {
+  
+  redirect("/dashboard", "replace");
+
+  
   return (
     <div className="flex items-center justify-center min-h-svh">
       <div className="flex flex-col items-center justify-center gap-4">
@@ -8,5 +13,5 @@ export default function Page() {
         <Button size="sm">Button</Button>
       </div>
     </div>
-  )
+  );
 }

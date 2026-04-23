@@ -1,35 +1,34 @@
+import { Geist, Geist_Mono } from "next/font/google";
 
+import "@/components/ui/button";
 
-import { Geist, Geist_Mono } from "next/font/google"
+import "./globals.css";
 
-import "@/components/ui/button"
-
-import "./globals.css"
-
-import { Providers } from "@/components/providers"
+import Providers  from "@/components/providers";
 
 const fontSans = Geist({
   subsets: ["latin"],
   variable: "--font-sans",
-})
+});
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
-})
+});
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased `}
       >
         <Providers>{children}</Providers>
       </body>
     </html>
-  )
+  );
 }
