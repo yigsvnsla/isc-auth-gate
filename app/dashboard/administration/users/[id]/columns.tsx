@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { authClient } from "@workspace/auth-config/lib/client";
+import { authClient } from "@/lib/auth-client";
 
 export const columns: ColumnDef<typeof authClient.$Infer.Session.session>[] = [
   {

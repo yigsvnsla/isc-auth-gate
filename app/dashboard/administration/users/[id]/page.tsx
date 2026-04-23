@@ -1,13 +1,13 @@
 "use client";
 
-import { authClient } from "@workspace/auth-config/lib/client";
+import { authClient } from "@/lib/auth-client";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { shortName } from "@workspace/ui/lib/utils";
+import { shortName } from "@/lib/utils";
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -42,7 +42,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { useCopyToClipboard } from "@workspace/ui/hooks/use-copy-to-clipboard";
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { toast } from "@/components/ui/sonner";
 
 import { format, formatDistanceToNowStrict } from "date-fns";

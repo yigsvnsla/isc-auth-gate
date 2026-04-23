@@ -60,16 +60,8 @@ export const UsersDataTable: FC = () => {
           throw: true,
         },
         query: {
-          //searchValue: "some name",
-          //searchField: "name",
-          //searchOperator: "contains",
           limit: pageSize,
           offset: pageIndex,
-          //sortBy: "name",
-          //sortDirection: "desc",
-          //filterField: "email",
-          //filterValue: "hello@example.com",
-          //filterOperator: "eq",
         },
       });
 
@@ -80,8 +72,8 @@ export const UsersDataTable: FC = () => {
       return listUsers;
     },
     {
-      suspense: true,
-    },
+      fallbackData: { users: [], total: 0, limit: 10, offset: 0 },
+    }
   );
 
   const table = useReactTable({
