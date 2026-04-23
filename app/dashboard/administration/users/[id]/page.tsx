@@ -9,21 +9,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { shortName } from "@/lib/utils";
 import {
-  CalendarIcon,
   ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
   CopyIcon,
-  ListIcon,
   MailIcon,
+  CalendarIcon,
+  ShieldHalfIcon,
+  CircleCheckIcon,
+  CircleXIcon,
+  ClockIcon,
+  KeyRoundIcon,
+  MonitorIcon,
+  SmartphoneIcon,
+  GlobeIcon,
+  MoreHorizontalIcon,
   RefreshCcwIcon,
   UserIcon,
-  UserPlus2Icon,
-  UsersIcon,
+  ListIcon,
+  ShieldCheckIcon,
+  AlertTriangleIcon,
+  Trash2Icon,
 } from "lucide-react";
-import { useParams } from "next/navigation";
-import React from "react";
+import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 
 import {
@@ -55,440 +61,715 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import { columns } from "./columns";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
+
+const mockActivityLog = [
+  { action: "Logged in", timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), ip: "192.168.1.100", device: "Chrome on Windows" },
+  { action: "Updated profile", timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), ip: "192.168.1.100", device: "Chrome on Windows" },
+  { action: "Password changed", timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), ip: "192.168.1.100", device: "Chrome on Windows" },
+  { action: "Logged in", timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), ip: "10.0.0.50", device: "Safari on MacOS" },
+  { action: "Account created", timestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), ip: "192.168.1.100", device: "Chrome on Windows" },
+];
+
+function getDeviceIcon(userAgent: string) {
+  if (userAgent.includes("iPhone") || userAgent.includes("Android")) return SmartphoneIcon;
+  if (userAgent.includes("Mac") || userAgent.includes("Windows") || userAgent.includes("Linux")) return MonitorIcon;
+  return MonitorIcon;
+}
 
 export default function UserIdPage() {
   const [copy] = useCopyToClipboard();
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
 
-  const userInfo = useSWR(["/admin/get-user", id], async (args) => {
-    const [, userId] = args;
+  const { data: userInfo, isLoading: userLoading } = useSWR(
+    ["/admin/get-user", id],
+    async (args) => {
+      const [, userId] = args;
+      return authClient.admin.getUser({
+        query: { id: userId },
+        fetchOptions: { throw: true },
+      });
+    },
+    { fallbackData: {} as any }
+  );
 
-    return authClient.admin.getUser({
-      query: {
-        id: userId,
-      },
-      fetchOptions: {
-        throw: true,
-      },
-    });
-  });
-
-  const sessionsInfo = useSWR(
+  const { data: sessionsInfo, isLoading: sessionsLoading } = useSWR(
     ["/admin/list-user-sessions", id],
     async (args) => {
       const [, userId] = args;
-
       return authClient.admin.listUserSessions(
-        {
-          userId,
-        },
-        {
-          throw: true,
-        },
+        { userId },
+        { throw: true }
       );
     },
+    { fallbackData: { sessions: [] } as any }
   );
-
-  const tableSessions = useReactTable({
-    data: sessionsInfo.data?.sessions ?? [],
-    columns: columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-  });
 
   function copyToClipboard(value: string) {
     return () => {
       copy(value);
-      toast.success("copy to clipboard success");
+      toast.success("Copied to clipboard");
     };
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-4 items-center ">
-        <Avatar className="size-16 ">
-          <AvatarImage
-            src={userInfo.data?.image || undefined}
-            alt={userInfo.data?.name}
-          />
-          <AvatarFallback>
-            {shortName(String(userInfo.data?.name))}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <h1 className="scroll-m-20 text-xl xl:text-2xl font-extrabold tracking-tight text-balance">
-            {userInfo.data?.name}
-          </h1>
-          <h4 className="text-muted-foreground/80 text-sm  scroll-m-20 xl:text-lg font-semibold tracking-tight">
-            {userInfo.data?.email}
-          </h4>
-          <div className="flex gap-2 mt-2">
-            {userInfo.isLoading ? (
-              <Skeleton className="h-5 w-20" />
-            ) : userInfo.data?.banned ? (
-              <Badge className="bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none">
-                <span
-                  className="bg-destructive size-1.5 rounded-full"
-                  aria-hidden="true"
-                />
-                Blocked
-              </Badge>
-            ) : (
-              <Badge className="border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5">
-                <span
-                  className="size-1.5 rounded-full bg-green-600 dark:bg-green-400"
-                  aria-hidden="true"
-                />
-                Active
-              </Badge>
-            )}
+  const activeSessionsCount = sessionsInfo?.sessions?.filter(
+    (s: any) => new Date(s.expiresAt) > new Date()
+  ).length || 0;
 
-            {userInfo.isLoading ? (
-              <Skeleton className="h-5 w-20" />
-            ) : userInfo.data?.emailVerified ? (
-              <Badge
-                className="capitalize ms-1 border-blue-600/30 bg-blue-600/10 text-blue-600 dark:bg-blue-600/20 dark:text-blue-400"
-                variant="outline"
-              >
-                <span
-                  className="size-1.5 rounded-full bg-blue-600 dark:bg-blue-400"
-                  aria-hidden="true"
-                />
-                verified
-              </Badge>
-            ) : (
-              <Badge className="capitalize border-none bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 focus-visible:outline-none dark:bg-amber-400/10 dark:text-amber-400 dark:focus-visible:ring-amber-400/40 [a&]:hover:bg-amber-600/5 dark:[a&]:hover:bg-amber-400/5">
-                <span
-                  className="size-1.5 rounded-full bg-amber-600 dark:bg-amber-400"
-                  aria-hidden="true"
-                />
-                unverified
-              </Badge>
+  return (
+    <div className="flex flex-col gap-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link href="/dashboard" />}>Dashboard</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link href="/dashboard/administration" />}>Administration</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link href="/dashboard/administration/users" />}>Users</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{userInfo?.name || "Loading..."}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="flex gap-4 lg:flex-1">
+          <Avatar className="size-16 lg:size-20">
+            <AvatarImage src={userInfo?.image || undefined} alt={userInfo?.name} />
+            <AvatarFallback className="text-xl lg:text-2xl">
+              {shortName(String(userInfo?.name || ""))}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl lg:text-2xl font-semibold tracking-tight">
+              {userLoading ? (
+                <Skeleton className="h-8 w-48" />
+              ) : (
+                userInfo?.name
+              )}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {userLoading ? <Skeleton className="h-4 w-40" /> : userInfo?.email}
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {userLoading ? (
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              ) : (
+                <>
+                  {userInfo?.banned ? (
+                    <Badge className="bg-rose-500/10 text-rose-600 border-rose-500/20">
+                      <CircleXIcon data-icon="inline-start" className="size-3" />
+                      Blocked
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                      <CircleCheckIcon data-icon="inline-start" className="size-3" />
+                      Active
+                    </Badge>
+                  )}
+                  {userInfo?.emailVerified ? (
+                    <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                      <CircleCheckIcon data-icon="inline-start" className="size-3" />
+                      Verified
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                      <CircleXIcon data-icon="inline-start" className="size-3" />
+                      Unverified
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" className="capitalize">
+                    <ShieldHalfIcon data-icon="inline-start" className="size-3" />
+                    {userInfo?.role || "user"}
+                  </Badge>
+                </>
+              )}
+            </div>
+            {!userLoading && userInfo?.createdAt && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Member since {format(userInfo.createdAt, "MMMM d, yyyy")}
+              </p>
             )}
           </div>
         </div>
+
+        <div className="flex gap-2 lg:shrink-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+                <MoreHorizontalIcon data-icon="inline-start" className="size-4" />
+                Actions
+              </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[180px]">
+              <DropdownMenuItem>
+                <RefreshCcwIcon data-icon="inline-start" className="size-4" />
+                Reset Password
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <MailIcon data-icon="inline-start" className="size-4" />
+                Send Verification
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <AlertDialog>
+                <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-rose-600 focus:text-rose-600" />}>
+                    <Trash2Icon data-icon="inline-start" className="size-4" />
+                    Delete User
+                  </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this user?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. All user data including sessions and accounts will be permanently deleted.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+                      Delete User
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      <div>
-        <Tabs defaultValue="account">
-          <TabsList className="w-full xl:w-100">
-            <TabsTrigger className="capitalize" value="account">
-              <UserIcon />
-              profile
-            </TabsTrigger>
-            <TabsTrigger className="capitalize" value="sessions">
-              <ListIcon />
-              sessions
-            </TabsTrigger>
-            <TabsTrigger value="password">Password</TabsTrigger>
-          </TabsList>
-          <TabsContent value="account">
+      <Separator />
+
+      <Tabs defaultValue="overview" className="flex flex-col gap-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="sessions">Sessions</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="flex flex-col gap-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <Card>
-              <CardHeader>
-                <CardTitle className="capitalize">profile details</CardTitle>
-                <CardDescription className="capitalize">
-                  user information and acccount details
-                </CardDescription>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div className=" items-start gap-3 hidden">
-                    <div className="text-muted-foreground mt-0.5">
-                      <UserIcon />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-muted-foreground">User ID</p>
-                      <p className="font-medium truncate font-mono text-xs">
-                        ktz636zi5eavnilpeqq3d6qu
-                      </p>
-                      <p className=" text-muted-foreground font-medium truncate font-mono text-xs">
-                        dsadsadas
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="text-muted-foreground mt-0.5">
-                      <UserIcon />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-muted-foreground">
-                        User Identification
-                      </p>
-                      <p className="font-medium truncate font-mono text-xs">
-                        {userInfo.data?.id}
-                      </p>
-                    </div>
-                    <div>
-                      <Button
-                        onClick={copyToClipboard(String(userInfo.data?.id))}
-                        size="icon-sm"
-                        variant="outline"
-                      >
-                        <CopyIcon />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="text-muted-foreground mt-0.5">
-                      <MailIcon />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="capitalize text-sm text-muted-foreground">
-                        email
-                      </p>
-                      <p className="font-medium truncate font-mono text-xs">
-                        {userInfo.data?.email}
-                      </p>
-                    </div>
-                    <div>
-                      <Button
-                        onClick={copyToClipboard(String(userInfo.data?.id))}
-                        size="icon-sm"
-                        variant="outline"
-                      >
-                        <CopyIcon />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="text-muted-foreground mt-0.5">
-                      <CalendarIcon />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="capitalize text-sm text-muted-foreground">
-                        created at
-                      </p>
-                      <p className="font-medium truncate font-mono text-xs">
-                        {format(
-                          userInfo.data?.createdAt || new Date(),
-                          "dd/mm/yyyy - hh:mm:ss",
-                        )}
-                      </p>
-                      <p className=" text-muted-foreground font-medium truncate font-mono text-xs">
-                        {formatDistanceToNowStrict(
-                          userInfo.data?.createdAt || Date.now(),
-                          { addSuffix: true },
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="text-muted-foreground mt-0.5">
-                      <CalendarIcon />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="capitalize text-sm text-muted-foreground">
-                        updated at
-                      </p>
-                      <p className="font-medium truncate font-mono text-xs">
-                        {format(
-                          userInfo.data?.updatedAt || new Date(),
-                          "dd/mm/yyyy - hh:mm:ss",
-                        )}
-                      </p>
-                      <p className=" text-muted-foreground font-medium truncate font-mono text-xs">
-                        {formatDistanceToNowStrict(
-                          userInfo.data?.updatedAt || Date.now(),
-                          { addSuffix: true },
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <div className="text-2xl font-bold">{activeSessionsCount}</div>
+                <p className="text-xs text-muted-foreground">Currently authenticated</p>
               </CardContent>
             </Card>
-          </TabsContent>
-          <TabsContent value="sessions">
             <Card>
-              <CardHeader>
-                <CardTitle>Sessions Account</CardTitle>
-                <CardDescription>Lista de sesiones del usuario</CardDescription>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Linked Accounts</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* TABLE */}
-                <div className="overflow-hidden rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      {tableSessions.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                          {headerGroup.headers.map((header) => {
-                            return (
-                              <TableHead key={header.id}>
-                                {header.isPlaceholder
-                                  ? null
-                                  : flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext(),
-                                    )}
-                              </TableHead>
-                            );
-                          })}
-                        </TableRow>
-                      ))}
-                    </TableHeader>
-                    <TableBody>
-                      {tableSessions.getRowModel().rows?.length ? (
-                        tableSessions.getRowModel().rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            data-state={row.getIsSelected() && "selected"}
-                          >
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id}>
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext(),
-                                )}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow className="hover:bg-transparent">
-                          <TableCell colSpan={columns.length}>
-                            <Empty className="h-[calc(10*52px)]">
-                              <EmptyHeader>
-                                <EmptyMedia variant="icon">
-                                  <UsersIcon />
-                                </EmptyMedia>
-                                <EmptyTitle className="capitalize">
-                                  list users is empty
-                                </EmptyTitle>
-                                <EmptyDescription className="max-w-xs text-pretty">
-                                  You&apos;re all caught up. New notifications
-                                  will appear here.
-                                </EmptyDescription>
-                              </EmptyHeader>
-                              <EmptyContent className="grid sm:grid-cols-2 ">
-                                <Button variant="outline">
-                                  <RefreshCcwIcon data-icon="inline-start" />
-                                  Refresh
-                                </Button>
-                                <Button variant="secondary">
-                                  <UserPlus2Icon data-icon="inline-start" />
-                                  Create new User
-                                </Button>
-                              </EmptyContent>
-                            </Empty>
+                <div className="text-2xl font-bold">2</div>
+                <p className="text-xs text-muted-foreground">OAuth & password</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Last Login</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">2h ago</div>
+                <p className="text-xs text-muted-foreground">Active session</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Profile Summary</CardTitle>
+              <CardDescription>Quick overview of user information</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="flex items-start gap-3">
+                <div className="flex size-8 items-center justify-center rounded-md bg-muted">
+                  <UserIcon className="size-4 text-muted-foreground" />
+                </div>
+                <div className="grid gap-1 flex-1 min-w-0">
+                  <p className="text-sm font-medium">User ID</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-mono text-muted-foreground truncate">
+                      {userInfo?.id || "—"}
+                    </p>
+                    {userInfo?.id && (
+                      <Button variant="ghost" size="icon" className="size-6" onClick={copyToClipboard(userInfo.id)}>
+                        <CopyIcon className="size-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex size-8 items-center justify-center rounded-md bg-muted">
+                  <MailIcon className="size-4 text-muted-foreground" />
+                </div>
+                <div className="grid gap-1 flex-1 min-w-0">
+                  <p className="text-sm font-medium">Email</p>
+                  <p className="text-xs text-muted-foreground truncate">{userInfo?.email || "—"}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex size-8 items-center justify-center rounded-md bg-muted">
+                  <CalendarIcon className="size-4 text-muted-foreground" />
+                </div>
+                <div className="grid gap-1 flex-1 min-w-0">
+                  <p className="text-sm font-medium">Created</p>
+                  <p className="text-xs text-muted-foreground">
+                    {userInfo?.createdAt ? format(userInfo.createdAt, "MMM d, yyyy") : "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex size-8 items-center justify-center rounded-md bg-muted">
+                  <ShieldHalfIcon className="size-4 text-muted-foreground" />
+                </div>
+                <div className="grid gap-1 flex-1 min-w-0">
+                  <p className="text-sm font-medium">Role</p>
+                  <p className="text-xs text-muted-foreground capitalize">{userInfo?.role || "user"}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Profile Information</CardTitle>
+              <CardDescription>User account details</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6">
+              <div className="flex items-start gap-3">
+                <div className="text-muted-foreground mt-0.5">
+                  <UserIcon className="size-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">User Identification</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs font-mono text-muted-foreground truncate">
+                      {userInfo?.id || "—"}
+                    </p>
+                    <Button variant="ghost" size="icon" className="size-6" onClick={copyToClipboard(userInfo?.id || "")}>
+                      <CopyIcon className="size-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="text-muted-foreground mt-0.5">
+                  <MailIcon className="size-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Email</p>
+                  <p className="text-xs font-mono text-muted-foreground truncate">
+                    {userInfo?.email || "—"}
+                  </p>
+                </div>
+                <Button variant="ghost" size="icon" className="size-6" onClick={copyToClipboard(userInfo?.email || "")}>
+                  <CopyIcon className="size-3" />
+                </Button>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="text-muted-foreground mt-0.5">
+                  <CalendarIcon className="size-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Created At</p>
+                  <p className="text-xs font-mono text-muted-foreground">
+                    {userInfo?.createdAt ? format(userInfo.createdAt, "MMM d, yyyy HH:mm:ss") : "—"}
+                  </p>
+                  {userInfo?.createdAt && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatDistanceToNowStrict(userInfo.createdAt, { addSuffix: true })}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="text-muted-foreground mt-0.5">
+                  <CalendarIcon className="size-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Last Updated</p>
+                  <p className="text-xs font-mono text-muted-foreground">
+                    {userInfo?.updatedAt ? format(userInfo.updatedAt, "MMM d, yyyy HH:mm:ss") : "—"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sessions">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">User Sessions</CardTitle>
+                  <CardDescription>Active authentication sessions</CardDescription>
+                </div>
+                <Button variant="outline" size="sm">
+                  <RefreshCcwIcon data-icon="inline-start" className="size-4" />
+                  Revoke All
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Device</TableHead>
+                    <TableHead>IP Address</TableHead>
+                    <TableHead>Last Active</TableHead>
+                    <TableHead>Expires</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sessionsInfo?.sessions?.length > 0 ? (
+                    sessionsInfo.sessions.map((session: any) => {
+                      const DeviceIcon = getDeviceIcon(session.userAgent);
+                      const isExpired = new Date(session.expiresAt) < new Date();
+                      return (
+                        <TableRow key={session.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <DeviceIcon className="size-4 text-muted-foreground" />
+                              <span className="text-sm">{session.userAgent.split(" ")[0]}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-mono text-sm">{session.ipAddress || "—"}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">
+                              {session.updatedAt ? formatDistanceToNowStrict(session.updatedAt, { addSuffix: true }) : "—"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={isExpired ? "destructive" : "secondary"}>
+                              {format(session.expiresAt, "MMM d, HH:mm")}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <AlertDialog>
+                              <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="size-7 text-rose-600 hover:text-rose-700 hover:bg-rose-50" />}>
+                                    <Trash2Icon className="size-3" />
+                                  </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Revoke session?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This user will be signed out from this device.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+                                    Revoke
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </TableCell>
                         </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-                {/* FOOTER */}
-                <div className="flex flex-col sm:flex-row items-center justify-between px-2 ">
-                  <div className="text-muted-foreground flex-1 text-sm">
-                    {tableSessions.getFilteredSelectedRowModel().rows.length} of{" "}
-                    {tableSessions.getFilteredRowModel().rows.length} row(s)
-                    selected.
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No active sessions
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Password</CardTitle>
+                <CardDescription>Authentication method status</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+                      <KeyRoundIcon className="size-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Password</p>
+                      <p className="text-xs text-muted-foreground">Last changed 30 days ago</p>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-6 lg:space-x-8">
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm font-medium">Rows per page</p>
-                      <Select
-                        value={`${tableSessions.getState().pagination.pageSize}`}
-                        onValueChange={(value) => {
-                          tableSessions.setPageSize(Number(value));
-                        }}
-                      >
-                        <SelectTrigger className="h-8 w-17.5">
-                          <SelectValue
-                            placeholder={
-                              tableSessions.getState().pagination.pageSize
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent side="top">
-                          {[10, 20, 25, 30, 40, 50].map((pageSize) => (
-                            <SelectItem key={pageSize} value={`${pageSize}`}>
-                              {pageSize}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  <Badge variant="secondary">Enabled</Badge>
+                </div>
+                <Button variant="outline" size="sm" className="w-full">
+                  <RefreshCcwIcon data-icon="inline-start" className="size-4" />
+                  Reset Password
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Two-Factor Authentication</CardTitle>
+                <CardDescription>Extra security layer</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-lg bg-amber-500/10">
+                      <ShieldCheckIcon className="size-5 text-amber-500" />
                     </div>
-                    <div className="flex w-25 items-center justify-center text-sm font-medium">
-                      Page {tableSessions.getState().pagination.pageIndex + 1}{" "}
-                      of {tableSessions.getPageCount()}
+                    <div>
+                      <p className="text-sm font-medium">2FA Status</p>
+                      <p className="text-xs text-muted-foreground">Not configured</p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="hidden size-8 lg:flex"
-                        onClick={() => tableSessions.setPageIndex(0)}
-                        disabled={!tableSessions.getCanPreviousPage()}
-                      >
-                        <span className="sr-only">Go to first page</span>
-                        <ChevronsLeftIcon />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        onClick={() => tableSessions.previousPage()}
-                        disabled={!tableSessions.getCanPreviousPage()}
-                      >
-                        <span className="sr-only">Go to previous page</span>
-                        <ChevronLeftIcon />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        onClick={() => tableSessions.nextPage()}
-                        disabled={!tableSessions.getCanNextPage()}
-                      >
-                        <span className="sr-only">Go to next page</span>
-                        <ChevronRightIcon />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="hidden size-8 lg:flex"
-                        onClick={() =>
-                          tableSessions.setPageIndex(
-                            tableSessions.getPageCount() - 1,
-                          )
-                        }
-                        disabled={!tableSessions.getCanNextPage()}
-                      >
-                        <span className="sr-only">Go to last page</span>
-                        <ChevronsRightIcon />
-                      </Button>
+                  </div>
+                  <Badge variant="outline" className="text-amber-600 border-amber-600/20">Not Enabled</Badge>
+                </div>
+                <Button variant="outline" size="sm" className="w-full">
+                  Enable 2FA
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base">Connected Accounts</CardTitle>
+                <CardDescription>OAuth and linked authentication methods</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-lg bg-[#0078d4]/10">
+                        <GlobeIcon className="size-5 text-[#0078d4]" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Microsoft SSO</p>
+                        <p className="text-xs text-muted-foreground">Connected Jan 15, 2025</p>
+                      </div>
                     </div>
+                    <Badge variant="secondary" className="text-emerald-600">Connected</Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+                        <KeyRoundIcon className="size-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Password</p>
+                        <p className="text-xs text-muted-foreground">Primary authentication</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary">Active</Badge>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-          <TabsContent value="password">Change your password here.</TabsContent>
-        </Tabs>
-      </div>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base">API Keys</CardTitle>
+                <CardDescription>Programmatic access credentials</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+                        <KeyRoundIcon className="size-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium font-mono">key_abc123...fgh456</p>
+                        <p className="text-xs text-muted-foreground">Created Mar 10, 2025</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" className="size-7">
+                        <CopyIcon className="size-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="size-7 text-rose-600 hover:text-rose-700">
+                        <Trash2Icon className="size-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="mt-4">
+                  <KeyRoundIcon data-icon="inline-start" className="size-4" />
+                  Generate New Key
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Activity Log</CardTitle>
+              <CardDescription>Recent user actions and events</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Device</TableHead>
+                    <TableHead>IP Address</TableHead>
+                    <TableHead>Time</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mockActivityLog.map((log, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {log.action}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">{log.device}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-mono text-sm">{log.ip}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <ClockIcon className="size-3" />
+                          {formatDistanceToNowStrict(log.timestamp, { addSuffix: true })}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <Separator />
+
+      <Card className="border-rose-500/20 bg-rose-500/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-rose-600">
+            <AlertTriangleIcon className="size-5" />
+            Danger Zone
+          </CardTitle>
+          <CardDescription>Irreversible and destructive actions</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-4">
+          {userInfo?.banned ? (
+            <AlertDialog>
+              <AlertDialogTrigger render={<Button variant="outline" className="border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10" />}>
+                    <CircleCheckIcon data-icon="inline-start" className="size-4" />
+                    Unban User
+                  </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Unban {userInfo?.name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This user will be able to sign in again.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction>Unban User</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : (
+            <AlertDialog>
+              <AlertDialogTrigger render={<Button variant="outline" className="border-amber-500/20 text-amber-600 hover:bg-amber-500/10" />}>
+                  <AlertTriangleIcon data-icon="inline-start" className="size-4" />
+                  Ban User
+                </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Ban {userInfo?.name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This user will not be able to sign in until unbanned.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction className="bg-amber-600 hover:bg-amber-700">Ban User</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          <AlertDialog>
+<AlertDialogTrigger render={<Button variant="outline" className="border-rose-500/20 text-rose-600 hover:bg-rose-500/10" />}>
+                    <Trash2Icon data-icon="inline-start" className="size-4" />
+                    Delete User
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this user?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. All user data including sessions and accounts will be permanently deleted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+                  Delete User
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
     </div>
   );
 }

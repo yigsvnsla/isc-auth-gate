@@ -12,11 +12,11 @@ import { useId } from "react";
 
 export const UsersDataTableSkeleton = () => {
   const elementId: string = useId();
-  const height: number = 10;
-  const width: number = 3;
+  const height: number = 8;
+  const width: number = 7;
   return (
     <>
-      <div className="overflow-hidden rounded-md border">
+      <div className="overflow-hidden rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -25,49 +25,40 @@ export const UsersDataTableSkeleton = () => {
                   <Skeleton className="h-4 w-20" />
                 </TableHead>
               ))}
-              <TableHead>
-                <Skeleton className="mx-auto h-4 w-20" />
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Array.from({ length: height }).map((_, i) => (
               <TableRow key={`${elementId}-${i}`}>
-                {Array.from({ length: width }).map((_, i) => (
-                  <TableCell key={`${elementId}-${i}`}>
-                    <Skeleton className="h-4 my-2 w-full" />
-                  </TableCell>
-                ))}
-
                 <TableCell>
-                  <div className="flex gap-2 mx-auto w-fit">
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                    <Skeleton className="h-8 w-8 rounded-md" />
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="size-9 rounded-lg" />
+                    <div className="grid gap-1">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-36" />
+                    </div>
                   </div>
                 </TableCell>
+                {Array.from({ length: width - 1 }).map((_, j) => (
+                  <TableCell key={`${elementId}-${i}-${j}`}>
+                    <Skeleton className="h-4 w-full max-w-[100px]" />
+                  </TableCell>
+                ))}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
       <div className="flex items-center justify-between px-2">
-        <div className="text-muted-foreground flex-1 text-sm">
-          <Skeleton className="h-4 w-40" />
-        </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
-          <div className="flex items-center space-x-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-8 w-17.5 rounded-md" />
-          </div>
-          <div className="flex w-25 items-center justify-center text-sm font-medium">
-            <Skeleton className="h-4 w-40" />
-          </div>
-          <div className="flex items-center space-x-2">
-            <Skeleton className="h-8 w-8 rounded-md" />
-            <Skeleton className="h-8 w-8 rounded-md" />
-            <Skeleton className="h-8 w-8 rounded-md" />
-            <Skeleton className="h-8 w-8 rounded-md" />
+        <Skeleton className="h-4 w-32" />
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-8 w-[140px]" />
+          <Skeleton className="h-4 w-32" />
+          <div className="flex gap-2">
+            <Skeleton className="size-8 rounded-md" />
+            <Skeleton className="size-8 rounded-md" />
+            <Skeleton className="size-8 rounded-md" />
+            <Skeleton className="size-8 rounded-md" />
           </div>
         </div>
       </div>

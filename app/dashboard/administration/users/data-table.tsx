@@ -81,6 +81,7 @@ export const UsersDataTable: FC = () => {
     data: data.users,
     manualPagination: true,
     rowCount: data.total,
+    // pageCount: totalPages,
     getCoreRowModel: getCoreRowModel(),
     onPaginationChange: setPagination,
     state: {

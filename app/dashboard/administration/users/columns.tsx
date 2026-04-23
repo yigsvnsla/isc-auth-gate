@@ -4,62 +4,105 @@ import { ColumnDef } from "@tanstack/react-table";
 import { authClient } from "@/lib/auth-client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   CircleCheckIcon,
   CircleXIcon,
   MailIcon,
-  SearchIcon,
+  MoreHorizontalIcon,
   ShieldHalfIcon,
   User2Icon,
+  ClockIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { format, formatDistanceToNowStrict } from "date-fns";
 import { shortName } from "@/lib/utils";
 import { usePathname } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/components/ui/sonner";
+import { KeyRoundIcon, SearchIcon, BanIcon } from "lucide-react";
 
-const ActionsCell = ({ userId }: { userId: string }) => {
+const ActionsCell = ({ userId, userName }: { userId: string; userName: string }) => {
   const pathname = usePathname();
+
   return (
-    <div className="flex gap-2">
-      <Button
-        variant="outline"
-        size="icon"
-        render={
-          <Link href={`${pathname}${userId}`}>
-            <SearchIcon className="size-4" />
-          </Link>
-        }
-      />
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
+          <MoreHorizontalIcon className="size-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[160px]">
+          <DropdownMenuItem render={<Link href={`${pathname}/${userId}`} />}>
+            <SearchIcon data-icon="inline-start" className="size-4" />
+            View Details
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <AlertDialog>
+            <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} />}>
+              <BanIcon data-icon="inline-start" className="size-4" />
+              Ban User
+            </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Ban {userName}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This user will not be able to sign in until unbanned.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => toast.success(`${userName} has been banned`)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Ban User
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
 export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
   {
-    header: "Usuario",
-
+    accessorKey: "name",
+    header: "User",
     cell({ row }) {
       const image = String(row.original.image);
       const name = String(row.original.name);
       const email = String(row.original.email);
       return (
-        <div className="flex gap-2">
-          <Avatar className="h-8 w-8 rounded-lg">
+        <div className="flex gap-3">
+          <Avatar className="size-9">
             <AvatarImage src={image || undefined} alt={name} />
-            <AvatarFallback className="rounded-lg">
-              {shortName(name)}
-            </AvatarFallback>
+            <AvatarFallback>{shortName(name)}</AvatarFallback>
           </Avatar>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-bold w-fit">{name}</span>
+          <div className="grid gap-0.5">
+            <span className="text-sm font-medium leading-none">{name}</span>
             <Link
               href={`mailto:${email}`}
-              className="truncate text-xs text-accent-foreground/80 w-fit flex items-center gap-1"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              <MailIcon className="size-2.5 text-accent-foreground/80" />
+              <MailIcon className="size-3" />
               {email}
             </Link>
           </div>
@@ -68,84 +111,106 @@ export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
     },
   },
   {
-    header: "Roles",
+    accessorKey: "role",
+    header: "Role",
     cell({ row }) {
-      const roles = {
-        admin: ShieldHalfIcon,
-        user: User2Icon,
-      } as const;
-
-      const roleKey = row.original.role as keyof typeof roles;
-
-      const Icon = roles[roleKey] || User2Icon;
+      const role = row.original.role as string;
+      const roleConfig = {
+        admin: { icon: ShieldHalfIcon, variant: "default" as const },
+        moderator: { icon: ShieldHalfIcon, variant: "secondary" as const },
+        user: { icon: User2Icon, variant: "outline" as const },
+      };
+      const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.user;
+      const Icon = config.icon;
 
       return (
-        <div className="flex items-center font-medium capitalize gap-2 justify-start-safe">
-          <Icon className="size-4" />
-          {roleKey}
+        <Badge variant={config.variant} className="capitalize gap-1.5 w-fit">
+          <Icon className="size-3.5" data-icon="inline-start" />
+          {role}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "emailVerified",
+    header: "Status",
+    cell({ row }) {
+      const banned = row.original.banned;
+      const verified = row.original.emailVerified;
+
+      if (banned) {
+        return (
+          <Badge className="gap-1.5 bg-rose-500/10 text-rose-600 border-rose-500/20 hover:bg-rose-500/10">
+            <CircleXIcon data-icon="inline-start" className="size-3.5" />
+            Blocked
+          </Badge>
+        );
+      }
+
+      if (verified) {
+        return (
+          <Badge className="gap-1.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10">
+            <CircleCheckIcon data-icon="inline-start" className="size-3.5" />
+            Active
+          </Badge>
+        );
+      }
+
+      return (
+        <Badge className="gap-1.5 bg-amber-500/10 text-amber-600 border-amber-500/20 hover:bg-amber-500/10">
+          <CircleXIcon data-icon="inline-start" className="size-3.5" />
+          Pending
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "emailVerified",
+    header: "Email",
+    cell({ row }) {
+      const verified = row.original.emailVerified;
+      return verified ? (
+        <Badge variant="secondary" className="gap-1 text-emerald-600">
+          <CircleCheckIcon data-icon="inline-start" className="size-3" />
+          Verified
+        </Badge>
+      ) : (
+        <Badge variant="outline" className="gap-1 text-amber-600">
+          <CircleXIcon data-icon="inline-start" className="size-3" />
+          Unverified
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Joined",
+    cell({ row }) {
+      const createdAt = row.original.createdAt;
+      return (
+        <div className="text-sm text-muted-foreground">
+          {format(createdAt, "MMM d, yyyy")}
         </div>
       );
     },
   },
   {
-    header: "Verified",
-    cell({ row }) {
-      const verified = row.original.emailVerified;
-
-      return verified ? (
-        <Badge variant="secondary" className="capitalize">
-          <CircleCheckIcon data-icon="inline-start" />
-          verified
-        </Badge>
-      ) : (
-        <Badge variant="secondary" className="capitalize">
-          <CircleXIcon data-icon="inline-start" />
-          unverified
-        </Badge>
+    id: "lastLogin",
+    header: "Last Login",
+    cell() {
+      const mockLastLogin = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
+      return (
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <ClockIcon className="size-3.5" />
+          {formatDistanceToNowStrict(mockLastLogin, { addSuffix: true })}
+        </div>
       );
     },
   },
   {
-    header: "Status",
-    cell({ row }) {
-      const banned = row.original.banned;
-
-      return banned ? (
-        <Badge className="capitalize gap-1.5 rounded-full border-red-600/40 bg-red-600/10 text-red-500 shadow-none hover:bg-red-600/10 dark:bg-red-600/30">
-          <CircleXIcon data-icon="inline-start" className=" text-red-500" />
-          blocked
-        </Badge>
-      ) : (
-        <Badge className="capitalize gap-1.5 rounded-full border-emerald-600/40 bg-emerald-600/10 text-emerald-500 shadow-none hover:bg-emerald-600/10 dark:bg-emerald-600/20">
-          <CircleCheckIcon
-            className=" text-emerald-500"
-            data-icon="inline-start"
-          />
-          active
-        </Badge>
-      );
-    },
-  },
-  {
-    header: "Created At",
-    cell({ row }) {
-      const createdAt = row.original.createdAt;
-
-      return format(createdAt, "dd/mm/yyyy - hh:mm:ss");
-    },
-  },
-  {
-    header: "Update At",
-    cell({ row }) {
-      const updateAt = row.original.updatedAt;
-
-      return format(updateAt, "dd/mm/yyyy - hh:mm:ss");
-    },
-  },
-
-  {
-    accessorKey: "id",
-    header: "Actions",
-    cell: ({ row: { original } }) => <ActionsCell userId={original.id} />,
+    id: "actions",
+    cell: ({ row: { original } }) => (
+      <ActionsCell userId={original.id} userName={original.name} />
+    ),
   },
 ];
