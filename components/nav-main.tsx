@@ -1,4 +1,4 @@
-import { ChevronRightIcon, type LucideIcon } from "lucide-react";
+import { ChevronRightIcon, HomeIcon, type LucideIcon } from "lucide-react";
 
 import {
   Collapsible,
@@ -30,6 +30,7 @@ export function NavMain({
     items?: {
       title: string;
       url: string;
+      icon?: LucideIcon;
     }[];
   }[];
 }) {
@@ -43,6 +44,17 @@ export function NavMain({
             defaultOpen={item.isActive}
             className="group/collapsible"
           >
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                render={
+                  <Link href="/dashboard" className="capitalize">
+                    <HomeIcon />
+                    <span>Home</span>
+                  </Link>
+                }
+              ></SidebarMenuButton>
+            </SidebarMenuItem>
+
             <SidebarMenuItem>
               <CollapsibleTrigger
                 render={
@@ -62,7 +74,12 @@ export function NavMain({
                     <SidebarMenuSubItem key={subItem.title}>
                       <SidebarMenuSubButton
                         className="capitalize"
-                        render={<Link href={subItem.url}>{subItem.title}</Link>}
+                        render={
+                          <Link href={subItem.url}>
+                            {subItem.icon && <subItem.icon />}
+                            {subItem.title}
+                          </Link>
+                        }
                       />
                     </SidebarMenuSubItem>
                   ))}

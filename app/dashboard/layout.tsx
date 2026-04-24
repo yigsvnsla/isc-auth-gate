@@ -27,11 +27,7 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
     },
   });
 
-  if (
-    !userHasPermission ||
-    userHasPermission.error ||
-    !userHasPermission.success
-  ) {
+  if (userHasPermission.error || !userHasPermission.success) {
     // no es lo mejor que se me ocurra, pero es para mostrar el error en la pantalla de login
     redirect(`/auth/sign-in`, "replace");
   }

@@ -11,6 +11,8 @@ import {
   Send,
   Settings2,
   SquareTerminal,
+  UserIcon,
+  UsersIcon,
 } from "lucide-react";
 
 const data = {
@@ -24,10 +26,12 @@ const data = {
         {
           title: "users",
           url: "/dashboard/administration/users",
+          icon:  UserIcon
         },
         {
-          title: "Starred",
-          url: "#",
+          title: "organizations",
+          url: "/dashboard/administration/organizations",
+          icon:  UsersIcon  
         },
         {
           title: "Settings",

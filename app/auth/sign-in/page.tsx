@@ -1,7 +1,7 @@
 import { GridPattern } from "@/components/ui/grid-pattern";
 import { LoginForm } from "@/components/login-form";
 import { cn } from "@/lib/utils";
-import { GalleryVerticalEnd } from "lucide-react";
+import { CommandIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function LoginPage() {
@@ -17,10 +17,10 @@ export default function LoginPage() {
         <div className="flex flex-col gap-4 p-6 md:p-10">
           <div className="flex w-full justify-between">
             <a href="#" className="flex items-center gap-2 font-medium">
-              <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-                <GalleryVerticalEnd className="size-4" />
+              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                <CommandIcon className="size-4" />
               </div>
-              Acme Inc.
+              ISC Gate
             </a>
             <ThemeToggle />
           </div>
