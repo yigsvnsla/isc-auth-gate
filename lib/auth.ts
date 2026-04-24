@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/database";
-import { admin as adminPlugin, openAPI } from "better-auth/plugins";
+import { admin as adminPlugin, openAPI, organization } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 // import { smtp_transporter } from "./smtp";
 import { accessControl, admin, user, moderator } from "./permissions";
@@ -105,6 +105,11 @@ export const auth = betterAuth({
       adminUserIds: ["5RfQlRTKmUCC2H5EyAnHAgSLwxelZsz9"],
       ac: accessControl,
       roles: { admin, user, moderator },
+    }),
+    organization({
+      allowUserToCreateOrganization: true,
+      organizationLimit: 5,
+      membershipLimit: 100,
     }),
     openAPI(),
     nextCookies(),

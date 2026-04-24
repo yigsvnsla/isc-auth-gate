@@ -1,9 +1,9 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { FC, useState } from "react";
+import { FC, useState, useMemo } from "react";
 import useSWR from "swr";
-import { columns } from "./columns";
+import { columns, type OrganizationRow } from "./columns";
 import {
   flexRender,
   getCoreRowModel,
@@ -23,8 +23,8 @@ import {
   ChevronRight,
   ChevronsRight,
   RefreshCcwIcon,
-  UserPlus2Icon,
-  UsersIcon,
+  Building2Icon,
+  PlusIcon,
 } from "lucide-react";
 import {
   Table,
@@ -42,47 +42,70 @@ import {
   EmptyDescription,
   EmptyContent,
 } from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
 
-export const UsersDataTable: FC = () => {
-  // const [totalUsers, setTotalUsers] = useState(0);
-  // const [totalPages, setTotalPages] = useState(0);
-
+export const OrganizationsDataTable: FC = () => {
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
 
-  const { data, isLoading, isValidating } = useSWR(
-    ["/admin/list-users", pagination],
-    async ([, { pageIndex, pageSize }]) => {
-      const listUsers = await authClient.admin.listUsers({
-        fetchOptions: {
-          throw: true,
-        },
-        query: {
-          limit: pageSize,
-          offset: pageIndex,
-        },
-      });
-
-      if (!listUsers || !("limit" in listUsers)) {
-        throw new Error("Lista Incompleta");
-      }
-
-      return listUsers;
-    },
-    {
-      fallbackData: { users: [], total: 0, limit: 10, offset: 0 },
-      keepPreviousData: true,
+  const { data, isLoading } = useSWR(
+    "/organization/list",
+    async () => {
+      const result = await authClient.organization.list();
+      return result;
     }
   );
 
+  const rawData = Array.isArray(data) ? (data as unknown as OrganizationRow[]) : [];
+
+  const filteredData = useMemo(() => {
+    let filtered = rawData;
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(
+        (org) =>
+          org.name.toLowerCase().includes(searchLower) ||
+          org.slug.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (roleFilter !== "all") {
+      filtered = filtered.filter((org) => org.role === roleFilter);
+    }
+
+    return filtered;
+  }, [rawData, search, roleFilter]);
+
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const handleRoleFilter = (value: string | null) => {
+    setRoleFilter(value ?? "all");
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const paginatedData = filteredData.slice(
+    pagination.pageIndex * pagination.pageSize,
+    (pagination.pageIndex + 1) * pagination.pageSize
+  );
+
+  const totalRows = filteredData.length;
+  const hasData = rawData.length > 0;
+  const hasResults = filteredData.length > 0;
+  const isFiltering = search || roleFilter !== "all";
+
   const table = useReactTable({
     columns,
-    data: data.users,
+    data: paginatedData,
     manualPagination: true,
-    rowCount: data.total,
-    // pageCount: totalPages,
+    rowCount: filteredData.length,
     getCoreRowModel: getCoreRowModel(),
     onPaginationChange: setPagination,
     state: {
@@ -93,6 +116,14 @@ export const UsersDataTable: FC = () => {
   if (isLoading) {
     return (
       <>
+        {/* FILTERS */}
+        <div className="flex gap-4">
+          <div className="relative flex-1">
+            <div className="h-10 w-full animate-pulse rounded-md border bg-muted" />
+          </div>
+          <div className="h-10 w-[160px] animate-pulse rounded-md border bg-muted" />
+        </div>
+
         <div className="overflow-hidden rounded-md border">
           <Table>
             <TableHeader>
@@ -112,11 +143,11 @@ export const UsersDataTable: FC = () => {
                       <div className="size-9 rounded-lg animate-pulse bg-muted" />
                       <div className="grid gap-1">
                         <div className="h-4 w-28 animate-pulse rounded bg-muted" />
-                        <div className="h-3 w-36 animate-pulse rounded bg-muted" />
+                        <div className="h-3 w-20 animate-pulse rounded bg-muted" />
                       </div>
                     </div>
                   </TableCell>
-                  {Array.from({ length: 6 }).map((_, j) => (
+                  {Array.from({ length: 4 }).map((_, j) => (
                     <TableCell key={j}>
                       <div className="h-4 w-full max-w-[100px] animate-pulse rounded bg-muted" />
                     </TableCell>
@@ -145,6 +176,39 @@ export const UsersDataTable: FC = () => {
 
   return (
     <>
+      {/* FILTERS */}
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Input
+            placeholder="Search organizations by name or slug..."
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-8"
+          />
+          <svg
+            className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            fill="none"
+            height="1em"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <circle cx="11" cy="11" r="8" strokeWidth="2" />
+            <path d="m21 21-4.35-4.35" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </div>
+        <Select value={roleFilter} onValueChange={handleRoleFilter}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="owner">Owner</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="member">Member</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* TABLE */}
       <div className="overflow-hidden rounded-md border">
         <Table>
@@ -167,7 +231,62 @@ export const UsersDataTable: FC = () => {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {!hasData ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={columns.length}>
+                  <Empty className="h-[calc(10*52px)]">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Building2Icon />
+                      </EmptyMedia>
+                      <EmptyTitle className="capitalize">
+                        no organizations yet
+                      </EmptyTitle>
+                      <EmptyDescription className="max-w-xs text-pretty">
+                        You don&apos;t have any organizations. Create one to get started.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                    <EmptyContent className="grid sm:grid-cols-2 ">
+                      <Button variant="outline">
+                        <RefreshCcwIcon data-icon="inline-start" />
+                        Refresh
+                      </Button>
+                      <Button variant="secondary">
+                        <PlusIcon data-icon="inline-start" />
+                        Create Organization
+                      </Button>
+                    </EmptyContent>
+                  </Empty>
+                </TableCell>
+              </TableRow>
+            ) : !hasResults ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={columns.length}>
+                  <Empty className="h-[calc(10*52px)]">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Building2Icon />
+                      </EmptyMedia>
+                      <EmptyTitle className="capitalize">
+                        no results found
+                      </EmptyTitle>
+                      <EmptyDescription className="max-w-xs text-pretty">
+                        No organizations match your search criteria. Try adjusting your filters.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                    <EmptyContent className="grid sm:grid-cols-2 ">
+                      <Button variant="outline" onClick={() => handleSearch("")}>
+                        <RefreshCcwIcon data-icon="inline-start" />
+                        Clear Search
+                      </Button>
+                      <Button variant="secondary" onClick={() => handleRoleFilter("all")}>
+                        Clear Filters
+                      </Button>
+                    </EmptyContent>
+                  </Empty>
+                </TableCell>
+              </TableRow>
+            ) : (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -183,35 +302,6 @@ export const UsersDataTable: FC = () => {
                   ))}
                 </TableRow>
               ))
-            ) : (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={columns.length}>
-                  <Empty className="h-[calc(10*52px)]">
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        <UsersIcon />
-                      </EmptyMedia>
-                      <EmptyTitle className="capitalize">
-                        list users is empty
-                      </EmptyTitle>
-                      <EmptyDescription className="max-w-xs text-pretty">
-                        You&apos;re all caught up. New notifications will appear
-                        here.
-                      </EmptyDescription>
-                    </EmptyHeader>
-                    <EmptyContent className="grid sm:grid-cols-2 ">
-                      <Button variant="outline">
-                        <RefreshCcwIcon data-icon="inline-start" />
-                        Refresh
-                      </Button>
-                      <Button variant="secondary">
-                        <UserPlus2Icon data-icon="inline-start" />
-                        Create new User
-                      </Button>
-                    </EmptyContent>
-                  </Empty>
-                </TableCell>
-              </TableRow>
             )}
           </TableBody>
         </Table>
@@ -220,8 +310,11 @@ export const UsersDataTable: FC = () => {
       {/* FOOTER */}
       <div className="flex flex-col sm:flex-row items-center justify-between px-2 ">
         <div className="text-muted-foreground flex-1 text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {isFiltering ? (
+            <>showing {totalRows} of {rawData.length} organization(s)</>
+          ) : (
+            <>{rawData.length} organization(s)</>
+          )}
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">
@@ -297,153 +390,3 @@ export const UsersDataTable: FC = () => {
     </>
   );
 };
-
-// import {
-//   ColumnDef,
-//   flexRender,
-//   getCoreRowModel,
-//   getPaginationRowModel,
-//   useReactTable,
-// } from "@tanstack/react-table";
-// import { Button } from "@/components/ui/button";
-// import {
-//   Empty,
-//   EmptyContent,
-//   EmptyDescription,
-//   EmptyHeader,
-//   EmptyMedia,
-//   EmptyTitle,
-// } from "@/components/ui/empty";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
-// import {
-//   CalendarIcon,
-//   RefreshCcwIcon,
-//   ShieldEllipsisIcon,
-//   UserPlus2Icon,
-//   UsersIcon,
-// } from "lucide-react";
-// import { UserDataTablePagination } from "./pagination";
-// import { Input } from "@/components/ui/input";
-
-// interface DataTableProps<TData, TValue> {
-//   columns: ColumnDef<TData, TValue>[];
-//   data: TData[];
-// }
-
-// export function UsersDataTable<TData, TValue>({
-//   columns,
-//   data,
-// }: DataTableProps<TData, TValue>) {
-//   const table = useReactTable({
-//     data,
-//     columns,
-//     getCoreRowModel: getCoreRowModel(),
-//     getPaginationRowModel: getPaginationRowModel(),
-//   });
-
-//   return (
-//     <>
-//       <div className=" flex space-x-2">
-//         <Input placeholder="Search users.." className="w-xs" />
-//         <div></div>
-
-//         <Button
-//           variant={"outline"}
-//           className="capitalize border border-dashed ml-auto"
-//         >
-//           <span className="sr-only md:not-sr-only">roles</span>
-//           <ShieldEllipsisIcon />
-//         </Button>
-
-//         <Button variant={"secondary"} className="capitalize">
-//           <span className="sr-only md:not-sr-only">created</span>
-//           <CalendarIcon />
-//         </Button>
-
-//         <Button className="capitalize">
-//           <span className="sr-only md:not-sr-only">new user</span>
-//           <UserPlus2Icon />
-//         </Button>
-//       </div>
-
-//       <div className="overflow-hidden rounded-md border">
-//         <Table>
-//           <TableHeader>
-//             {table.getHeaderGroups().map((headerGroup) => (
-//               <TableRow key={headerGroup.id}>
-//                 {headerGroup.headers.map((header) => {
-//                   return (
-//                     <TableHead key={header.id}>
-//                       {header.isPlaceholder
-//                         ? null
-//                         : flexRender(
-//                             header.column.columnDef.header,
-//                             header.getContext(),
-//                           )}
-//                     </TableHead>
-//                   );
-//                 })}
-//               </TableRow>
-//             ))}
-//           </TableHeader>
-//           <TableBody>
-//             {table.getRowModel().rows?.length ? (
-//               table.getRowModel().rows.map((row) => (
-//                 <TableRow
-//                   key={row.id}
-//                   data-state={row.getIsSelected() && "selected"}
-//                 >
-//                   {row.getVisibleCells().map((cell) => (
-//                     <TableCell key={cell.id}>
-//                       {flexRender(
-//                         cell.column.columnDef.cell,
-//                         cell.getContext(),
-//                       )}
-//                     </TableCell>
-//                   ))}
-//                 </TableRow>
-//               ))
-//             ) : (
-//               <TableRow className="hover:bg-transparent">
-//                 <TableCell colSpan={columns.length}>
-//                   <Empty className="h-[calc(10*52px)]">
-//                     <EmptyHeader>
-//                       <EmptyMedia variant="icon">
-//                         <UsersIcon />
-//                       </EmptyMedia>
-//                       <EmptyTitle className="capitalize">
-//                         list users is empty
-//                       </EmptyTitle>
-//                       <EmptyDescription className="max-w-xs text-pretty">
-//                         You&apos;re all caught up. New notifications will appear
-//                         here.
-//                       </EmptyDescription>
-//                     </EmptyHeader>
-//                     <EmptyContent className="grid sm:grid-cols-2 ">
-//                       <Button variant="outline">
-//                         <RefreshCcwIcon data-icon="inline-start" />
-//                         Refresh
-//                       </Button>
-//                       <Button variant="secondary">
-//                         <UserPlus2Icon data-icon="inline-start" />
-//                         Create new User
-//                       </Button>
-//                     </EmptyContent>
-//                   </Empty>
-//                 </TableCell>
-//               </TableRow>
-//             )}
-//           </TableBody>
-//         </Table>
-//       </div>
-//       <UserDataTablePagination table={table} />
-//     </>
-//   );
-// }
