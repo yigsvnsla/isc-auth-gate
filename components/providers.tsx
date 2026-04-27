@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
@@ -7,10 +6,13 @@ import { SWRConfig } from "swr";
 import { SidebarProvider } from "./ui/sidebar";
 import { cookies } from "next/headers";
 
-export default async function Providers({ children }: { children: React.ReactNode }) {
-
+export default async function Providers({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const cookieStore = await cookies();
-  const defaultOpen = Boolean(cookieStore.get("sidebar_state")?.value);
+  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
 
   return (
     <NextThemesProvider

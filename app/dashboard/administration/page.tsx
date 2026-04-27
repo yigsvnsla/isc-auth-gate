@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
@@ -82,9 +81,7 @@ export default function AdministrationPage() {
                 key={section.title}
                 className="cursor-not-allowed opacity-60"
               >
-                <CardContent className="pt-6">
-                  {cardContent}
-                </CardContent>
+                <CardContent className="pt-6">{cardContent}</CardContent>
               </Card>
             );
           }
@@ -92,9 +89,7 @@ export default function AdministrationPage() {
           return (
             <Link key={section.title} href={section.href}>
               <Card className="transition-all hover:border-primary/50 hover:shadow-md cursor-pointer h-full">
-                <CardContent className="pt-6">
-                  {cardContent}
-                </CardContent>
+                <CardContent className="pt-6">{cardContent}</CardContent>
               </Card>
             </Link>
           );
