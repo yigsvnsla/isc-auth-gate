@@ -15,10 +15,13 @@ import { redirect } from "next/navigation";
 import { PropsWithChildren } from "react";
 import { auth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { headers } from "next/headers";
 
 export default async function DashboardLayout({ children }: PropsWithChildren) {
   // You can also just pass the role directly
+  const _headers = await headers();
   const userHasPermission = await auth.api.userHasPermission({
+    headers: _headers,
     body: {
       role: "admin",
       permissions: {

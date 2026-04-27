@@ -73,7 +73,7 @@ export function NavUser({
             nativeButton={false}
             render={
               <SidebarMenuButton
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer select-none"
                 size="lg"
                 render={
                   <section>

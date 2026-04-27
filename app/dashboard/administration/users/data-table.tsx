@@ -1,8 +1,8 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { FC, useState } from "react";
-import useSWR from "swr";
+import { FC, useState, useCallback, useTransition } from "react";
+import useSWR, { mutate } from "swr";
 import { columns } from "./columns";
 import {
   flexRender,
@@ -25,6 +25,9 @@ import {
   RefreshCcwIcon,
   UserPlus2Icon,
   UsersIcon,
+  BanIcon,
+  Trash2Icon,
+  CheckCircleIcon,
 } from "lucide-react";
 import {
   Table,
@@ -42,17 +45,31 @@ import {
   EmptyDescription,
   EmptyContent,
 } from "@/components/ui/empty";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/components/ui/sonner";
 
 export const UsersDataTable: FC = () => {
-  // const [totalUsers, setTotalUsers] = useState(0);
-  // const [totalPages, setTotalPages] = useState(0);
+
 
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
 
-  const { data, isLoading, isValidating } = useSWR(
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const [isPending, startTransition] = useTransition();
+
+  const { data, isLoading } = useSWR(
     ["/admin/list-users", pagination],
     async ([, { pageIndex, pageSize }]) => {
       const listUsers = await authClient.admin.listUsers({
@@ -61,7 +78,9 @@ export const UsersDataTable: FC = () => {
         },
         query: {
           limit: pageSize,
-          offset: pageIndex,
+          offset: pageIndex * pageSize,
+          sortBy: "createdAt",
+          sortDirection: "desc",
         },
       });
 
@@ -74,7 +93,46 @@ export const UsersDataTable: FC = () => {
     {
       fallbackData: { users: [], total: 0, limit: 10, offset: 0 },
       keepPreviousData: true,
-    }
+    },
+  );
+
+  const totalPages = Math.ceil((data.total || 0) / pagination.pageSize);
+  const canPreviousPage = pagination.pageIndex > 0;
+  const canNextPage =
+    pagination.pageIndex < totalPages - 1 &&
+    data.users.length === pagination.pageSize;
+
+  const selectedUsers = data.users.filter((user) => rowSelection[user.id]);
+  const selectedCount = selectedUsers.length;
+  const hasSelection = selectedCount > 0;
+
+  const handleBatchAction = useCallback(
+    async (action: "ban" | "unban" | "delete", userIds: string[]) => {
+      toast.promise(
+        (async () => {
+          const promises = userIds.map((userId) => {
+            if (action === "ban") {
+              return authClient.admin.banUser({ userId });
+            } else if (action === "unban") {
+              return authClient.admin.unbanUser({ userId });
+            } else {
+              return authClient.admin.removeUser({ userId });
+            }
+          });
+          await Promise.all(promises);
+          startTransition(() => {
+            setRowSelection({});
+            mutate(["/admin/list-users", pagination]);
+          });
+        })(),
+        {
+          loading: `${action === "ban" ? "Baneando" : action === "unban" ? "Activando" : "Eliminando"} ${userIds.length} usuario(s)...`,
+          success: `${userIds.length} usuario(s) ${action === "ban" ? "baneado(s)" : action === "unban" ? "activado(s)" : "eliminado(s)"}`,
+          error: "Error al realizar la operación",
+        },
+      );
+    },
+    [pagination],
   );
 
   const table = useReactTable({
@@ -82,11 +140,13 @@ export const UsersDataTable: FC = () => {
     data: data.users,
     manualPagination: true,
     rowCount: data.total,
-    // pageCount: totalPages,
     getCoreRowModel: getCoreRowModel(),
-    onPaginationChange: setPagination,
+    getRowId: (row) => row.id,
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
     state: {
       pagination,
+      rowSelection,
     },
   });
 
@@ -118,7 +178,7 @@ export const UsersDataTable: FC = () => {
                   </TableCell>
                   {Array.from({ length: 6 }).map((_, j) => (
                     <TableCell key={j}>
-                      <div className="h-4 w-full max-w-[100px] animate-pulse rounded bg-muted" />
+                      <div className="h-4 w-full max-w-25 animate-pulse rounded bg-muted" />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -129,7 +189,7 @@ export const UsersDataTable: FC = () => {
         <div className="flex items-center justify-between px-2 py-4">
           <div className="h-4 w-32 animate-pulse rounded bg-muted" />
           <div className="flex items-center gap-4">
-            <div className="h-8 w-[140px] animate-pulse rounded bg-muted" />
+            <div className="h-8 w-35 animate-pulse rounded bg-muted" />
             <div className="h-4 w-32 animate-pulse rounded bg-muted" />
             <div className="flex gap-2">
               <div className="size-8 rounded-md animate-pulse bg-muted" />
@@ -145,6 +205,127 @@ export const UsersDataTable: FC = () => {
 
   return (
     <>
+      {/* BATCH ACTIONS TOOLBAR */}
+      {hasSelection && (
+        <div className="mb-2 flex items-center justify-between rounded-md border bg-muted/50 px-3 py-2">
+          <span className="text-sm font-medium">
+            <CheckCircleIcon className="mr-2 inline-block size-4" />
+            {selectedCount} usuario(s) seleccionado(s)
+          </span>
+          <div className="flex items-center gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <BanIcon className="size-4" />
+                    Banear
+                  </Button>
+                }
+              />
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Banear {selectedCount} usuario(s)?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Los usuarios seleccionados no podrán iniciar sesión hasta
+                    que sean aktivados.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      handleBatchAction(
+                        "ban",
+                        selectedUsers.map((u) => u.id),
+                      )
+                    }
+                  >
+                    Banear
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <CheckCircleIcon className="size-4" />
+                    Activar
+                  </Button>
+                }
+              />
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Activar {selectedCount} usuario(s)?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Se removerá el bloqueo de los usuarios seleccionados.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      handleBatchAction(
+                        "unban",
+                        selectedUsers.map((u) => u.id),
+                      )
+                    }
+                  >
+                    Activar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-destructive hover:text-destructive"
+                  >
+                    <Trash2Icon className="size-4" />
+                    Eliminar
+                  </Button>
+                }
+              />
+
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Eliminar {selectedCount} usuario(s)?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción es irreversible. Los usuarios serán eliminados
+                    permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      handleBatchAction(
+                        "delete",
+                        selectedUsers.map((u) => u.id),
+                      )
+                    }
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Eliminar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      )}
+
       {/* TABLE */}
       <div className="overflow-hidden rounded-md border">
         <Table>
@@ -220,22 +401,23 @@ export const UsersDataTable: FC = () => {
       {/* FOOTER */}
       <div className="flex flex-col sm:flex-row items-center justify-between px-2 ">
         <div className="text-muted-foreground flex-1 text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+          {data.total} total usuario(s)
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium">Rows per page</p>
             <Select
-              value={`${table.getState().pagination.pageSize}`}
+              value={`${pagination.pageSize}`}
               onValueChange={(value) => {
-                table.setPageSize(Number(value));
+                setPagination((prev) => ({
+                  ...prev,
+                  pageSize: Number(value),
+                  pageIndex: 0,
+                }));
               }}
             >
               <SelectTrigger className="h-8 w-17.5">
-                <SelectValue
-                  placeholder={table.getState().pagination.pageSize}
-                />
+                <SelectValue placeholder={pagination.pageSize} />
               </SelectTrigger>
               <SelectContent side="top">
                 {[10, 20, 25, 30, 40, 50].map((pageSize) => (
@@ -247,16 +429,17 @@ export const UsersDataTable: FC = () => {
             </Select>
           </div>
           <div className="flex w-25 items-center justify-center text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
+            Page {pagination.pageIndex + 1} of {totalPages}
           </div>
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
               size="icon"
               className="hidden size-8 lg:flex"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
+              onClick={() =>
+                setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+              }
+              disabled={!canPreviousPage}
             >
               <span className="sr-only">Go to first page</span>
               <ChevronsLeft />
@@ -265,8 +448,13 @@ export const UsersDataTable: FC = () => {
               variant="outline"
               size="icon"
               className="size-8"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  pageIndex: prev.pageIndex - 1,
+                }))
+              }
+              disabled={!canPreviousPage}
             >
               <span className="sr-only">Go to previous page</span>
               <ChevronLeft />
@@ -275,8 +463,13 @@ export const UsersDataTable: FC = () => {
               variant="outline"
               size="icon"
               className="size-8"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  pageIndex: prev.pageIndex + 1,
+                }))
+              }
+              disabled={!canNextPage}
             >
               <span className="sr-only">Go to next page</span>
               <ChevronRight />
@@ -285,8 +478,13 @@ export const UsersDataTable: FC = () => {
               variant="outline"
               size="icon"
               className="hidden size-8 lg:flex"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  pageIndex: totalPages - 1,
+                }))
+              }
+              disabled={!canNextPage}
             >
               <span className="sr-only">Go to last page</span>
               <ChevronsRight />
@@ -297,153 +495,3 @@ export const UsersDataTable: FC = () => {
     </>
   );
 };
-
-// import {
-//   ColumnDef,
-//   flexRender,
-//   getCoreRowModel,
-//   getPaginationRowModel,
-//   useReactTable,
-// } from "@tanstack/react-table";
-// import { Button } from "@/components/ui/button";
-// import {
-//   Empty,
-//   EmptyContent,
-//   EmptyDescription,
-//   EmptyHeader,
-//   EmptyMedia,
-//   EmptyTitle,
-// } from "@/components/ui/empty";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
-// import {
-//   CalendarIcon,
-//   RefreshCcwIcon,
-//   ShieldEllipsisIcon,
-//   UserPlus2Icon,
-//   UsersIcon,
-// } from "lucide-react";
-// import { UserDataTablePagination } from "./pagination";
-// import { Input } from "@/components/ui/input";
-
-// interface DataTableProps<TData, TValue> {
-//   columns: ColumnDef<TData, TValue>[];
-//   data: TData[];
-// }
-
-// export function UsersDataTable<TData, TValue>({
-//   columns,
-//   data,
-// }: DataTableProps<TData, TValue>) {
-//   const table = useReactTable({
-//     data,
-//     columns,
-//     getCoreRowModel: getCoreRowModel(),
-//     getPaginationRowModel: getPaginationRowModel(),
-//   });
-
-//   return (
-//     <>
-//       <div className=" flex space-x-2">
-//         <Input placeholder="Search users.." className="w-xs" />
-//         <div></div>
-
-//         <Button
-//           variant={"outline"}
-//           className="capitalize border border-dashed ml-auto"
-//         >
-//           <span className="sr-only md:not-sr-only">roles</span>
-//           <ShieldEllipsisIcon />
-//         </Button>
-
-//         <Button variant={"secondary"} className="capitalize">
-//           <span className="sr-only md:not-sr-only">created</span>
-//           <CalendarIcon />
-//         </Button>
-
-//         <Button className="capitalize">
-//           <span className="sr-only md:not-sr-only">new user</span>
-//           <UserPlus2Icon />
-//         </Button>
-//       </div>
-
-//       <div className="overflow-hidden rounded-md border">
-//         <Table>
-//           <TableHeader>
-//             {table.getHeaderGroups().map((headerGroup) => (
-//               <TableRow key={headerGroup.id}>
-//                 {headerGroup.headers.map((header) => {
-//                   return (
-//                     <TableHead key={header.id}>
-//                       {header.isPlaceholder
-//                         ? null
-//                         : flexRender(
-//                             header.column.columnDef.header,
-//                             header.getContext(),
-//                           )}
-//                     </TableHead>
-//                   );
-//                 })}
-//               </TableRow>
-//             ))}
-//           </TableHeader>
-//           <TableBody>
-//             {table.getRowModel().rows?.length ? (
-//               table.getRowModel().rows.map((row) => (
-//                 <TableRow
-//                   key={row.id}
-//                   data-state={row.getIsSelected() && "selected"}
-//                 >
-//                   {row.getVisibleCells().map((cell) => (
-//                     <TableCell key={cell.id}>
-//                       {flexRender(
-//                         cell.column.columnDef.cell,
-//                         cell.getContext(),
-//                       )}
-//                     </TableCell>
-//                   ))}
-//                 </TableRow>
-//               ))
-//             ) : (
-//               <TableRow className="hover:bg-transparent">
-//                 <TableCell colSpan={columns.length}>
-//                   <Empty className="h-[calc(10*52px)]">
-//                     <EmptyHeader>
-//                       <EmptyMedia variant="icon">
-//                         <UsersIcon />
-//                       </EmptyMedia>
-//                       <EmptyTitle className="capitalize">
-//                         list users is empty
-//                       </EmptyTitle>
-//                       <EmptyDescription className="max-w-xs text-pretty">
-//                         You&apos;re all caught up. New notifications will appear
-//                         here.
-//                       </EmptyDescription>
-//                     </EmptyHeader>
-//                     <EmptyContent className="grid sm:grid-cols-2 ">
-//                       <Button variant="outline">
-//                         <RefreshCcwIcon data-icon="inline-start" />
-//                         Refresh
-//                       </Button>
-//                       <Button variant="secondary">
-//                         <UserPlus2Icon data-icon="inline-start" />
-//                         Create new User
-//                       </Button>
-//                     </EmptyContent>
-//                   </Empty>
-//                 </TableCell>
-//               </TableRow>
-//             )}
-//           </TableBody>
-//         </Table>
-//       </div>
-//       <UserDataTablePagination table={table} />
-//     </>
-//   );
-// }

@@ -19,6 +19,7 @@ import { NavUserSkeleton } from "./nav-user-skeleton";
 import { NavUserContainer } from "./nav-user-container";
 import { NavMainContainer } from "./nav-main-container";
 import { CommandIcon } from "lucide-react";
+import Link from "next/link";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -29,7 +30,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               size="lg"
               render={
-                <a href="#">
+                <Link href="#">
                   <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                     <CommandIcon className="size-4" />
                   </div>
@@ -37,7 +38,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <span className="truncate font-medium">ISC Gate</span>
                     <span className="truncate text-xs">Enterprise</span>
                   </div>
-                </a>
+                </Link>
               }
             />
           </SidebarMenuItem>

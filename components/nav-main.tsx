@@ -38,23 +38,23 @@ export function NavMain({
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            className="capitalize"
+            render={
+              <Link href="/dashboard">
+                <HomeIcon />
+                <span>Home</span>
+              </Link>
+            }
+          />
+        </SidebarMenuItem>
         {items.map((item) => (
           <Collapsible
             key={item.title}
             defaultOpen={item.isActive}
             className="group/collapsible"
           >
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                render={
-                  <Link href="/dashboard" className="capitalize">
-                    <HomeIcon />
-                    <span>Home</span>
-                  </Link>
-                }
-              ></SidebarMenuButton>
-            </SidebarMenuItem>
-
             <SidebarMenuItem>
               <CollapsibleTrigger
                 render={

@@ -38,27 +38,38 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/sonner";
-import { KeyRoundIcon, SearchIcon, BanIcon } from "lucide-react";
+import { SearchIcon, BanIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
-const ActionsCell = ({ userId, userName }: { userId: string; userName: string }) => {
+const ActionsCell = ({
+  userId,
+  userName,
+}: {
+  userId: string;
+  userName: string;
+}) => {
   const pathname = usePathname();
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
-          <MoreHorizontalIcon className="size-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem render={<Link href={`${pathname}/${userId}`} />}>
-            <SearchIcon data-icon="inline-start" className="size-4" />
-            View Details
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <AlertDialog>
-            <AlertDialogTrigger render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} />}>
-              <BanIcon data-icon="inline-start" className="size-4" />
-              Ban User
-            </AlertDialogTrigger>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="icon" className="size-8" />}
+      >
+        <MoreHorizontalIcon className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuItem render={<Link href={`${pathname}/${userId}`} />}>
+          <SearchIcon data-icon="inline-start" className="size-4" />
+          View Details
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <AlertDialog>
+          <AlertDialogTrigger
+            render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} />}
+          >
+            <BanIcon data-icon="inline-start" className="size-4" />
+            Ban User
+          </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Ban {userName}?</AlertDialogTitle>
@@ -84,6 +95,25 @@ const ActionsCell = ({ userId, userName }: { userId: string; userName: string })
 
 export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
   {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={Boolean(table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate"))}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
     accessorKey: "name",
     header: "User",
     cell({ row }) {
@@ -91,7 +121,7 @@ export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
       const name = String(row.original.name);
       const email = String(row.original.email);
       return (
-        <div className="flex gap-3">
+        <div className="flex gap-3 select-none cursor-default">
           <Avatar className="size-9">
             <AvatarImage src={image || undefined} alt={name} />
             <AvatarFallback>{shortName(name)}</AvatarFallback>
@@ -120,7 +150,8 @@ export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
         moderator: { icon: ShieldHalfIcon, variant: "secondary" as const },
         user: { icon: User2Icon, variant: "outline" as const },
       };
-      const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.user;
+      const config =
+        roleConfig[role as keyof typeof roleConfig] || roleConfig.user;
       const Icon = config.icon;
 
       return (
@@ -132,6 +163,7 @@ export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
     },
   },
   {
+    id: "StatusVerification",
     accessorKey: "emailVerified",
     header: "Status",
     cell({ row }) {
@@ -165,6 +197,7 @@ export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
     },
   },
   {
+    id: "emailVerification",
     accessorKey: "emailVerified",
     header: "Email",
     cell({ row }) {
@@ -198,7 +231,9 @@ export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
     id: "lastLogin",
     header: "Last Login",
     cell() {
-      const mockLastLogin = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
+      const mockLastLogin = new Date(
+        Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
+      );
       return (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <ClockIcon className="size-3.5" />
