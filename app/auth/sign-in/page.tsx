@@ -16,7 +16,7 @@ export default function LoginPage() {
       <div className="grid min-h-svh w-full grid-cols-1 absolute">
         <div className="flex flex-col gap-4 p-6 md:p-10">
           <div className="flex w-full justify-between">
-            <a href="#" className="flex items-center gap-2 font-medium">
+             <a href="#" title="Coming Soon" className="flex items-center gap-2 font-medium">
               <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                 <CommandIcon className="size-4" />
               </div>

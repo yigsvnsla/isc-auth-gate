@@ -151,7 +151,7 @@ function OrganizationDetailContent({ orgId }: { orgId: string }) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            TODO: Implement member list for this organization.
+            TODO: Implement member list for this organization. (Coming Soon)
             <br />
             API: authClient.organization.listMembers(&#123; organizationId &#125;)
           </p>
@@ -164,7 +164,7 @@ function OrganizationDetailContent({ orgId }: { orgId: string }) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            TODO: Implement pending invitations list.
+            TODO: Implement pending invitations list. (Coming Soon)
             <br />
             API: authClient.organization.listInvitations(&#123; organizationId &#125;)
           </p>

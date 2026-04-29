@@ -38,6 +38,7 @@ import {
   CircleUserIcon,
 } from "lucide-react";
 
+// Coming Soon: Replace with real API data
 const mockUsers = [
   {
     id: "usr_1",
@@ -101,6 +102,7 @@ const mockUsers = [
   },
 ];
 
+// Coming Soon: Replace with real API data
 const mockSessions = [
   {
     id: "ses_1",
@@ -140,6 +142,7 @@ const mockSessions = [
   },
 ];
 
+// Coming Soon: Replace with real API data
 const mockAccounts = [
   { userId: "usr_1", providerId: "microsoft", providerType: "oauth" },
   { userId: "usr_2", providerId: "microsoft", providerType: "oauth" },

@@ -90,6 +90,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 
+// Coming Soon: Replace with real API data
 const mockActivityLog = [
   { action: "Logged in", timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), ip: "192.168.1.100", device: "Chrome on Windows" },
   { action: "Updated profile", timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), ip: "192.168.1.100", device: "Chrome on Windows" },

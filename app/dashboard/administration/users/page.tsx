@@ -31,18 +31,38 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RefreshCwIcon, PlusIcon } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import useSWR from "swr";
 
 export default function Page() {
+  const { data, isLoading } = useSWR(
+    "/admin/users/kpis",
+    async () => {
+      const listUsers = await authClient.admin.listUsers({
+        fetchOptions: { throw: true },
+        query: { limit: 1, offset: 0 },
+      });
+      return { total: listUsers.total || 0 };
+    },
+    { fallbackData: { total: 0 } },
+  );
+
+  const totalUsers = data?.total ?? 0;
+
   return (
     <div className="flex flex-col gap-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink render={<Link href="/dashboard" />}>Dashboard</BreadcrumbLink>
+            <BreadcrumbLink render={<Link href="/dashboard" />}>
+              Dashboard
+            </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink render={<Link href="/dashboard/administration" />}>Administration</BreadcrumbLink>
+            <BreadcrumbLink render={<Link href="/dashboard/administration" />}>
+              Administration
+            </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -54,7 +74,9 @@ export default function Page() {
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">User Management</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              User Management
+            </h1>
             <p className="text-sm text-muted-foreground">
               Manage authentication and access for all users
             </p>
@@ -82,8 +104,14 @@ export default function Page() {
                 <UsersIcon className="size-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold">247</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Users
+                </p>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <p className="text-2xl font-bold">{totalUsers}</p>
+                )}
               </div>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
@@ -99,7 +127,9 @@ export default function Page() {
                 <CircleCheckIcon className="size-5 text-emerald-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Active</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Active
+                </p>
                 <p className="text-2xl font-bold">189</p>
               </div>
             </div>
@@ -114,11 +144,15 @@ export default function Page() {
                 <MailWarningIcon className="size-5 text-amber-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pending Verification</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Pending Verification
+                </p>
                 <p className="text-2xl font-bold">12</p>
               </div>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">Awaiting email confirmation</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Awaiting email confirmation
+            </p>
           </CardContent>
         </Card>
 
@@ -129,11 +163,15 @@ export default function Page() {
                 <BanIcon className="size-5 text-rose-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Banned</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Banned
+                </p>
                 <p className="text-2xl font-bold">2</p>
               </div>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">Account suspended</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Account suspended
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -156,7 +194,7 @@ export default function Page() {
           </svg>
         </div>
         <Select defaultValue="all">
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-40">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -167,7 +205,7 @@ export default function Page() {
           </SelectContent>
         </Select>
         <Select defaultValue="all">
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-35">
             <SelectValue placeholder="Role" />
           </SelectTrigger>
           <SelectContent>

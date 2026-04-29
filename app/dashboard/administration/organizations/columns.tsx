@@ -98,7 +98,7 @@ export const columns: ColumnDef<OrganizationRow>[] = [
     id: "members",
     header: "Members",
     cell() {
-      // TODO: Implement member count per organization
+      // TODO: Implement member count per organization (Coming Soon)
       // To get this: authClient.organization.listMembers({ organizationId })
       // Consider fetching in parallel after main list loads
       return (

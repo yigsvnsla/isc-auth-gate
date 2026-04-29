@@ -3,9 +3,9 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/database";
 import { admin as adminPlugin, openAPI, organization } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
-// import { smtp_transporter } from "./smtp";
+// import { smtp_transporter } from "./smtp"; // Coming Soon
 import { accessControl, admin, user, moderator } from "./permissions";
-// import { microsoft } from "@/plugins/providers/microsoft";
+// import { microsoft } from "@/plugins/providers/microsoft"; // Coming Soon
 import { env } from "@/env";
 
 export const auth = betterAuth({

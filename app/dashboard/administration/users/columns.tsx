@@ -65,11 +65,14 @@ const ActionsCell = ({
         <DropdownMenuSeparator />
         <AlertDialog>
           <AlertDialogTrigger
-            render={<DropdownMenuItem onSelect={(e) => e.preventDefault()} />}
-          >
-            <BanIcon data-icon="inline-start" className="size-4" />
-            Ban User
-          </AlertDialogTrigger>
+            nativeButton={false}
+            render={
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <BanIcon data-icon="inline-start" className="size-4" />
+                Ban User
+              </DropdownMenuItem>
+            }
+          />
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Ban {userName}?</AlertDialogTitle>
@@ -98,7 +101,10 @@ export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        checked={Boolean(table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate"))}
+        checked={Boolean(
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate"),
+        )}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
       />
@@ -231,6 +237,7 @@ export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
     id: "lastLogin",
     header: "Last Login",
     cell() {
+      // Coming Soon: Replace with real API data
       const mockLastLogin = new Date(
         Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
       );

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
-/// import { authClient } from "@workspace/auth-config/lib/client";
+/// import { authClient } from "@workspace/auth-config/lib/client"; // Coming Soon
 import {
   Field,
   FieldDescription,
@@ -54,6 +54,7 @@ export function LoginForm({
   const mutation = useSWRMutation(
     "/sign-up/email",
     (_url, { arg }: { arg: z.infer<typeof signInFormSchema> }) => {
+      // Coming Soon: Implement authentication
       //   return authClient.signIn.email({
       //   email: arg.username,
       //   password: arg.password,
@@ -67,7 +68,9 @@ export function LoginForm({
     },
   );
 
-  async function onSubmit(values: z.infer<typeof signInFormSchema>) {}
+  async function onSubmit(values: z.infer<typeof signInFormSchema>) {
+    // Coming Soon: Implement submit logic
+  }
 
   return (
     <form
@@ -142,6 +145,7 @@ export function LoginForm({
                 </FieldLabel>
                 <a
                   href="#"
+                  title="Coming Soon"
                   className="ml-auto text-muted-foreground text-sm underline-offset-4 hover:underline"
                 >
                   ¿Perdiste tu clave?
@@ -170,7 +174,7 @@ export function LoginForm({
           <MicrosoftLoginButton />
           <FieldDescription className="text-center">
             ¿No tienes una cuenta?{" "}
-            <a href="#" className="underline underline-offset-4">
+             <a href="#" title="Coming Soon" className="underline underline-offset-4">
               Registrarse
             </a>
           </FieldDescription>

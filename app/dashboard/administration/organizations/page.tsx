@@ -106,7 +106,7 @@ function OrganizationStats() {
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            TODO: Implement member count per organization
+            TODO: Implement member count per organization (Coming Soon)
           </p>
         </CardContent>
       </Card>

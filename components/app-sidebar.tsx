@@ -2,9 +2,9 @@
 
 import * as React from "react";
 
-// import { NavProjects } from "@/components/nav-projects";
-// import { NavSecondary } from "@/components/nav-secondary";
-// import { NavUser } from "@/components/nav-user";
+// import { NavProjects } from "@/components/nav-projects"; // Coming Soon
+// import { NavSecondary } from "@/components/nav-secondary"; // Coming Soon
+// import { NavUser } from "@/components/nav-user"; // Coming Soon
 import {
   Sidebar,
   SidebarContent,
@@ -30,7 +30,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               size="lg"
               render={
-                <Link href="#">
+                 <Link href="#" title="Coming Soon">
                   <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                     <CommandIcon className="size-4" />
                   </div>
