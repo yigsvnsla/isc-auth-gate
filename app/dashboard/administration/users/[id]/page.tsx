@@ -119,7 +119,7 @@ export default function UserIdPage() {
         fetchOptions: { throw: true },
       });
     },
-    { fallbackData: {} as any }
+    { fallbackData: {} as ReturnType<typeof authClient.admin.getUser> }
   );
 
   const { data: sessionsInfo, isLoading: sessionsLoading } = useSWR(
@@ -131,7 +131,7 @@ export default function UserIdPage() {
         { throw: true }
       );
     },
-    { fallbackData: { sessions: [] } as any }
+    { fallbackData: { sessions: [] } as ReturnType<typeof authClient.admin.listUserSessions> }
   );
 
   function copyToClipboard(value: string) {
@@ -142,7 +142,7 @@ export default function UserIdPage() {
   }
 
   const activeSessionsCount = sessionsInfo?.sessions?.filter(
-    (s: any) => new Date(s.expiresAt) > new Date()
+    (s: Awaited<ReturnType<typeof authClient.admin.listUserSessions>>["sessions"][number]) => new Date(s.expiresAt) > new Date()
   ).length || 0;
 
   return (
@@ -470,7 +470,7 @@ export default function UserIdPage() {
                 </TableHeader>
                 <TableBody>
                   {sessionsInfo?.sessions?.length > 0 ? (
-                    sessionsInfo.sessions.map((session: any) => {
+                    sessionsInfo.sessions.map((session: Awaited<ReturnType<typeof authClient.admin.listUserSessions>>["sessions"][number]) => {
                       const DeviceIcon = getDeviceIcon(session.userAgent);
                       const isExpired = new Date(session.expiresAt) < new Date();
                       return (
