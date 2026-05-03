@@ -9,7 +9,7 @@ export const NavUserContainer = () => {
   const { data, isLoading } = useSWR(
     "/api/get-session",
     async () => await authClient.getSession({}, { throw: true }),
-    { suspense: true, fallbackData: null },
+    { suspense: true, fallbackData: null, revalidateOnFocus: false },
   );
 
   return isLoading ? (

@@ -30,18 +30,27 @@ import { Spinner } from "@/components/ui/spinner";
 import { useDebounceValue } from "@/hooks/use-debounce-value";
 import useSWR from "swr";
 import { authClient } from "@/lib/auth-client";
+import { FC } from "react";
+
+// const userStatuses = [
+//   { label: "Active", value: "active" },
+//   { label: "Inactive", value: "inactive" },
+//   { label: "Pending", value: "pending" },
+// ] as const;
 
 const formSchema = z.object({
   searchValue: z.string().optional(),
-  searchField: z.enum(["auto", "email", "name"] as const).optional(),
+  searchField: z.enum(["auto", "email", "name"]).optional(),
 });
 
-type SearchField = z.infer<typeof formSchema>["searchField"];
-
-const fetcher = async (searchValue: string | undefined, searchField: string | undefined) => {
+const fetcher = async ([, searchValue, searchField]: [
+  string,
+  string,
+  string,
+]) => {
   // Map "auto" to undefined — admin API expects "email" | "name" | undefined
   const field = searchField === "auto" ? undefined : searchField;
-  const result = await authClient.admin.listUsers({
+  return await authClient.admin.listUsers({
     fetchOptions: { throw: true },
     query: {
       limit: 1,
@@ -50,26 +59,9 @@ const fetcher = async (searchValue: string | undefined, searchField: string | un
       searchField: field as "email" | "name" | undefined,
     },
   });
-  return { total: result.total ?? 0 };
 };
 
-// const spokenLanguages = [
-//   { label: "English", value: "en" },
-//   { label: "Spanish", value: "es" },
-//   { label: "French", value: "fr" },
-//   { label: "German", value: "de" },
-//   { label: "Italian", value: "it" },
-//   { label: "Chinese", value: "zh" },
-//   { label: "Japanese", value: "ja" },
-// ] as const;
-
-// const userStatuses = [
-//   { label: "Active", value: "active" },
-//   { label: "Inactive", value: "inactive" },
-//   { label: "Pending", value: "pending" },
-// ] as const;
-
-export const DataTableHeader = () => {
+export const DataTableHeader: FC = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: "onTouched",
@@ -95,15 +87,15 @@ export const DataTableHeader = () => {
   // 2. SWR condicional: solo busca si hay al menos 3 caracteres
   const shouldFetch = debouncedSearch && debouncedSearch.length >= 3;
 
-  const { data, isLoading } = useSWR<{ total: number }>(
+  const { data, isLoading } = useSWR(
     shouldFetch
-      ? ["/admin/users/count", debouncedSearch, fieldControlValue] as const
+      ? ["/admin/users/count", debouncedSearch, fieldControlValue]
       : null,
-    ([, searchValue, searchField]: readonly [string, string | undefined, SearchField]) =>
-      fetcher(searchValue, searchField),
+    fetcher,
     {
-      fallbackData: { total: 0 },
+      fallbackData: { total: 0, users: [] },
       revalidateOnFocus: false,
+      
     },
   );
 

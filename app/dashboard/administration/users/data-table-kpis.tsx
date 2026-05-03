@@ -44,7 +44,7 @@ export const DataTableKpis = () => {
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            <span className="text-emerald-500">↑ 12%</span> this month
+            <span className="text-emerald-500">---</span> this month
           </p>
         </CardContent>
       </Card>
@@ -59,10 +59,10 @@ export const DataTableKpis = () => {
               <p className="text-sm font-medium text-muted-foreground">
                 Active
               </p>
-              <p className="text-2xl font-bold">189</p>
+              <p className="text-2xl font-bold">---</p>
             </div>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">76.5% of total</p>
+          <p className="mt-2 text-xs text-muted-foreground">---% of total</p>
         </CardContent>
       </Card>
 
@@ -76,7 +76,7 @@ export const DataTableKpis = () => {
               <p className="text-sm font-medium text-muted-foreground">
                 Pending Verification
               </p>
-              <p className="text-2xl font-bold">12</p>
+              <p className="text-2xl font-bold">---</p>
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
@@ -95,7 +95,7 @@ export const DataTableKpis = () => {
               <p className="text-sm font-medium text-muted-foreground">
                 Banned
               </p>
-              <p className="text-2xl font-bold">2</p>
+              <p className="text-2xl font-bold">---</p>
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">

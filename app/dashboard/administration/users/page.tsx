@@ -37,7 +37,7 @@ export default function Page() {
       </div>
 
       <Separator />
-      <DataTableKpis />
+      {/* <DataTableKpis /> */}
 
       {/* <Suspense fallback={<UsersDataTableSkeleton />}> */}
         <DataTableHeader />
