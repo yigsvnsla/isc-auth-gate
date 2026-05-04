@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 import { columns } from "./data-table-columns";
 import {
   flexRender,
@@ -22,17 +22,50 @@ import { paramListUsersAtom } from "@/atoms/params-list-users-atom";
 import { useAtom } from "jotai";
 import { UserListDataTableEmpty } from "./data-table-empty";
 import { UserListDataTableBatching } from "./data-table-batching";
-import { selectListUsersAtom } from "@/atoms/select-list-users-atom";
+import { selectListUsersAtom, useSelectListUsers } from "@/atoms/select-list-users-atom";
+import { Checkbox } from "@/components/ui/checkbox";
 
+const SelectCell = React.memo(function SelectCell({ id }: { id: string }){
+  const value = useSelectListUsers((state) => state.values[id]);
+  const setRowSelection = useSelectListUsers((state) => state.setRowSelection);
+  const hasExistingSelection = useSelectListUsers((state) => state.hasExistingSelection);
+  useEffect(() => {
+    if (hasExistingSelection(id)) return;
+    setRowSelection(id, false);
+  }, [id, hasExistingSelection, setRowSelection]);
+  return ( <Checkbox
+        checked={!!value}
+        onCheckedChange={(value) => setRowSelection(id, !!value)}
+        aria-label="Select row"
+      />)
+} )
+
+const SelectHasOrAllSelection = React.memo(function SelectHasOrAllSelection(){
+  const values = useSelectListUsers((state) => state.values);
+  const setRowsSelection = useSelectListUsers((state) => state.setRowsSelection);
+
+  const entries = Object.values(values);
+  const someSelected = entries.some((v) => v);
+  const allSelected = entries.length > 0 && entries.every((v) => v);
+
+  return ( <Checkbox
+        checked={allSelected ? true : someSelected ? "indeterminate" : false}
+        onCheckedChange={() => setRowsSelection((prev) => {
+          const newValues: typeof prev = {};
+          const shouldSelectAll = !allSelected;
+          for (const key in prev) {
+            newValues[key] = shouldSelectAll;
+          }
+          return newValues;
+        })}
+        aria-label="Select all"
+      />)
+} )
 export const UserListDataTable: FC = () => {
-  const [rowSelection, setRowSelection] = useAtom(selectListUsersAtom);
 
   const [params] = useAtom(paramListUsersAtom);
 
   const { data, isLoading } = useAdminListUser(params);
-
-  const selectedUsers = data.users.filter((user) => rowSelection[user.id]);
-  const hasSelection = selectedUsers.length > 0;
 
   const table = useReactTable({
     columns,
@@ -42,13 +75,11 @@ export const UserListDataTable: FC = () => {
     enableRowSelection: true,
     getRowId: (row) => row.id,
     getCoreRowModel: getCoreRowModel(),
-    onRowSelectionChange: setRowSelection,
     state: {
       pagination: {
         pageSize: params.pageSize,
         pageIndex: params.pageIndex,
       },
-      rowSelection,
     },
   });
 
@@ -108,7 +139,7 @@ export const UserListDataTable: FC = () => {
   return (
     <>
       {/* BATCH ACTIONS TOOLBAR */}
-      {hasSelection && <UserListDataTableBatching />}
+      <UserListDataTableBatching />
 
       {/* TABLE */}
       <div className="overflow-hidden rounded-md border">
@@ -117,6 +148,13 @@ export const UserListDataTable: FC = () => {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
+                   if (header.id === "select") {
+                    return (
+                      <TableHead key={header.id} className="w-10 px-0">
+                        <SelectHasOrAllSelection />
+                      </TableHead>
+                    );
+                  }
                   return (
                     <TableHead key={header.id}>
                       {header.isPlaceholder
@@ -138,14 +176,24 @@ export const UserListDataTable: FC = () => {
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map(function Cell(cell) {
+                    if (cell.column.id === "select") {
+                      const rowID = row.original.id;
+                      
+                      return (
+                        <TableCell key={cell.id}>
+                          <SelectCell id={rowID} />
+                        </TableCell>
+                      );
+                    }
+                    return (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),
                       )}
                     </TableCell>
-                  ))}
+                  )})}
                 </TableRow>
               ))
             ) : (
