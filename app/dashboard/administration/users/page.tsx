@@ -1,14 +1,13 @@
 "use client";
 
-import { Suspense } from "react";
-import { UsersDataTableContainer } from "./data-table-container";
-import { UsersDataTableSkeleton } from "./data-table-skeleton";
 import { Separator } from "@/components/ui/separator";
 
 import { Button } from "@/components/ui/button";
 import { RefreshCwIcon, PlusIcon } from "lucide-react";
-import { DataTableKpis } from "./data-table-kpis";
-import { DataTableHeader } from "./data-table-header";
+import { UserListDataTableKpis } from "./data-table-kpis";
+import { UserListDataTableHeader } from "./data-table-header";
+import { UserListDataTableFooter } from "./data-table-footer";
+import { UserListDataTable } from "./data-table";
 
 export default function Page() {
   return (
@@ -37,12 +36,10 @@ export default function Page() {
       </div>
 
       <Separator />
-      {/* <DataTableKpis /> */}
-
-      {/* <Suspense fallback={<UsersDataTableSkeleton />}> */}
-        <DataTableHeader />
-        <UsersDataTableContainer />
-      {/* </Suspense> */}
+      <UserListDataTableKpis />
+      <UserListDataTableHeader />
+      <UserListDataTable />
+      <UserListDataTableFooter />
     </div>
   );
 }

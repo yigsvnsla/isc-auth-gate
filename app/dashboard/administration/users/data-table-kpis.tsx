@@ -6,23 +6,16 @@ import {
   MailWarningIcon,
   BanIcon,
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
-import useSWR from "swr";
+import { useAdminListUser } from "@/hooks/adminListUsers";
+import { FC } from "react";
 
-export const DataTableKpis = () => {
-  const { data, isLoading } = useSWR(
-    "/admin/users/kpis",
-    async () => {
-      const listUsers = await authClient.admin.listUsers({
-        fetchOptions: { throw: true },
-        query: { limit: 1, offset: 0 },
-      });
-      return { total: listUsers.total || 0 };
-    },
-    { fallbackData: { total: 0 } },
-  );
-
-  const totalUsers = data?.total ?? 0;
+export const UserListDataTableKpis: FC = () => {
+  const { data, isLoading } = useAdminListUser({
+    pageIndex: 0,
+    pageSize: 10,
+    searchField: "",
+    searchValue: "",
+  });
 
   return (
     <div className="grid gap-4 md:grid-cols-4">
@@ -39,7 +32,7 @@ export const DataTableKpis = () => {
               {isLoading ? (
                 <Skeleton className="h-8 w-16" />
               ) : (
-                <p className="text-2xl font-bold">{totalUsers}</p>
+                <p className="text-2xl font-bold">{data.total}</p>
               )}
             </div>
           </div>

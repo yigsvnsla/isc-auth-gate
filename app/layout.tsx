@@ -4,7 +4,8 @@ import "@/components/ui/button";
 
 import "./globals.css";
 
-import Providers  from "@/components/providers";
+import Providers from "@/components/providers";
+import Script from "next/script";
 
 const fontSans = Geist({
   subsets: ["latin"],
@@ -23,6 +24,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script
+          src="//unpkg.com/react-scan/dist/auto.global.js"
+          strategy="beforeInteractive"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body
         suppressHydrationWarning
         className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased `}

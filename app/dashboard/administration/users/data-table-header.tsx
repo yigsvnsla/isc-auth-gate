@@ -4,7 +4,6 @@ import {
   Select,
   SelectContent,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -15,7 +14,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Field,
   FieldContent,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -28,50 +26,27 @@ import {
 } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
 import { useDebounceValue } from "@/hooks/use-debounce-value";
-import useSWR from "swr";
-import { authClient } from "@/lib/auth-client";
-import { FC } from "react";
-
-// const userStatuses = [
-//   { label: "Active", value: "active" },
-//   { label: "Inactive", value: "inactive" },
-//   { label: "Pending", value: "pending" },
-// ] as const;
+import { FC, useEffect } from "react";
+import { paramListUsersAtom } from "@/atoms/params-list-users-atom";
+import { useAtom } from "jotai";
+import { useAdminListUser } from "@/hooks/adminListUsers";
 
 const formSchema = z.object({
   searchValue: z.string().optional(),
   searchField: z.enum(["auto", "email", "name"]).optional(),
 });
 
-const fetcher = async ([, searchValue, searchField]: [
-  string,
-  string,
-  string,
-]) => {
-  // Map "auto" to undefined — admin API expects "email" | "name" | undefined
-  const field = searchField === "auto" ? undefined : searchField;
-  return await authClient.admin.listUsers({
-    fetchOptions: { throw: true },
-    query: {
-      limit: 1,
-      offset: 0,
-      searchValue,
-      searchField: field as "email" | "name" | undefined,
-    },
-  });
-};
-
-export const DataTableHeader: FC = () => {
+export const UserListDataTableHeader: FC = () => {
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
     mode: "onTouched",
+    resolver: zodResolver(formSchema),
+
     defaultValues: {
       searchValue: "",
       searchField: "name",
     },
   });
 
-  // 1. Usamos useWatch para complacer al React Compiler y mejorar performance
   const searchControlValue = useWatch({
     control: form.control,
     name: "searchValue",
@@ -82,22 +57,20 @@ export const DataTableHeader: FC = () => {
     name: "searchField",
   });
 
+  const [params, setParams] = useAtom(paramListUsersAtom);
+
   const [debouncedSearch] = useDebounceValue(searchControlValue, 500);
 
-  // 2. SWR condicional: solo busca si hay al menos 3 caracteres
-  const shouldFetch = debouncedSearch && debouncedSearch.length >= 3;
+  useEffect(() => {
+    setParams((currentParams) => ({
+      ...currentParams,
+      searchField: fieldControlValue ?? "",
+      searchValue: debouncedSearch ?? "",
+      pageIndex: 0,
+    }));
+  }, [debouncedSearch, fieldControlValue, setParams]);
 
-  const { data, isLoading } = useSWR(
-    shouldFetch
-      ? ["/admin/users/count", debouncedSearch, fieldControlValue]
-      : null,
-    fetcher,
-    {
-      fallbackData: { total: 0, users: [] },
-      revalidateOnFocus: false,
-      
-    },
-  );
+  const { isLoading } = useAdminListUser(params);
 
   return (
     <form onSubmit={form.handleSubmit(console.log)}>
@@ -120,18 +93,18 @@ export const DataTableHeader: FC = () => {
                     placeholder="Type to search (min. 3 chars)..."
                     autoComplete="off"
                     aria-invalid={fieldState.invalid}
+                    disabled={
+                      isLoading && !form.getFieldState("searchValue").isDirty
+                    }
                   />
 
                   {/* 3. El Spinner solo se muestra cuando realmente está cargando */}
                   <InputGroupAddon align="inline-end">
-                    {isLoading && <Spinner className="size-4" />}
+                    {isLoading && form.getFieldState("searchValue").isDirty && (
+                      <Spinner className="size-4" />
+                    )}
                   </InputGroupAddon>
                 </InputGroup>
-
-                {/* Opcional: Mostrar el total de resultados encontrados en tiempo real */}
-                <FieldDescription>
-                  {!!data?.total && `Found ${data.total} users`}
-                </FieldDescription>
 
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />
@@ -162,21 +135,25 @@ export const DataTableHeader: FC = () => {
                   onValueChange={field.onChange}
                 >
                   <SelectTrigger
-                    id="form-rhf-select-language"
+                    id="form-rhf-select-field"
                     aria-invalid={fieldState.invalid}
-                    className="min-w-30"
+                    disabled={
+                      isLoading && !form.getFieldState("searchValue").isDirty
+                    }
+                    className="min-w-30 capitalize"
                   >
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent alignItemWithTrigger>
-                    <SelectItem value="auto">Auto</SelectItem>
-                    <SelectSeparator />
-                    <SelectItem value={"name"}>name</SelectItem>
-                    {/* {spokenLanguages.map((language) => (
-                      <SelectItem key={language.value} value={language.value}>
-                        {language.label}
+                    {["auto", "name", "email"].map((field) => (
+                      <SelectItem
+                        className="capitalize"
+                        key={field}
+                        value={field}
+                      >
+                        {field}
                       </SelectItem>
-                    ))} */}
+                    ))}
                   </SelectContent>
                 </Select>
               </Field>
