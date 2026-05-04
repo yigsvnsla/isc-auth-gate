@@ -15,7 +15,7 @@ import { FC, useCallback } from "react";
 import { toast } from "@/components/ui/sonner";
 import { authClient } from "@/lib/auth-client";
 import { useAtom, useAtomValue } from "jotai";
-import { selectListUsersAtom } from "@/atoms/select-list-users-atom";
+import { selectListUsersAtom, useSelectListUsers } from "@/atoms/select-list-users-atom";
 import { mutate } from "swr";
 import { paramListUsersAtom } from "@/atoms/params-list-users-atom";
 
@@ -42,7 +42,7 @@ export const UserListDataTableBatching: FC = () => {
   const banExpiresIn = 0;
   const [params] = useAtom(paramListUsersAtom);
 
-  const selection = useAtomValue(selectListUsersAtom);
+  const selection = useSelectListUsers((state) => state.values);
   const selectionList = 0;
   const handleBatchAction = useCallback((action: LIST_USERS_BATCH_ACTIONS) => {
     console.log("BATCH ACTION");
@@ -124,6 +124,10 @@ export const UserListDataTableBatching: FC = () => {
   //   },
   //   [],
   // );
+
+  const hasSelection = Object.values(selection).some((v) => v);
+
+  if (!hasSelection) return null;
 
   return (
     <div className="mb-2 flex items-center justify-between rounded-md border bg-muted/50 px-3 py-2">

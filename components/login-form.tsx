@@ -26,6 +26,7 @@ import useSWRMutation from "swr/mutation";
 import { Spinner } from "@/components/ui/spinner";
 import { MicrosoftLoginButton } from "./MicrosoftLoginButton";
 import { useSearchParams } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 
 const signInFormSchema = z.object({
   username: z.string().min(2, {
@@ -69,7 +70,13 @@ export function LoginForm({
   );
 
   async function onSubmit(values: z.infer<typeof signInFormSchema>) {
-    // Coming Soon: Implement submit logic
+    const result = await authClient.signIn.email({
+      email: values.username,
+      password: values.password,
+      callbackURL: "/dashboard",
+
+    });
+    console.log(result);
   }
 
   return (
@@ -143,13 +150,13 @@ export function LoginForm({
                 <FieldLabel htmlFor={`login-form-${componentId}-password`}>
                   Contraseña
                 </FieldLabel>
-                <a
-                  href="#"
+                <button
+
                   title="Coming Soon"
                   className="ml-auto text-muted-foreground text-sm underline-offset-4 hover:underline"
                 >
                   ¿Perdiste tu clave?
-                </a>
+                </button>
               </div>
               <Input
                 {...field}
