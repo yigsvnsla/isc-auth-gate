@@ -11,19 +11,48 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircleIcon, BanIcon, Trash2Icon } from "lucide-react";
-import { FC, useCallback } from "react";
+import { FC, useCallback, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import { authClient } from "@/lib/auth-client";
 import { useAtom, useAtomValue } from "jotai";
 import { selectListUsersAtom } from "@/atoms/select-list-users-atom";
 import { mutate } from "swr";
 import { paramListUsersAtom } from "@/atoms/params-list-users-atom";
+import { UserWithRole } from "better-auth/plugins";
+import { RowSelectionState } from "@tanstack/react-table";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Switch } from "@base-ui/react";
+import { string } from "better-auth";
 
 enum LIST_USERS_BATCH_ACTIONS {
   BAN_USERS,
   UNBAN_USERS,
   DELETE_USERS,
 }
+
+const bannedTimes = [
+  { label: "indefinido", value: null },
+  { label: "1 dia", value: "1" },
+  { label: "1 mes", value: "2" },
+  { label: "1 año", value: "3" },
+];
 
 const actionMessage = {
   [LIST_USERS_BATCH_ACTIONS.BAN_USERS]: "Desactivando",
@@ -39,46 +68,50 @@ const actionsMessage = {
 
 export const UserListDataTableBatching: FC = () => {
   const banReason = "";
-  const banExpiresIn = 0;
-  const [params] = useAtom(paramListUsersAtom);
+  const [expiresIn, setExpiresIn] = useState("");
+  // const [params] = useAtom(paramListUsersAtom);
+  const selectionList = Object.keys(useAtomValue(selectListUsersAtom)).filter(
+    (id, i, arr) => arr[i],
+  );
 
-  const selection = useAtomValue(selectListUsersAtom);
-  const selectionList = 0;
-  const handleBatchAction = useCallback((action: LIST_USERS_BATCH_ACTIONS) => {
-    console.log("BATCH ACTION");
+  // const selectionList = 0;
+  const handleBatchAction = useCallback(
+    (action: LIST_USERS_BATCH_ACTIONS, list: string[]) => {
+      // const promisedActions = selectionList.map((userId) => {
+      //   // switch (action) {
+      //   //   case LIST_USERS_BATCH_ACTIONS.UNBAN_USERS:
+      //   //     return authClient.admin.unbanUser({ userId });
+      //   //   case LIST_USERS_BATCH_ACTIONS.DELETE_USERS:
+      //   //     return authClient.admin.removeUser({ userId });
+      //   //   case LIST_USERS_BATCH_ACTIONS.BAN_USERS:
+      //   //     return authClient.admin.banUser({
+      //   //       userId,
+      //   //       banReason,
+      //   //       banExpiresIn,
+      //   //     });
+      //   //   default:
+      //   //     throw new Error("LIST_USERS_BATCH_ACTIONS not implement");
+      //   // }
+      // });
 
-    const selectionList = Object.keys(selection).filter((id) => selection[id]);
-    const promisedActions = selectionList.map((userId) => {
-      // switch (action) {
-      //   case LIST_USERS_BATCH_ACTIONS.UNBAN_USERS:
-      //     return authClient.admin.unbanUser({ userId });
-      //   case LIST_USERS_BATCH_ACTIONS.DELETE_USERS:
-      //     return authClient.admin.removeUser({ userId });
-      //   case LIST_USERS_BATCH_ACTIONS.BAN_USERS:
-      //     return authClient.admin.banUser({
-      //       userId,
-      //       banReason,
-      //       banExpiresIn,
-      //     });
-      //   default:
-      //     throw new Error("LIST_USERS_BATCH_ACTIONS not implement");
-      // }
-    });
+      return () => {
+        console.log("BATCH ACTION", selectionList);
 
-    return () => {
-      toast
-        .promise(Promise.all(promisedActions), {
-          loading: `${actionMessage[action]} ${promisedActions.length} usuario(s)...`,
-          success: `${promisedActions.length} usuario(s) ${actionsMessage[action]}`,
-          error: "Error al realizar la operación",
-        })
-        .unwrap()
-        .then(() => {
-          // setSelection({});
-          // mutate(["/admin/list-users", params]);
-        });
-    };
-  }, []);
+        // toast
+        //   .promise(Promise.all(promisedActions), {
+        //     loading: `${actionMessage[action]} ${promisedActions.length} usuario(s)...`,
+        //     success: `${promisedActions.length} usuario(s) ${actionsMessage[action]}`,
+        //     error: "Error al realizar la operación",
+        //   })
+        //   .unwrap()
+        //   .then(() => {
+        //     // setSelection({});
+        //     // mutate(["/admin/list-users", params]);
+        //   });
+      };
+    },
+    [selectionList],
+  );
 
   // const handleBatchAction = useCallback(
   //   (action: "removeUser" | "unbanUser" | "banUser") => {
@@ -129,7 +162,7 @@ export const UserListDataTableBatching: FC = () => {
     <div className="mb-2 flex items-center justify-between rounded-md border bg-muted/50 px-3 py-2">
       <span className="text-sm font-medium">
         <CheckCircleIcon className="mr-2 inline-block size-4" />
-        {"selectionList.length"} usuario(s) seleccionado(s)
+        {selectionList.length} usuario(s) seleccionado(s)
       </span>
       <div className="flex items-center gap-2">
         <AlertDialog>
@@ -137,27 +170,66 @@ export const UserListDataTableBatching: FC = () => {
             render={
               <Button variant="outline" size="sm" className="gap-1.5">
                 <BanIcon className="size-4" />
-                Banear
+                Bloquear
               </Button>
             }
           />
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Banear {"selectionList?.length"} usuario(s)?
+                ¿Desea bloquear a {selectionList?.length} usuario(s)?
               </AlertDialogTitle>
-              dasdsa
+
               <AlertDialogDescription>
                 Los usuarios seleccionados no podrán iniciar sesión hasta que
                 sean aktivados.
               </AlertDialogDescription>
             </AlertDialogHeader>
+            <FieldGroup className="w-full gap-4">
+              <Field orientation="vertical">
+                <FieldContent>
+                  <FieldLabel htmlFor="banReason">Ban Reason</FieldLabel>
+                  <FieldDescription>
+                    Describe la razon del bloqueo.
+                  </FieldDescription>
+                </FieldContent>
+                <Textarea
+                  id="banReason"
+                  defaultValue="Bloqueo administrativo por [Jesus Guzman]"
+                />
+              </Field>
+              <Field>
+                <FieldContent>
+                  <FieldLabel htmlFor="banExpiresIn">Ban Expires In</FieldLabel>
+                  <FieldDescription>
+                    Establece el tiempo de bloqueo
+                  </FieldDescription>
+                </FieldContent>
+                <Select items={bannedTimes} defaultValue={null}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tiempo de bloqueo" />
+                  </SelectTrigger>
+                  <SelectContent alignItemWithTrigger>
+                    <SelectGroup>
+                      {bannedTimes.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </FieldGroup>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
               <AlertDialogAction
-                onClick={handleBatchAction(LIST_USERS_BATCH_ACTIONS.BAN_USERS)}
+                onClick={handleBatchAction(
+                  LIST_USERS_BATCH_ACTIONS.BAN_USERS,
+                  selectionList,
+                )}
               >
-                Banear
+                Bloquear
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -175,7 +247,7 @@ export const UserListDataTableBatching: FC = () => {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Activar {"selectionList.length"} usuario(s)?
+                Activar {selectionList.length} usuario(s)?
               </AlertDialogTitle>
               <AlertDialogDescription>
                 Se removerá el bloqueo de los usuarios seleccionados.
@@ -186,6 +258,7 @@ export const UserListDataTableBatching: FC = () => {
               <AlertDialogAction
                 onClick={handleBatchAction(
                   LIST_USERS_BATCH_ACTIONS.UNBAN_USERS,
+                  selectionList,
                 )}
               >
                 Activar
@@ -211,7 +284,7 @@ export const UserListDataTableBatching: FC = () => {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Eliminar {"selectionList.length"} usuario(s)?
+                Eliminar {selectionList.length} usuario(s)?
               </AlertDialogTitle>
               <AlertDialogDescription>
                 Esta acción es irreversible. Los usuarios serán eliminados
