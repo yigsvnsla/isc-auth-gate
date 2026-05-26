@@ -14,9 +14,15 @@ import { HomeIcon, ChevronRightIcon } from "lucide-react";
 
 const BREADCRUMB_MAP: Record<string, { label: string; href?: string }> = {
   dashboard: { label: "Dashboard", href: "/dashboard" },
-  administration: { label: "Administration", href: "/dashboard/administration" },
+  administration: {
+    label: "Administration",
+    href: "/dashboard/administration",
+  },
   users: { label: "Users", href: "/dashboard/administration/users" },
-  organizations: { label: "Organizations", href: "/dashboard/administration/organizations" },
+  organizations: {
+    label: "Organizations",
+    href: "/dashboard/administration/organizations",
+  },
 };
 
 function generateBreadcrumbs(pathname: string) {
@@ -61,23 +67,33 @@ export function DashboardBreadcrumb() {
       <BreadcrumbList>
         {breadcrumbs.map((crumb, index) => (
           <span key={crumb.href} className="flex items-center">
-            <BreadcrumbItem className={index === 0 ? "hidden md:block" : undefined}>
+            <BreadcrumbItem
+              className={index === 0 ? "hidden md:block" : undefined}
+            >
               {crumb.isCurrent ? (
                 <BreadcrumbPage className="font-medium text-foreground">
                   {crumb.label}
                 </BreadcrumbPage>
               ) : (
                 <BreadcrumbLink
-                  href={crumb.href}
-                  className="flex items-center gap-1.5"
-                >
-                  {index === 0 && <HomeIcon className="size-4" />}
-                  <span className={index === 0 ? "hidden" : undefined}>{crumb.label}</span>
-                </BreadcrumbLink>
+                  render={
+                    <Link
+                      href={crumb.href}
+                      className="flex items-center gap-1.5"
+                    >
+                      {index === 0 && <HomeIcon className="size-4" />}
+                      <span className={index === 0 ? "hidden" : undefined}>
+                        {crumb.label}
+                      </span>
+                    </Link>
+                  }
+                />
               )}
             </BreadcrumbItem>
             {index < breadcrumbs.length - 1 && (
-              <BreadcrumbSeparator className={index === 0 ? "hidden md:block" : undefined}>
+              <BreadcrumbSeparator
+                className={index === 0 ? "hidden md:block" : undefined}
+              >
                 <ChevronRightIcon className="size-3.5" />
               </BreadcrumbSeparator>
             )}

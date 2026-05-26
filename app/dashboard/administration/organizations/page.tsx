@@ -14,11 +14,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Building2Icon,
-  ShieldIcon,
-  UsersIcon,
-} from "lucide-react";
+import { Building2Icon, ShieldIcon, UsersIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -32,20 +28,19 @@ import useSWR from "swr";
 import { authClient } from "@/lib/auth-client";
 
 function OrganizationStats() {
-  const { data } = useSWR(
-    "/organization/list",
-    async () => {
-      const result = await authClient.organization.list();
-      return result;
-    }
-  );
+  const { data } = useSWR("/organization/list", async () => {
+    const result = await authClient.organization.list();
+    return result;
+  });
 
   type OrganizationData = {
     id: string;
     role: string;
   };
 
-  const organizations: OrganizationData[] = Array.isArray(data) ? data as unknown as OrganizationData[] : [];
+  const organizations: OrganizationData[] = Array.isArray(data)
+    ? (data as unknown as OrganizationData[])
+    : [];
   const totalOrgs = organizations.length;
   const ownerCount = organizations.filter((org) => org.role === "owner").length;
   const adminCount = organizations.filter((org) => org.role === "admin").length;
@@ -59,7 +54,9 @@ function OrganizationStats() {
               <Building2Icon className="size-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Organizations</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Organizations
+              </p>
               <p className="text-2xl font-bold">{totalOrgs}</p>
             </div>
           </div>
@@ -101,7 +98,9 @@ function OrganizationStats() {
               <UsersIcon className="size-5 text-emerald-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Members</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Members
+              </p>
               <p className="text-2xl font-bold">N/A</p>
             </div>
           </div>
@@ -117,26 +116,12 @@ function OrganizationStats() {
 export default function Page() {
   return (
     <div className="flex flex-col gap-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink render={<Link href="/dashboard" />}>Dashboard</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink render={<Link href="/dashboard/administration" />}>Administration</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Organizations</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Organization Management</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Organization Management
+            </h1>
             <p className="text-sm text-muted-foreground">
               Manage your organizations and team access
             </p>
@@ -146,10 +131,16 @@ export default function Page() {
               <RefreshCwIcon data-icon="inline-start" className="size-4" />
               Refresh
             </Button>
-            <Button size="sm">
-              <PlusIcon data-icon="inline-start" className="size-4" />
-              New Organization
-            </Button>
+            <Button
+              size="sm"
+              nativeButton={false}
+              render={
+                <Link href="/dashboard/administration/organizations/create" className="flex items-center gap-1.5">
+                  <PlusIcon data-icon="inline-start" className="size-4" />
+                  New Organization
+                </Link>
+              }
+            />
           </div>
         </div>
       </div>
