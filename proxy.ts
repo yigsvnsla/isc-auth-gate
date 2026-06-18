@@ -7,8 +7,6 @@ export async function proxy(request: NextRequest) {
         headers: await headers()
     })
 
-    console.log(session?.user.email);
-
     if(!session) {
         return NextResponse.redirect(new URL("/auth/sign-in", request.url));
     }

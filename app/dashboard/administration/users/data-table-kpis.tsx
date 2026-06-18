@@ -6,7 +6,7 @@ import {
   MailWarningIcon,
   BanIcon,
 } from "lucide-react";
-import { useAdminListUser } from "@/hooks/adminListUsers";
+import { useAdminListUser } from "@/hooks/use-admin-list-users";
 import { FC } from "react";
 
 export const UserListDataTableKpis: FC = () => {

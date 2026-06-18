@@ -29,7 +29,7 @@ import { useDebounceValue } from "@/hooks/use-debounce-value";
 import { FC, useEffect } from "react";
 import { paramListUsersAtom } from "@/atoms/params-list-users-atom";
 import { useAtom } from "jotai";
-import { useAdminListUser } from "@/hooks/adminListUsers";
+import { useAdminListUser } from "@/hooks/use-admin-list-users";
 
 const formSchema = z.object({
   searchValue: z.string().optional(),
@@ -37,6 +37,8 @@ const formSchema = z.object({
 });
 
 export const UserListDataTableHeader: FC = () => {
+  // TODO: Entiendo perfectamente que la sincrizacion de estados en el efecto no es lo mejor pero para empezar esta bien, deberia refactorizarse para no depender de una sincronizacion asincrona
+
   const form = useForm<z.infer<typeof formSchema>>({
     mode: "onTouched",
     resolver: zodResolver(formSchema),
@@ -70,7 +72,8 @@ export const UserListDataTableHeader: FC = () => {
     }));
   }, [debouncedSearch, fieldControlValue, setParams]);
 
-  const { isLoading } = useAdminListUser(params);
+  // TODO: Refactorizar este componente para deshabilitar el formulario directamente desde el hook y no desde el template
+  const { isLoading, isValidating } = useAdminListUser(params);
 
   return (
     <form onSubmit={form.handleSubmit(console.log)}>
@@ -94,15 +97,19 @@ export const UserListDataTableHeader: FC = () => {
                     autoComplete="off"
                     aria-invalid={fieldState.invalid}
                     disabled={
-                      isLoading && !form.getFieldState("searchValue").isDirty
+                      isLoading ||
+                      (isValidating &&
+                        !form.getFieldState("searchValue").isDirty)
                     }
                   />
 
                   {/* 3. El Spinner solo se muestra cuando realmente está cargando */}
                   <InputGroupAddon align="inline-end">
-                    {isLoading && form.getFieldState("searchValue").isDirty && (
-                      <Spinner className="size-4" />
-                    )}
+                    {isLoading ||
+                      (isValidating &&
+                        form.getFieldState("searchValue").isDirty && (
+                          <Spinner className="size-4" />
+                        ))}
                   </InputGroupAddon>
                 </InputGroup>
 
@@ -138,13 +145,16 @@ export const UserListDataTableHeader: FC = () => {
                     id="form-rhf-select-field"
                     aria-invalid={fieldState.invalid}
                     disabled={
-                      isLoading && !form.getFieldState("searchValue").isDirty
+                      isLoading ||
+                      (isValidating &&
+                        !form.getFieldState("searchValue").isDirty)
                     }
                     className="min-w-30 capitalize"
                   >
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent alignItemWithTrigger>
+                    {/* // TODO: pasar esto a u ncatalogo o lista constante  */}
                     {["auto", "name", "email"].map((field) => (
                       <SelectItem
                         className="capitalize"

@@ -17,11 +17,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { useAdminListUser } from "@/hooks/adminListUsers";
+import { useAdminListUser } from "@/hooks/use-admin-list-users";
 import { paramListUsersAtom } from "@/atoms/params-list-users-atom";
 import { useAtom } from "jotai";
 import { UserListDataTableEmpty } from "./data-table-empty";
-import { UserListDataTableBatching } from "./data-table-batching";
 import { selectListUsersAtom } from "@/atoms/select-list-users-atom";
 
 export const UserListDataTable: FC = () => {
@@ -29,10 +28,7 @@ export const UserListDataTable: FC = () => {
 
   const [params] = useAtom(paramListUsersAtom);
 
-  const { data, isLoading } = useAdminListUser(params);
-
-  const selectedUsers = data.users.filter((user) => rowSelection[user.id]);
-  const hasSelection = selectedUsers.length > 0;
+  const { data, isLoading, isValidating } = useAdminListUser(params);
 
   const table = useReactTable({
     columns,
@@ -52,7 +48,7 @@ export const UserListDataTable: FC = () => {
     },
   });
 
-  if (isLoading) {
+  if (isLoading || isValidating) {
     return (
       <>
         <div className="overflow-hidden rounded-md border">
@@ -107,9 +103,6 @@ export const UserListDataTable: FC = () => {
 
   return (
     <>
-      {/* BATCH ACTIONS TOOLBAR */}
-      {hasSelection && <UserListDataTableBatching />}
-
       {/* TABLE */}
       <div className="overflow-hidden rounded-md border">
         <Table>

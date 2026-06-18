@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAdminListUser } from "@/hooks/adminListUsers";
+import { useAdminListUser } from "@/hooks/use-admin-list-users";
 import { useAtom } from "jotai";
 import {
   ChevronLeft,

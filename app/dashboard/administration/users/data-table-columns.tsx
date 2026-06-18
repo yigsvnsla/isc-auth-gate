@@ -40,6 +40,7 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { SearchIcon, BanIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialogBanUsers } from "./alert-dialog-ban-users";
 
 const ActionsCell = ({
   userId,
@@ -63,11 +64,12 @@ const ActionsCell = ({
           View Details
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <AlertDialog>
+
+        {/* <AlertDialog>
           <AlertDialogTrigger
             nativeButton={false}
             render={
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <DropdownMenuItem>
                 <BanIcon data-icon="inline-start" className="size-4" />
                 Ban User
               </DropdownMenuItem>
@@ -90,7 +92,7 @@ const ActionsCell = ({
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
-        </AlertDialog>
+        </AlertDialog> */}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -238,13 +240,14 @@ export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
     header: "Last Login",
     cell() {
       // Coming Soon: Replace with real API data
-      const mockLastLogin = new Date(
-        Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
-      );
+      // const mockLastLogin = new Date(
+      //   Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
+      // );
       return (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <ClockIcon className="size-3.5" />
-          {formatDistanceToNowStrict(mockLastLogin, { addSuffix: true })}
+          ---
+          {/* {formatDistanceToNowStrict(mockLastLogin, { addSuffix: true })} */}
         </div>
       );
     },
