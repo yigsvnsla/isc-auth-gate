@@ -4,9 +4,11 @@ import { db } from "@/database";
 import { admin as adminPlugin, openAPI, organization } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 // import { smtp_transporter } from "./smtp"; // Coming Soon
-import { accessControl, admin, user, moderator } from "./permissions";
+import { accessControl, admin, user, moderator, orgSystemAdmin } from "./permissions";
 // import { microsoft } from "@/plugins/providers/microsoft"; // Coming Soon
 import { env } from "@/env";
+// ponytail: AC reusado del RBAC estático para que los roles dinámicos usen los
+// mismos statements (auth, project, defaultStatements) definidos en permissions.ts
 
 export const auth = betterAuth({
   debug: env.BETTER_AUTH_SERVER_DEBUG,
@@ -55,6 +57,7 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     autoSignIn: false,
+    
     sendResetPassword: async ({ user, url, token }, request) => {
       console.log({
         to: user.email,
@@ -107,9 +110,16 @@ export const auth = betterAuth({
       roles: { admin, user, moderator },
     }),
     organization({
+      ac: accessControl,
       allowUserToCreateOrganization: true,
       organizationLimit: 5,
       membershipLimit: 100,
+      dynamicAccessControl: {
+        enabled: true,
+      },
+      roles: {
+        systemAdmin: orgSystemAdmin,
+      },
     }),
     openAPI(),
     nextCookies(),

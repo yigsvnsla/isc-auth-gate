@@ -15,7 +15,7 @@ export const testDb = drizzle(testPool, { schema });
 
 export async function cleanupTestDb() {
   await testPool.query(`
-    TRUNCATE TABLE sessions, accounts, verifications, members, invitations, organizations, users RESTART IDENTITY CASCADE;
+    TRUNCATE TABLE sessions, accounts, verifications, members, invitations, organizations, users, organization_roles RESTART IDENTITY CASCADE;
   `);
 }
 

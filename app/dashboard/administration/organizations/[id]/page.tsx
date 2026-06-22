@@ -25,8 +25,7 @@ import {
   ArrowLeftIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import useSWR from "swr";
-import { authClient } from "@/lib/auth-client";
+import { useOrganizations } from "@/hooks/use-admin-roles";
 import { format } from "date-fns";
 import { shortName } from "@/lib/utils";
 import {
@@ -46,20 +45,13 @@ type OrganizationData = {
 };
 
 function OrganizationDetailContent({ orgId }: { orgId: string }) {
-  const { data, isLoading } = useSWR(
-    "/organization/list",
-    async () => {
-      const result = await authClient.organization.list();
-      return result;
-    }
-  );
+  const { data: organizations, isLoading } = useOrganizations();
 
   if (isLoading) {
     return <OrganizationDetailSkeleton />;
   }
 
-  const organizations: OrganizationData[] = Array.isArray(data) ? (data as unknown as OrganizationData[]) : [];
-  const organization = organizations.find((org) => org.id === orgId);
+  const organization = (organizations ?? []).find((org) => org.id === orgId) as OrganizationData | undefined;
 
   if (!organization) {
     return (
@@ -204,8 +196,6 @@ interface OrganizationDetailPageProps {
 }
 
 export default function OrganizationDetailPage({ params }: OrganizationDetailPageProps) {
-  const resolvedParams = { id: "" };
-  
   return (
     <div className="flex flex-col gap-6">
       <Breadcrumb>

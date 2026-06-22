@@ -1,8 +1,7 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
 import { FC, useState, useMemo } from "react";
-import useSWR from "swr";
+import { useOrganizations } from "@/hooks/use-admin-roles";
 import { columns, type OrganizationRow } from "./columns";
 import {
   flexRender,
@@ -52,15 +51,8 @@ export const OrganizationsDataTable: FC = () => {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
-  const { data, isLoading } = useSWR(
-    "/organization/list",
-    async () => {
-      const result = await authClient.organization.list();
-      return result;
-    }
-  );
-
-  const rawData = Array.isArray(data) ? (data as unknown as OrganizationRow[]) : [];
+  const { data, isLoading } = useOrganizations();
+  const rawData = (data ?? []) as unknown as OrganizationRow[];
 
   const filteredData = useMemo(() => {
     let filtered = rawData;

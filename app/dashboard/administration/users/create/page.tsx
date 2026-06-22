@@ -98,7 +98,7 @@ export default function CreateUserPage() {
     <div className="flex flex-col gap-6">
       {/* Header con botón de regreso */}
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon-sm" render={<Link href="/dashboard/administration/users" />}>
+        <Button variant="outline" size="icon-sm" nativeButton={false} render={<Link href="/dashboard/administration/users" />}>
           <ArrowLeftIcon data-icon="inline-start" />
         </Button>
         <div>
@@ -298,7 +298,7 @@ export default function CreateUserPage() {
           </CardContent>
 
           <CardFooter className="flex justify-between border-t border-foreground/10 pt-6">
-            <Button variant="outline" render={<Link href="/dashboard/administration/users">Cancelar</Link>}>
+            <Button variant="outline" nativeButton={false} render={<Link href="/dashboard/administration/users">Cancelar</Link>}>
             </Button>
             <Button type="submit" disabled={isMutating || !form.formState.isValid}>
               {isMutating ? (

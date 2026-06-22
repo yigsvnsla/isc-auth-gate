@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -92,6 +99,26 @@ export const organizations = pgTable(
   (table) => [uniqueIndex("organizations_slug_uidx").on(table.slug)],
 );
 
+export const organizationRoles = pgTable(
+  "organization_roles",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    permission: text("permission").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").$onUpdate(
+      () => /* @__PURE__ */ new Date(),
+    ),
+  },
+  (table) => [
+    index("organizationRoles_organizationId_idx").on(table.organizationId),
+    index("organizationRoles_role_idx").on(table.role),
+  ],
+);
+
 export const members = pgTable(
   "members",
   {
@@ -155,9 +182,20 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
 }));
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
+  organizationRoles: many(organizationRoles),
   members: many(members),
   invitations: many(invitations),
 }));
+
+export const organizationRolesRelations = relations(
+  organizationRoles,
+  ({ one }) => ({
+    organizations: one(organizations, {
+      fields: [organizationRoles.organizationId],
+      references: [organizations.id],
+    }),
+  }),
+);
 
 export const membersRelations = relations(members, ({ one }) => ({
   organizations: one(organizations, {

@@ -4,7 +4,7 @@ import { testDb } from "@/tests/database";
 import { env } from "@/env";
 import { admin as adminPlugin, organization, openAPI, testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
-import { accessControl, admin, user, moderator } from "./permissions";
+import { accessControl, admin, user, moderator, orgSystemAdmin } from "./permissions";
 
 export const testAuth = betterAuth({
   debug: env.BETTER_AUTH_SERVER_DEBUG,
@@ -13,8 +13,8 @@ export const testAuth = betterAuth({
   trustedOrigins: env.BETTER_AUTH_SERVER_TRUSTED_ORIGINS,
   advanced: {
     useSecureCookies: true,
-    disableCSRFCheck: false,
-    disableOriginCheck: false,
+    disableCSRFCheck: true,
+    disableOriginCheck: true,
     crossSubDomainCookies: {
       enabled: true,
     },
@@ -33,9 +33,14 @@ export const testAuth = betterAuth({
       roles: { admin, user, moderator },
     }),
     organization({
+      ac: accessControl,
       allowUserToCreateOrganization: true,
       organizationLimit: 5,
       membershipLimit: 100,
+      dynamicAccessControl: { enabled: true },
+      roles: {
+        systemAdmin: orgSystemAdmin,
+      },
     }),
     openAPI(),
     nextCookies(),

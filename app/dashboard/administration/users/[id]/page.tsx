@@ -9,7 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { shortName } from "@/lib/utils";
 import {
-  ChevronLeftIcon,
   CopyIcon,
   MailIcon,
   CalendarIcon,
@@ -24,12 +23,11 @@ import {
   MoreHorizontalIcon,
   RefreshCcwIcon,
   UserIcon,
-  ListIcon,
   ShieldCheckIcon,
   AlertTriangleIcon,
   Trash2Icon,
 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import useSWR from "swr";
 
 import {
@@ -79,7 +77,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -108,7 +105,6 @@ function getDeviceIcon(userAgent: string) {
 export default function UserIdPage() {
   const [copy] = useCopyToClipboard();
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
 
   const { data: userInfo, isLoading: userLoading } = useSWR(
     ["/admin/get-user", id],
@@ -122,7 +118,7 @@ export default function UserIdPage() {
     { fallbackData: {} as ReturnType<typeof authClient.admin.getUser> }
   );
 
-  const { data: sessionsInfo, isLoading: sessionsLoading } = useSWR(
+  const { data: sessionsInfo, } = useSWR(
     ["/admin/list-user-sessions", id],
     async (args) => {
       const [, userId] = args;
@@ -183,9 +179,9 @@ export default function UserIdPage() {
                 userInfo?.name
               )}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground">
               {userLoading ? <Skeleton className="h-4 w-40" /> : userInfo?.email}
-            </p>
+            </div>
             <div className="flex flex-wrap gap-2 mt-2">
               {userLoading ? (
                 <div className="flex gap-2">
@@ -238,7 +234,7 @@ export default function UserIdPage() {
                 <MoreHorizontalIcon data-icon="inline-start" className="size-4" />
                 Actions
               </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[180px]">
+            <DropdownMenuContent align="end" className="w-45">
               <DropdownMenuItem>
                 <RefreshCcwIcon data-icon="inline-start" className="size-4" />
                 Reset Password
@@ -465,7 +461,7 @@ export default function UserIdPage() {
                     <TableHead>IP Address</TableHead>
                     <TableHead>Last Active</TableHead>
                     <TableHead>Expires</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="w-12.5"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

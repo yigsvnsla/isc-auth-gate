@@ -35,7 +35,6 @@ const adminSections = [
     href: "/dashboard/administration/roles",
     icon: ShieldIcon,
     color: "bg-emerald-500",
-    disabled: true,
   },
   {
     title: "Settings",

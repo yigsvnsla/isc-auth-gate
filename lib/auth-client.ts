@@ -2,7 +2,7 @@ import { adminClient, inferAdditionalFields, organizationClient } from "better-a
 import { createAuthClient } from "better-auth/react";
 
 import type { auth } from "./auth";
-import { accessControl, admin, moderator, user } from "./permissions";
+import { accessControl, admin, moderator, user, orgSystemAdmin } from "./permissions";
 
 export const authClient = createAuthClient({
 
@@ -12,7 +12,13 @@ export const authClient = createAuthClient({
       ac: accessControl,
       roles: { admin, user, moderator },
     }),
-    organizationClient(),
+    organizationClient({
+      ac: accessControl,
+      dynamicAccessControl: { enabled: true },
+      roles: {
+        systemAdmin: orgSystemAdmin,
+      },
+    }),
     inferAdditionalFields<typeof auth>(),
   ],
 });
