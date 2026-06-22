@@ -60,8 +60,8 @@ import { formCreateOrganizationBasicSchema } from "./form-create-org.schema";
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
-  const form = useFormCreateOrganization();
   const { trigger } = useAdminCreateOrganization();
+  const form = useFormCreateOrganization();
 
   // TODO: Organization Details — Custom fields (extend API schema with metadata)
   const [description, setDescription] = useState("");
@@ -77,29 +77,27 @@ export default function CreateOrganizationPage() {
   const [isPublic, setIsPublic] = useState(false);
 
   const handleSubmit = async (
-    form: z.infer<typeof formCreateOrganizationBasicSchema>,
+    formData: z.infer<typeof formCreateOrganizationBasicSchema>,
   ) => {
-    toast.promise(
-      trigger({
-        name: form.name,
-        slug: form.slug,
-        logo: form.logo,
-      }),
-      {
-        loading: "Creating organization...",
-        success: (result) => {
-          router.push("/dashboard/administration/organizations");
-          return `Organization "${result?.name}" created successfully`;
-        },
+    const promise = trigger({
+      name: formData.name,
+      slug: formData.slug,
+      logo: formData.logo,
+    });
 
-        error: (err) => {
-          console.error(err);
-          return (
-            err?.message || "An error occurred while creating the organization"
-          );
-        },
+    toast.promise(promise, {
+      loading: "Creating organization...",
+      success: (result) => {
+        router.push("/dashboard/administration/organizations");
+        return `Organization "${result?.name}" created successfully`;
       },
-    );
+      error: (err) => {
+        console.error(err);
+        return err?.message || "An error occurred while creating the organization";
+      },
+    });
+
+    await promise;
   };
 
   return (

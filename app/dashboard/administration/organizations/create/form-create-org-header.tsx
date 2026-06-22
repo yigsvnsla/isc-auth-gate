@@ -5,19 +5,13 @@ import { useRouter } from "next/navigation";
 import { formCreateOrganizationBasicSchema } from "./form-create-org.schema";
 import { useFormContext, useFormState } from "react-hook-form";
 import z from "zod";
-import { useAdminCreateOrganization } from "@/hooks/use-admin-create-org";
 
 export const FormCreateOrganizationHeader = () => {
   const router = useRouter();
 
-  const { isMutating } = useAdminCreateOrganization();
   const { control } =
     useFormContext<z.infer<typeof formCreateOrganizationBasicSchema>>();
-  const { isValid } = useFormState({ control });
-
-
-  console.log({isValid, isMutating});
-  
+  const { isValid, isSubmitting } = useFormState({ control });
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -41,13 +35,13 @@ export const FormCreateOrganizationHeader = () => {
           type="button"
           variant="outline"
           onClick={() => router.back()}
-          disabled={isMutating}
+          disabled={isSubmitting}
         >
           <ArrowLeftIcon data-icon="inline-start" className="size-4" />
           Cancel
         </Button>
-        <Button type="submit" disabled ={!isValid && isMutating}>
-          {isMutating ? (
+        <Button type="submit" disabled={!isValid || isSubmitting}>
+          {isSubmitting ? (
             <>
               <Spinner className="size-4" />
               Creating...
