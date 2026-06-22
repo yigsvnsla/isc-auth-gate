@@ -30,7 +30,7 @@ const ActionsCell = ({ orgId, orgName }: { orgId: string; orgName: string }) => 
       <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
         <MoreHorizontalIcon className="size-4" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[160px]">
+      <DropdownMenuContent align="end" className="w-40">
         <DropdownMenuItem render={<Link href={`${pathname}/${orgId}`} />}>
           <SearchIcon data-icon="inline-start" className="size-4" />
           View Details
