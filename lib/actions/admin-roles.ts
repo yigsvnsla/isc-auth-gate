@@ -6,6 +6,16 @@ import { organizations } from "@/database/schema";
 import { auth } from "@/lib/auth";
 import { withOrgAdminAccess } from "@/lib/admin-org-access";
 
+/**
+ * Server actions for dynamic org role CRUD.
+ *
+ * Wraps Better Auth org API endpoints with admin authorization.
+ * Only global admin users can create/update/delete org-scoped roles.
+ * Uses withOrgAdminAccess to temporarily join the target org.
+ *
+ * @see lib/admin-org-access.ts
+ */
+
 export async function listAllOrganizationsAction() {
   const h = await headers();
   const session = await auth.api.getSession({ headers: h });

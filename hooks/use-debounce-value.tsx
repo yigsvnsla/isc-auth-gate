@@ -1,7 +1,8 @@
 import debounce from "lodash.debounce"
 import * as React from "react"
 
-// ============================================================================
+// React Compiler note: direct state mutation outside setState is intentional
+// (ref-based debounce bypass). Don't refactor to useMemo — will break cleanup.
 
 interface DebounceOptions {
   leading?: boolean

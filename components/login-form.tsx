@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
-/// import { authClient } from "@workspace/auth-config/lib/client"; // Coming Soon
+import { authClient } from "@/lib/auth-client";
 import {
   Field,
   FieldDescription,
@@ -21,9 +21,9 @@ import {
 import { Input } from "@/components/ui/input";
 import z from "zod/v3";
 import { Controller, useForm } from "react-hook-form";
-import { useId } from "react";
-import useSWRMutation from "swr/mutation";
+import { useId, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 import { MicrosoftLoginButton } from "./MicrosoftLoginButton";
 import { useSearchParams } from "next/navigation";
 
@@ -51,25 +51,24 @@ export function LoginForm({
     },
   });
 
-  const mutation = useSWRMutation(
-    "/sign-up/email",
-    (_url, { arg }: { arg: z.infer<typeof signInFormSchema> }) => {
-      // Coming Soon: Implement authentication
-      //   return authClient.signIn.email({
-      //   email: arg.username,
-      //   password: arg.password,
-      //   callbackURL: "/dashboard",
-      // });
-
-      // return authClient.signIn.social({
-      //   provider: "microsoft",
-      //   callbackURL: "/dashboard", // The URL to redirect to after the sign in
-      // });
-    },
-  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function onSubmit(values: z.infer<typeof signInFormSchema>) {
-    // Coming Soon: Implement submit logic
+    setIsSubmitting(true);
+    try {
+      const { error } = await authClient.signIn.email({
+        email: values.username,
+        password: values.password,
+        callbackURL: "/dashboard",
+      });
+      if (error) {
+        toast.error(error.message || "Error al iniciar sesión");
+      }
+    } catch {
+      toast.error("Error al iniciar sesión");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -165,8 +164,8 @@ export function LoginForm({
           )}
         />
 
-        <Button disabled={mutation.isMutating} type="submit" className="w-full">
-          {mutation.isMutating ? <Spinner /> : "Ingresar"}
+        <Button disabled={isSubmitting} type="submit" className="w-full">
+          {isSubmitting ? <Spinner /> : "Ingresar"}
         </Button>
 
         <FieldSeparator>Continua con</FieldSeparator>

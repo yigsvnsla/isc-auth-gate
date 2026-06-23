@@ -1,11 +1,12 @@
 import { createTransport } from "nodemailer";
+import { env } from "@/env";
 
 export const smtp_transporter = createTransport({
-  host: String(process.env.SMTP_TRANSPORTER_HOST),
-  port: Number(process.env.SMTP_TRANSPORTER_PORT),
-  secure: Boolean(process.env.SMTP_TRANSPORTER_SECURE),
+  host: env.BETTER_AUTH_SMTP_TRANSPORTER_HOST,
+  port: env.BETTER_AUTH_SMTP_TRANSPORTER_PORT,
+  secure: env.BETTER_AUTH_SMTP_TRANSPORTER_SECURE,
   auth: {
-    user: String(process.env.SMTP_TRANSPORTER_USER),
-    pass: String(process.env.SMTP_TRANSPORTER_PASS)
+    user: env.BETTER_AUTH_SMTP_TRANSPORTER_USER,
+    pass: env.BETTER_AUTH_SMTP_TRANSPORTER_PASS,
   },
 });

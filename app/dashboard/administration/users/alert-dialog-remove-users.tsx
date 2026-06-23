@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import React, { FC, useId, useState } from "react";
+import React, { FC, useState } from "react";
 import { useAtomValue, useSetAtom } from "jotai";
 import { selectListUsersIdAtom } from "@/atoms/select-list-users-id-atoms";
 import { toast } from "@/components/ui/sonner";

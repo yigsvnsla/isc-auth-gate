@@ -12,19 +12,20 @@ import { DashboardBreadcrumb } from "./dashboard-breadcrumb";
 
 export default async function DashboardLayout({ children }: PropsWithChildren) {
   const _headers = await headers();
-  const userHasPermission = await auth.api.userHasPermission({
-    headers: _headers,
-    body: {
-      role: "admin",
-      permissions: {
-        auth: ["access"],
-      },
-    },
-  });
 
-  if (userHasPermission.error || !userHasPermission.success) {
-    redirect(`/auth/sign-in`, "replace");
+  const session = await auth.api.getSession({ headers: _headers });
+  if (!session) redirect("/auth/sign-in");
+
+  let hasAccess;
+  try {
+    hasAccess = await auth.api.userHasPermission({
+      headers: _headers,
+      body: { permissions: { auth: ["access"] } },
+    });
+  } catch {
+    redirect("/auth/sign-in");
   }
+  if (hasAccess.error || !hasAccess.success) redirect("/auth/sign-in");
 
   return (
     <>

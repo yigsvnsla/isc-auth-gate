@@ -1,35 +1,13 @@
-import * as React from "react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { Toaster } from "@/components/ui/sonner";
-import { Provider as JotaiProvider } from "jotai";
-import { SWRConfig } from "swr";
-import { SidebarProvider } from "./ui/sidebar";
-import { cookies } from "next/headers";
+import ServerProviders from "./server-providers";
+import ClientProviders from "./client-providers";
+import { ReactNode } from "react";
 
-export default async function Providers({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const cookieStore = await cookies();
-  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
-
+export default function Providers({ children }: { children: ReactNode }) {
   return (
-    <NextThemesProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      enableColorScheme
-      disableTransitionOnChange
-    >
-      <SWRConfig>
-        <JotaiProvider>
-          <SidebarProvider defaultOpen={defaultOpen}>
-            {children}
-          </SidebarProvider>
-          <Toaster />
-        </JotaiProvider>
-      </SWRConfig>
-    </NextThemesProvider>
+    <ServerProviders>
+      <ClientProviders>
+        {children}
+      </ClientProviders>
+    </ServerProviders>
   );
 }

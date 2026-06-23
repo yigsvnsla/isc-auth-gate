@@ -3,8 +3,19 @@ import { LoginForm } from "@/components/login-form";
 import { cn } from "@/lib/utils";
 import { CommandIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  try {
+    const _headers = await headers();
+    const session = await auth.api.getSession({ headers: _headers });
+    if (session) redirect("/dashboard");
+  } catch {
+    // DB unreachable — show login page anyway
+  }
+
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-background">
       <GridPattern

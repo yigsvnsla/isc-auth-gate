@@ -12,6 +12,7 @@ import {
   Building2Icon,
   SettingsIcon,
   ShieldIcon,
+  GlobeIcon,
 } from "lucide-react";
 
 const adminSections = [
@@ -35,6 +36,13 @@ const adminSections = [
     href: "/dashboard/administration/roles",
     icon: ShieldIcon,
     color: "bg-emerald-500",
+  },
+  {
+    title: "OAuth Apps",
+    description: "Manage third-party OAuth clients and consents",
+    href: "/dashboard/administration/oauth",
+    icon: GlobeIcon,
+    color: "bg-indigo-500",
   },
   {
     title: "Settings",

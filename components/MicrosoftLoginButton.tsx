@@ -6,23 +6,18 @@ import useSWRMutation from "swr/mutation";
 
 export const MicrosoftLoginButton: FC = () => {
   const { trigger, isMutating } = useSWRMutation("/sign-up/social", () =>
-    toast.promise(
-      authClient.signIn.social({
-        provider: "microsoft",
-        callbackURL: "/dashboard",
-        
-        
-      }),
-      {
-        position: "top-center",
-        loading: "Ingresando con Microsoft...",
-        error: "Error al ingresar",
-      },
-    ),
+    authClient.signIn.social({
+      provider: "microsoft",
+      callbackURL: "/dashboard",
+    }),
   );
 
   async function onSubmit() {
-    await trigger();
+    try {
+      await trigger();
+    } catch {
+      toast.error("Error al iniciar sesión con Microsoft");
+    }
   }
 
   return (

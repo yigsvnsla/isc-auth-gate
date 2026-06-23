@@ -5,8 +5,8 @@ import { eq, and } from "drizzle-orm";
 import { organizations, members } from "@/database/schema";
 
 describe("Organization Management", () => {
-  let ctx: Awaited<ReturnType<typeof testAuth.$context>>;
-  let testHelpers: ReturnType<typeof ctx.test>;
+  let ctx: Awaited<typeof testAuth.$context>;
+  let testHelpers: any;
 
   beforeEach(async () => {
     ctx = await testAuth.$context;

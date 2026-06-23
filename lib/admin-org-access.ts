@@ -4,6 +4,15 @@ import { members as member } from "@/database/schema";
 import { auth } from "./auth";
 import { eq, and } from "drizzle-orm";
 
+/**
+ * Run an action as org admin by temporarily joining the org if not a member.
+ *
+ * Better Auth org API requires the caller to be an org member. Server actions
+ * called by global admins may target orgs they don't belong to. This helper
+ * temporarily inserts a membership, runs the action, then cleans up.
+ *
+ * @throws If session user is not a global admin
+ */
 export async function withOrgAdminAccess<T>(
   orgId: string,
   action: (ctx: { auth: typeof auth; headers: Headers }) => Promise<T>,

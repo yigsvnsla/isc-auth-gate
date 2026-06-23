@@ -6,10 +6,6 @@ export const metadata: Metadata = {
   description: "Inicia sesión en tu cuenta de ISC Auth",
 };
 
-export default function Loading({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function Loading({children}: {children: React.ReactNode}) {
   return <>{children}</>;
 }
