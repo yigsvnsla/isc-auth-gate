@@ -23,9 +23,11 @@ import { env } from "@/env";
  * 1. adminPlugin — user CRUD, ban, role assignment
  * 2. organization — multi-tenant with dynamic roles (DAC)
  * 3. openAPI — Swagger at /api/auth/reference
- * 4. nextCookies — cookie serialization for server components
- * 5. jwt — JWT support (required by oauthProvider)
- * 6. oauthProvider — OAuth 2.1 server (authorize, token, userinfo)
+ * 4. jwt — JWT support (required by oauthProvider)
+ * 5. oauthProvider — OAuth 2.1 server (authorize, token, userinfo)
+ * 6. nextCookies — cookie serialization for server components.
+ *    MUST be LAST: plugins whose hooks.after run after it would set
+ *    Set-Cookie headers that never reach the Next.js cookie store.
  *
  * @see https://www.better-auth.com/docs
  */
@@ -162,7 +164,6 @@ export const auth = betterAuth({
       },
     }),
     openAPI(),
-    nextCookies(),
     jwt(),
     oauthProvider({
       loginPage: "/auth/sign-in",
@@ -172,6 +173,10 @@ export const auth = betterAuth({
       scopes: ["openid", "profile", "email", "offline_access"],
       // ponytail: trusted client para el dashboard propio. Expandir con MCP agents si aplica
       cachedTrustedClients: new Set(["isc-gate-dashboard"]),
+      // Discovery metadata served at app/.well-known/oauth-authorization-server/[...issuerPath].
+      // Warning is init-time advisory; route verified 200 (RFC 8414).
+      silenceWarnings: { oauthAuthServerConfig: true },
     }),
+    nextCookies(),
   ],
 });
