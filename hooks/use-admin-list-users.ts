@@ -1,4 +1,4 @@
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import useSWR from "swr";
 
 interface UseAdminListUsersArg {

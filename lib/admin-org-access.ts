@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { db } from "@/database";
 import { members as member } from "@/database/schema";
-import { auth } from "./auth";
+import { auth } from "./auth/auth";
 import { eq, and } from "drizzle-orm";
 
 /**

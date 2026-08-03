@@ -1,18 +1,38 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/database";
-import { admin as adminPlugin, openAPI, organization, jwt } from "better-auth/plugins";
+import {
+  admin as adminPlugin,
+  openAPI,
+  organization,
+  jwt,
+} from "better-auth/plugins";
+import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
-import { smtp_transporter } from "./smtp";
+import { smtp_transporter } from "../smtp";
 import { createElement } from "react";
 import { render } from "@react-email/render";
-import VerificationEmail from "@/emails/verification-email";
-import ResetPasswordEmail from "@/emails/reset-password-email";
-import ExistingSignupEmail from "@/emails/existing-signup-email";
-import { accessControl, admin, user, moderator, orgSystemAdmin } from "./permissions";
+import VerificationEmail from "@/lib/email/templates/verification-email";
+import ResetPasswordEmail from "@/lib/email/templates/reset-password-email";
+import ExistingSignupEmail from "@/lib/email/templates/existing-signup-email";
+import {
+  accessControl,
+  admin,
+  user,
+  moderator,
+  orgSystemAdmin,
+} from "../permissions";
 import { oauthProvider } from "@better-auth/oauth-provider";
 // import { microsoft } from "@/plugins/providers/microsoft"; // Coming Soon
 import { env } from "@/env";
+import { email } from "../email";
+import { WelcomeEmail } from "@/lib/email/templates/welcome-email";
+import {
+  EmailSdkError,
+  EmailValidationError,
+  EmailRouteError,
+  EmailAdapterError,
+} from "@opencoredev/email-sdk";
 // ponytail: AC reuse from static RBAC so dynamic org roles share the same
 // statements (auth, project, defaultStatements) defined in permissions.ts
 
@@ -32,6 +52,8 @@ import { env } from "@/env";
  * @see https://www.better-auth.com/docs
  */
 export const auth = betterAuth({
+  baseURL: env.BETTER_AUTH_URL.replace(/\/+$/, ""),
+  basePath: "/api/auth",
   debug: env.BETTER_AUTH_SERVER_DEBUG,
   appName: env.BETTER_AUTH_SERVER_NAME,
   secret: env.BETTER_AUTH_SERVER_SECRET,
@@ -44,18 +66,21 @@ export const auth = betterAuth({
       enabled: true,
     },
   },
-    socialProviders: {
+  socialProviders: {
     microsoft: {
+      enabled: true,
+
       prompt: env.BETTER_AUTH_MICROSOFT_PROMPT,
       clientId: env.BETTER_AUTH_MICROSOFT_CLIENT_ID,
       tenantId: env.BETTER_AUTH_MICROSOFT_TENANT_ID,
       authority: env.BETTER_AUTH_MICROSOFT_AUTHORITY,
       clientSecret: env.BETTER_AUTH_MICROSOFT_CLIENT_SECRET,
       profilePhotoSize: env.BETTER_AUTH_MICROSOFT_PROFILE_PHOTO_SIZE,
-      overrideUserInfoOnSignIn:env.BETTER_AUTH_MICROSOFT_OVERRIDE_USER_INFO_ON_SIGN_IN,
+      overrideUserInfoOnSignIn:
+        env.BETTER_AUTH_MICROSOFT_OVERRIDE_USER_INFO_ON_SIGN_IN,
       // ponytail: Microsoft ID token doesn't always include email_verified (optional claim).
       // Since Microsoft authenticated the user, trust their verification.
-      mapProfileToUser: () => ({ emailVerified: true }),
+      // mapProfileToUser: () => ({ emailVerified: true }),
     },
   },
   experimental: { joins: true },
@@ -66,17 +91,63 @@ export const auth = betterAuth({
   },
 
   databaseHooks: {
+    verification: {},
+
+    session: {},
+
+    account: {},
+
     user: {
       create: {
-        async after(user) {
+        after: async (user) => {
           // ponytail: skip verification for OAuth users (email already verified by provider)
-          if (user.emailVerified) return;
-          await auth.api.sendVerificationEmail({
-            body: {
-              email: user.email,
-              callbackURL: "/dashboard",
-            },
-          });
+          // if (user.emailVerified) return;
+          // await auth.api.sendVerificationEmail({
+          //   body: {
+          //     email: user.email,
+          //     callbackURL: "/dashboard",
+          //   },
+          // });
+
+          try {
+            console.log(`User created: ${user.email} (ID: ${user.id})`);
+            email.send({
+              from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
+              to: user.email,
+              subject: "Welcome to Auth Gate",
+              html: await render(
+                <WelcomeEmail url="https://example.com" user={user} />,
+              ),
+            });
+          } catch (error) {
+            if (error instanceof EmailValidationError) {
+              // Bad message shape or unsupported field — fix the code path, do not retry.
+              throw error;
+            }
+
+            if (error instanceof EmailAdapterError) {
+              console.error(
+                `${error.adapter} failed`,
+                error.status,
+                error.message,
+              );
+              if (error.retryable) {
+                // await queue.retryLater(message); // transient — re-enqueue
+                return;
+              }
+              throw error; // 401/422-style failure: needs a config or account fix
+            }
+
+            if (
+              error instanceof EmailSdkError &&
+              String(error.code) === "all_providers_failed"
+            ) {
+              // Every route failed; details is one error per adapter, in route order.
+              console.error(error.message);
+            }
+
+            throw error;
+          }
         },
       },
     },
@@ -86,10 +157,12 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     autoSignIn: false,
-    
+
     sendResetPassword: async ({ user, url }) => {
       try {
-        const html = await render(createElement(ResetPasswordEmail, { user, url }));
+        const html = await render(
+          createElement(ResetPasswordEmail, { user, url }),
+        );
         await smtp_transporter.sendMail({
           from: '"ISC Auth" <Soporte@integritysolutions.com.ec>',
           to: user.email,
@@ -124,9 +197,23 @@ export const auth = betterAuth({
     sendOnSignIn: true,
     autoSignInAfterVerification: false,
 
+    beforeEmailVerification: async (user, _request) => {
+      console.log(`User ${user.email} is about to verify their email address.`);
+
+      return;
+    },
+
+    afterEmailVerification: async (user, _request) => {
+      console.log(`User ${user.email} has verified their email address.`);
+
+      return;
+    },
+
     sendVerificationEmail: async ({ user, url }) => {
       try {
-        const html = await render(createElement(VerificationEmail, { user, url }));
+        const html = await render(
+          createElement(VerificationEmail, { user, url }),
+        );
         const { messageId } = await smtp_transporter.sendMail({
           from: '"ISC Auth" <Soporte@integritysolutions.com.ec>',
           to: user.email,
@@ -146,8 +233,10 @@ export const auth = betterAuth({
   }),
 
   plugins: [
+    openAPI(),
+    jwt(),
     adminPlugin({
-      adminUserIds: ["5RfQlRTKmUCC2H5EyAnHAgSLwxelZsz9"],
+      adminUserIds: [],
       ac: accessControl,
       roles: { admin, user, moderator },
     }),
@@ -163,20 +252,21 @@ export const auth = betterAuth({
         systemAdmin: orgSystemAdmin,
       },
     }),
-    openAPI(),
-    jwt(),
+
     oauthProvider({
       loginPage: "/auth/sign-in",
       consentPage: "/auth/consent",
       allowDynamicClientRegistration: true,
+    
       // ponytail: scopes mínimos OIDC. Custom scopes por resource → agregar cuando se definan
       scopes: ["openid", "profile", "email", "offline_access"],
       // ponytail: trusted client para el dashboard propio. Expandir con MCP agents si aplica
       cachedTrustedClients: new Set(["isc-gate-dashboard"]),
       // Discovery metadata served at app/.well-known/oauth-authorization-server/[...issuerPath].
       // Warning is init-time advisory; route verified 200 (RFC 8414).
-      silenceWarnings: { oauthAuthServerConfig: true },
+      // silenceWarnings: { oauthAuthServerConfig: true },
     }),
     nextCookies(),
+    ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
   ],
 });

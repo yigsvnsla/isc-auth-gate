@@ -9,5 +9,5 @@ export const databaseEnv = z.object({
   BETTER_AUTH_DATABASE_USER: z.string().min(1),
   BETTER_AUTH_DATABASE_PASS: z.string().min(1),
   BETTER_AUTH_DATABASE_SSL: z.coerce.boolean().default(false),
-  BETTER_AUTH_DATABASE_DEBUG: z.coerce.boolean().default(false),
+  BETTER_AUTH_DATABASE_DEBUG: z.stringbool().default(false),
 });

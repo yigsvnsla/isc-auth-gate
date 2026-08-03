@@ -1,13 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -194,7 +192,11 @@ function CreateClientDialog({
             <Field>
               <FieldLabel>Client Secret</FieldLabel>
               <div className="flex gap-2">
-                <Input value={createdSecret} readOnly className="font-mono text-xs" />
+                <Input
+                  value={createdSecret}
+                  readOnly
+                  className="font-mono text-xs"
+                />
                 <CopyButton value={createdSecret} />
               </div>
             </Field>
@@ -298,9 +300,7 @@ function ClientRow({
     <TableRow>
       <TableCell>
         <div className="flex flex-col gap-0.5">
-          <span className="font-medium">
-            {client.name || clientIdShort}
-          </span>
+          <span className="font-medium">{client.name || clientIdShort}</span>
           <span className="text-xs text-muted-foreground font-mono">
             {client.clientId}
           </span>
@@ -309,7 +309,11 @@ function ClientRow({
       <TableCell>
         <div className="flex flex-wrap gap-1">
           {client.redirectUris.map((uri) => (
-            <Badge key={uri} variant="outline" className="text-[10px] font-mono max-w-[200px] truncate">
+            <Badge
+              key={uri}
+              variant="outline"
+              className="text-[10px] font-mono max-w-[200px] truncate"
+            >
               {uri}
             </Badge>
           ))}
@@ -384,7 +388,12 @@ function ConsentRow({
         {formatDate(consent.createdAt)}
       </TableCell>
       <TableCell>
-        <Button variant="ghost" size="icon-sm" onClick={() => onDelete(consent)} aria-label="Revoke consent">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => onDelete(consent)}
+          aria-label="Revoke consent"
+        >
           <Trash2Icon />
         </Button>
       </TableCell>
@@ -428,13 +437,34 @@ function ClientsTab() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          OAuth 2.1 clients registered in this authorization server.
-          Third-party apps use these credentials to authenticate users.
+          OAuth 2.1 clients registered in this authorization server. Third-party
+          apps use these credentials to authenticate users.
         </p>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
+        {/* <Button size="sm" onClick={() => setCreateOpen(true)}>
           <PlusIcon data-icon="inline-start" />
           New Client
-        </Button>
+        </Button> */}
+
+        {/* CREATE CLIENT DIALOG */}
+        <Dialog>
+          <DialogTrigger
+            render={
+              <Button id="D-1" size="sm">
+                <PlusIcon data-icon="inline-start" />
+                New Client
+              </Button>
+            }
+          />
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you absolutely sure?</DialogTitle>
+              <DialogDescription>
+                This action cannot be undone. This will permanently delete your
+                account and remove your data from our servers.
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -452,8 +482,12 @@ function ClientsTab() {
                   <TableRow>
                     <TableHead>Client</TableHead>
                     <TableHead>Redirect URIs</TableHead>
-                    <TableHead className="hidden md:table-cell">Status</TableHead>
-                    <TableHead className="hidden lg:table-cell">Created</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Status
+                    </TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      Created
+                    </TableHead>
                     <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -493,7 +527,8 @@ function ClientsTab() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete client &ldquo;{deleteTarget?.name || deleteTarget?.clientId}&rdquo;?
+              Delete client &ldquo;
+              {deleteTarget?.name || deleteTarget?.clientId}&rdquo;?
             </AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. All tokens issued for this client
@@ -518,7 +553,8 @@ function ClientsTab() {
             <AlertDialogTitle>Rotate secret?</AlertDialogTitle>
             <AlertDialogDescription>
               The current client secret will be invalidated immediately.
-              Applications using this client will need to update their configuration.
+              Applications using this client will need to update their
+              configuration.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -592,7 +628,8 @@ function ConsentsTab() {
           <div className="flex flex-col items-center gap-2 py-12 text-center">
             <KeyRoundIcon className="size-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              No consents granted yet. Consents appear after a user authorizes a third-party app.
+              No consents granted yet. Consents appear after a user authorizes a
+              third-party app.
             </p>
           </div>
         )}
@@ -606,8 +643,8 @@ function ConsentsTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>Revoke consent?</AlertDialogTitle>
             <AlertDialogDescription>
-              The third-party app will lose access to the authorized scopes.
-              The user may need to re-authorize on next login.
+              The third-party app will lose access to the authorized scopes. The
+              user may need to re-authorize on next login.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -628,9 +665,7 @@ export default function OAuthAdminPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          OAuth Apps
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">OAuth Apps</h1>
         <p className="text-sm text-muted-foreground">
           Manage third-party OAuth 2.1 clients and user consents
         </p>

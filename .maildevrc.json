@@ -1,5 +1,9 @@
 {
-    "web": 1080,
     "smtp": 1025,
-    "verbose": true
+    "web": 1080,
+    "verbose": true,
+    "mcp": true,
+    "mailDirectory": "./.maildev"
+
+    
 }

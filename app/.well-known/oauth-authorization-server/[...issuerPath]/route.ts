@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 import { toNextJsHandler } from "better-auth/next-js";
 
 // OAuth 2.1 discovery metadata (RFC 8414).

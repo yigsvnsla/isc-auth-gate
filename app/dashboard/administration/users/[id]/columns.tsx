@@ -1,7 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { MonitorIcon, SmartphoneIcon, GlobeIcon, ClockIcon } from "lucide-react";

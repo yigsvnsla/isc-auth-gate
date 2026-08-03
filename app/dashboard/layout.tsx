@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { redirect } from "next/navigation";
 import { PropsWithChildren } from "react";
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { headers } from "next/headers";
 import { DashboardBreadcrumb } from "./dashboard-breadcrumb";

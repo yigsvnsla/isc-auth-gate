@@ -1,6 +1,7 @@
 import z from "zod";
 
 export const serverEnv = z.object({
+  BETTER_AUTH_URL: z.string().url(),
   BETTER_AUTH_SERVER_NAME: z.string(),
   BETTER_AUTH_SERVER_HOST: z.string().default("localhost"),
   BETTER_AUTH_SERVER_PORT: z.coerce.number().default(4000),

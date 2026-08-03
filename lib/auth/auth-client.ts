@@ -2,8 +2,8 @@ import { adminClient, inferAdditionalFields, organizationClient } from "better-a
 import { createAuthClient } from "better-auth/react";
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 
-import type { auth } from "./auth";
-import { accessControl, admin, moderator, user, orgSystemAdmin } from "./permissions";
+import { auth } from "./auth";
+import { accessControl, admin, moderator, user, orgSystemAdmin } from "../permissions";
 
 /**
  * Typed Better Auth client for browser-side calls.
@@ -30,3 +30,9 @@ export const authClient = createAuthClient({
     inferAdditionalFields<typeof auth>(),
   ],
 });
+
+
+
+
+
+

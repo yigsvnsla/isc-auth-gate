@@ -3,7 +3,7 @@ import { LoginForm } from "@/components/login-form";
 import { cn } from "@/lib/utils";
 import { CommandIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 

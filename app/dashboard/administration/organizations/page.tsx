@@ -25,7 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { RefreshCwIcon, Plus as PlusIcon } from "lucide-react";
 import useSWR from "swr";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 
 function OrganizationStats() {
   const { data } = useSWR("/organization/list", async () => {

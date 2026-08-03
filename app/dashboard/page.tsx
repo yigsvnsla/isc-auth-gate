@@ -465,7 +465,7 @@ export default function DashboardPage() {
                     <TableHead>Device</TableHead>
                     <TableHead>IP Address</TableHead>
                     <TableHead>Expires</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="w-12.5"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -522,7 +522,7 @@ export default function DashboardPage() {
                     <TableHead>Method</TableHead>
                     <TableHead>Provider</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="w-12.5"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
