@@ -48,6 +48,7 @@ import {
   KeyRoundIcon,
   CopyIcon,
 } from "lucide-react";
+import { CreateClientDialog } from "./create-oauth-client-dialog";
 interface OAuthClient {
   clientId: string;
   clientSecret?: string;
@@ -115,158 +116,158 @@ function useRotateClientSecret() {
   );
 }
 
-function CreateClientDialog({
-  open,
-  onOpenChange,
-  onCreated,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreated: () => void;
-}) {
-  const [name, setName] = useState("");
-  const [redirectUris, setRedirectUris] = useState("");
-  const [createdSecret, setCreatedSecret] = useState<string | null>(null);
+// function CreateClientDialog({
+//   open,
+//   onOpenChange,
+//   onCreated,
+// }: {
+//   open: boolean;
+//   onOpenChange: (open: boolean) => void;
+//   onCreated: () => void;
+// }) {
+//   const [name, setName] = useState("");
+//   const [redirectUris, setRedirectUris] = useState("");
+//   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
 
-  const createMutation = useSWRMutation(
-    "/oauth2/create-client",
-    async (
-      _key: string,
-      {
-        arg,
-      }: {
-        arg: { client_name: string; redirect_uris: string[] };
-      },
-    ) => {
-      const { data, error } = await authClient.oauth2.createClient(arg);
-      if (error) throw new Error(error.message ?? "Failed to create client");
-      return data as unknown as OAuthClient & { clientSecret: string };
-    },
-  );
+//   const createMutation = useSWRMutation(
+//     "/oauth2/create-client",
+//     async (
+//       _key: string,
+//       {
+//         arg,
+//       }: {
+//         arg: { client_name: string; redirect_uris: string[] };
+//       },
+//     ) => {
+//       const { data, error } = await authClient.oauth2.createClient(arg);
+//       if (error) throw new Error(error.message ?? "Failed to create client");
+//       return data as unknown as OAuthClient & { clientSecret: string };
+//     },
+//   );
 
-  const handleSubmit = async () => {
-    const uris = redirectUris
-      .split("\n")
-      .map((u) => u.trim())
-      .filter(Boolean);
-    if (uris.length === 0) {
-      toast.error("At least one redirect URI is required");
-      return;
-    }
-    try {
-      const result = await createMutation.trigger({
-        client_name: name || "Unnamed Client",
-        redirect_uris: uris,
-      });
-      setCreatedSecret(result.clientSecret);
-      toast.success(`Client "${name || result.clientId}" created`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create");
-    }
-  };
+//   const handleSubmit = async () => {
+//     const uris = redirectUris
+//       .split("\n")
+//       .map((u) => u.trim())
+//       .filter(Boolean);
+//     if (uris.length === 0) {
+//       toast.error("At least one redirect URI is required");
+//       return;
+//     }
+//     try {
+//       const result = await createMutation.trigger({
+//         client_name: name || "Unnamed Client",
+//         redirect_uris: uris,
+//       });
+//       setCreatedSecret(result.clientSecret);
+//       toast.success(`Client "${name || result.clientId}" created`);
+//     } catch (err) {
+//       toast.error(err instanceof Error ? err.message : "Failed to create");
+//     }
+//   };
 
-  const handleClose = () => {
-    if (!createdSecret) {
-      setCreatedSecret(null);
-      setName("");
-      setRedirectUris("");
-      onOpenChange(false);
-    }
-  };
+//   const handleClose = () => {
+//     if (!createdSecret) {
+//       setCreatedSecret(null);
+//       setName("");
+//       setRedirectUris("");
+//       onOpenChange(false);
+//     }
+//   };
 
-  if (createdSecret) {
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Client created</DialogTitle>
-            <DialogDescription>
-              Save the client secret now. It won&apos;t be shown again.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-3">
-            <Field>
-              <FieldLabel>Client ID</FieldLabel>
-              <Input value={createdSecret ? name || "—" : ""} readOnly />
-            </Field>
-            <Field>
-              <FieldLabel>Client Secret</FieldLabel>
-              <div className="flex gap-2">
-                <Input
-                  value={createdSecret}
-                  readOnly
-                  className="font-mono text-xs"
-                />
-                <CopyButton value={createdSecret} />
-              </div>
-            </Field>
-          </div>
-          <DialogFooter>
-            <Button
-              onClick={() => {
-                setCreatedSecret(null);
-                setName("");
-                setRedirectUris("");
-                onOpenChange(false);
-                onCreated();
-              }}
-            >
-              Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+//   if (createdSecret) {
+//     return (
+//       <Dialog open={open} onOpenChange={handleClose}>
+//         <DialogContent className="sm:max-w-lg">
+//           <DialogHeader>
+//             <DialogTitle>Client created</DialogTitle>
+//             <DialogDescription>
+//               Save the client secret now. It won&apos;t be shown again.
+//             </DialogDescription>
+//           </DialogHeader>
+//           <div className="flex flex-col gap-3">
+//             <Field>
+//               <FieldLabel>Client ID</FieldLabel>
+//               <Input value={createdSecret ? name || "—" : ""} readOnly />
+//             </Field>
+//             <Field>
+//               <FieldLabel>Client Secret</FieldLabel>
+//               <div className="flex gap-2">
+//                 <Input
+//                   value={createdSecret}
+//                   readOnly
+//                   className="font-mono text-xs"
+//                 />
+//                 <CopyButton value={createdSecret} />
+//               </div>
+//             </Field>
+//           </div>
+//           <DialogFooter>
+//             <Button
+//               onClick={() => {
+//                 setCreatedSecret(null);
+//                 setName("");
+//                 setRedirectUris("");
+//                 onOpenChange(false);
+//                 onCreated();
+//               }}
+//             >
+//               Done
+//             </Button>
+//           </DialogFooter>
+//         </DialogContent>
+//       </Dialog>
+//     );
+//   }
 
-  return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Create OAuth Client</DialogTitle>
-          <DialogDescription>
-            Register a new OAuth 2.1 client application.
-          </DialogDescription>
-        </DialogHeader>
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="client-name">Client Name</FieldLabel>
-            <Input
-              id="client-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="My App"
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="redirect-uris">
-              Redirect URIs <span className="text-destructive">*</span>
-            </FieldLabel>
-            <textarea
-              id="redirect-uris"
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              value={redirectUris}
-              onChange={(e) => setRedirectUris(e.target.value)}
-              placeholder="https://app.example.com/callback"
-              rows={3}
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              One URI per line
-            </p>
-          </Field>
-        </FieldGroup>
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={createMutation.isMutating}>
-            {createMutation.isMutating ? "Creating..." : "Create Client"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
+//   return (
+//     <Dialog open={open} onOpenChange={handleClose}>
+//       <DialogContent className="sm:max-w-lg">
+//         <DialogHeader>
+//           <DialogTitle>Create OAuth Client</DialogTitle>
+//           <DialogDescription>
+//             Register a new OAuth 2.1 client application.
+//           </DialogDescription>
+//         </DialogHeader>
+//         <FieldGroup>
+//           <Field>
+//             <FieldLabel htmlFor="client-name">Client Name</FieldLabel>
+//             <Input
+//               id="client-name"
+//               value={name}
+//               onChange={(e) => setName(e.target.value)}
+//               placeholder="My App"
+//             />
+//           </Field>
+//           <Field>
+//             <FieldLabel htmlFor="redirect-uris">
+//               Redirect URIs <span className="text-destructive">*</span>
+//             </FieldLabel>
+//             <textarea
+//               id="redirect-uris"
+//               className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+//               value={redirectUris}
+//               onChange={(e) => setRedirectUris(e.target.value)}
+//               placeholder="https://app.example.com/callback"
+//               rows={3}
+//             />
+//             <p className="text-xs text-muted-foreground mt-1">
+//               One URI per line
+//             </p>
+//           </Field>
+//         </FieldGroup>
+//         <DialogFooter>
+//           <Button variant="outline" onClick={handleClose}>
+//             Cancel
+//           </Button>
+//           <Button onClick={handleSubmit} disabled={createMutation.isMutating}>
+//             {createMutation.isMutating ? "Creating..." : "Create Client"}
+//           </Button>
+//         </DialogFooter>
+//       </DialogContent>
+//     </Dialog>
+//   );
+// }
 
 function CopyButton({ value }: { value: string }) {
   const [copy] = useCopyToClipboard();
@@ -445,26 +446,15 @@ function ClientsTab() {
           New Client
         </Button> */}
 
+
         {/* CREATE CLIENT DIALOG */}
-        <Dialog>
-          <DialogTrigger
-            render={
-              <Button id="D-1" size="sm">
-                <PlusIcon data-icon="inline-start" />
-                New Client
-              </Button>
-            }
-          />
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Are you absolutely sure?</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone. This will permanently delete your
-                account and remove your data from our servers.
-              </DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
+        <CreateClientDialog>
+          <Button id="D-1" size="sm">
+            <PlusIcon data-icon="inline-start" />
+            New Client
+          </Button>
+        </CreateClientDialog>
+
       </div>
 
       <Card>
@@ -488,7 +478,7 @@ function ClientsTab() {
                     <TableHead className="hidden lg:table-cell">
                       Created
                     </TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead className="w-20">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -514,11 +504,11 @@ function ClientsTab() {
         </CardContent>
       </Card>
 
-      <CreateClientDialog
+      {/* <CreateClientDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
         onCreated={() => mutate()}
-      />
+      /> */}
 
       <AlertDialog
         open={deleteTarget !== null}

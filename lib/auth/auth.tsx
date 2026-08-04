@@ -30,11 +30,11 @@ import { WelcomeEmail } from "@/lib/email/templates/welcome-email";
 import {
   EmailSdkError,
   EmailValidationError,
-  EmailRouteError,
   EmailAdapterError,
 } from "@opencoredev/email-sdk";
 // ponytail: AC reuse from static RBAC so dynamic org roles share the same
 // statements (auth, project, defaultStatements) defined in permissions.ts
+
 
 /**
  * Better Auth server instance.
@@ -257,7 +257,7 @@ export const auth = betterAuth({
       loginPage: "/auth/sign-in",
       consentPage: "/auth/consent",
       allowDynamicClientRegistration: true,
-    
+
       // ponytail: scopes mínimos OIDC. Custom scopes por resource → agregar cuando se definan
       scopes: ["openid", "profile", "email", "offline_access"],
       // ponytail: trusted client para el dashboard propio. Expandir con MCP agents si aplica
