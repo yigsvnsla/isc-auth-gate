@@ -5,15 +5,19 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Stepper } from "@/components/reui/stepper";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FC, ReactElement } from "react";
+import { FC, ReactElement, useState } from "react";
+import { toast } from "sonner";
 import { useCreateOauthClientMutation } from "./create-oauth-client-mutation";
 import { FormProvider, useForm } from "react-hook-form";
 import { CreateOauthClientForm } from "./create-oauth-client-form";
+import { CreateOauthClientDialogFooter } from "./create-oauth-client-dialog-footer";
 import {
   CreateOAuthClientData,
   createOAuthClientDataSchema,
 } from "./create-oauth-client-schema";
+import { CreateOauthClientDialogHeader } from "./create-oauth-client-dialog-header";
 
 export interface CreateClientDialogProps {
   children: ReactElement;
@@ -22,34 +26,25 @@ export interface CreateClientDialogProps {
 export const CreateClientDialog: FC<CreateClientDialogProps> = ({
   children,
 }) => {
-  const createMutation = useCreateOauthClientMutation();
-  const form = useForm({
+  const form = useForm<CreateOAuthClientData>({
     resolver: zodResolver(createOAuthClientDataSchema),
+    mode: "onChange",
     defaultValues: {},
   });
-
-  function handleSubmit(value: CreateOAuthClientData) {
-    console.log(value);
-
-    return;
-  }
 
   return (
     <Dialog>
       <DialogTrigger render={children} />
-      <DialogContent className="sm:max-w-4xl">
-        <FormProvider {...form}>
-          <CreateOauthClientForm />
-        </FormProvider>
-        <DialogFooter>
-          <Button variant="outline">Cancel</Button>
-          <Button
-            onClick={form.handleSubmit(handleSubmit)}
-            disabled={createMutation.isMutating}
-          >
-            {createMutation.isMutating ? "Creating..." : "Create Client"}
-          </Button>
-        </DialogFooter>
+      <DialogContent className="flex h-[75vh] flex-col overflow-hidden sm:max-w-4xl">
+        <Stepper defaultValue={1} className="flex h-full w-full flex-col gap-4">
+          <FormProvider {...form}>
+            <CreateOauthClientDialogHeader />
+
+            <CreateOauthClientForm />
+
+            <CreateOauthClientDialogFooter />
+          </FormProvider>
+        </Stepper>
       </DialogContent>
     </Dialog>
   );

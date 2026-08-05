@@ -449,7 +449,7 @@ function ClientsTab() {
 
         {/* CREATE CLIENT DIALOG */}
         <CreateClientDialog>
-          <Button id="D-1" size="sm">
+          <Button size="sm">
             <PlusIcon data-icon="inline-start" />
             New Client
           </Button>
