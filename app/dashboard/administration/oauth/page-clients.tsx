@@ -1,31 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { CreateClientDialog } from "./create-oauth-client-dialog";
-import { GlobeIcon, PlusIcon, RefreshCcwIcon, Trash2Icon } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-  AlertDialog,
-} from "@/components/ui/alert-dialog";
+import { RefreshCcwIcon, Trash2Icon } from "lucide-react";
+
+import { TableCell, TableRow } from "@/components/ui/table";
+
 import { OAuthClient } from "@better-auth/oauth-provider";
-import { useState } from "react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { DeleteOauthClientDialog } from "./delete-oauth-client-dialog";
+import { RotateSecretOauthClientDialog } from "./rotate-secret-oauth-client-dialog";
+import { AuthClientsTable } from "./page-clients-table";
+import { AuthClientsPageHeader } from "./page-clients-header";
 
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return "—";
@@ -99,21 +82,24 @@ function ClientRow({
       </TableCell>
       <TableCell>
         <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => onRotateSecret(client)}
-            aria-label="Rotate secret"
-            title="Rotate secret"
-          >
-            <RefreshCcwIcon />
-          </Button>
+          <RotateSecretOauthClientDialog>
+            <Button
+              size="icon-sm"
+              title="Rotate secret"
+              variant="ghost"
+              aria-label="Rotate secret"
+              // onClick={() => onRotateSecret(client)}
+            >
+              <RefreshCcwIcon />
+            </Button>
+          </RotateSecretOauthClientDialog>
 
           <DeleteOauthClientDialog>
             <Button
-              variant="ghost"
               size="icon-sm"
+              variant="ghost"
               aria-label="Delete client"
+              // onClick={() => onDelete(client)}
             >
               <Trash2Icon />
             </Button>
@@ -125,44 +111,15 @@ function ClientRow({
 }
 
 export const AuthClientsPage = () => {
-  const { data: clients, isLoading, mutate } = useOAuthClients();
-  const [createOpen, setCreateOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<OAuthClient | null>(null);
-  const [rotateTarget, setRotateTarget] = useState<OAuthClient | null>(null);
-  const deleteMutation = useDeleteOAuthClient();
-  const rotateMutation = useRotateClientSecret();
-  w;
-
-  const handleRotate = async () => {
-    if (!rotateTarget) return;
-    try {
-      await rotateMutation.trigger({ client_id: rotateTarget.client_id });
-      toast.success("Client secret rotated");
-      setRotateTarget(null);
-      mutate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to rotate");
-    }
-  };
+  // const { data: clients, isLoading, mutate } = useOAuthClients();
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          OAuth 2.1 clients registered in this authorization server. Third-party
-          apps use these credentials to authenticate users.
-        </p>
+      <AuthClientsPageHeader />
 
-        {/* CREATE CLIENT DIALOG */}
-        <CreateClientDialog>
-          <Button size="sm">
-            <PlusIcon data-icon="inline-start" />
-            New Client
-          </Button>
-        </CreateClientDialog>
-      </div>
+      <AuthClientsTable />
 
-      <Card>
+      {/* <Card>
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex flex-col gap-2 p-4">
@@ -207,53 +164,7 @@ export const AuthClientsPage = () => {
             </div>
           )}
         </CardContent>
-      </Card>
-
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(o) => !o && setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Delete client &ldquo;
-              {deleteTarget?.client_name || deleteTarget?.client_id}&rdquo;?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. All tokens issued for this client
-              will become invalid immediately.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              {deleteMutation.isMutating ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={rotateTarget !== null}
-        onOpenChange={(o) => !o && setRotateTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Rotate secret?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The current client secret will be invalidated immediately.
-              Applications using this client will need to update their
-              configuration.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRotate}>
-              {rotateMutation.isMutating ? "Rotating..." : "Rotate"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      </Card> */}
     </div>
   );
 };
