@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectLabel,
   SelectTrigger,
@@ -22,10 +23,19 @@ import { FC } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { CreateOAuthClientData } from "./create-oauth-client-schema";
 
-const authMethods = ["none", "client_secret_basic", "client_secret_post"] as const;
+const authMethods = [
+  "none",
+  "client_secret_basic",
+  "client_secret_post",
+] as const;
 const clientTypes = ["web", "native", "user-agent-based"] as const;
 const subjectTypes = ["public", "pairwise"] as const;
-const grantOptions = ["authorization_code", "client_credentials", "refresh_token"] as const;
+const grantOptions = [
+  "authorization_code",
+  "client_credentials",
+  "refresh_token",
+] as const;
+
 const responseOptions = ["code"] as const;
 
 export const CreateOauthClientFormStep3: FC = () => {
@@ -46,10 +56,9 @@ export const CreateOauthClientFormStep3: FC = () => {
             <Field orientation="vertical" data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={field.name}>Tipo de cliente</FieldLabel>
               <Select
-                value={field.value ?? ""}
-                onValueChange={(value) =>
-                  field.onChange(value === "" ? undefined : value)
-                }
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
               >
                 <SelectTrigger
                   id={field.name}
@@ -59,17 +68,18 @@ export const CreateOauthClientFormStep3: FC = () => {
                   <SelectValue placeholder="Selecciona un tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectLabel>Tipo de cliente</SelectLabel>
-                  {clientTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel>Tipo de cliente</SelectLabel>
+                    {clientTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
               <FieldDescription>
-                web: servidor con secret · native: app móvil · user-agent:
-                SPA.
+                web: servidor con secret · native: app móvil · user-agent: SPA.
               </FieldDescription>
               {fieldState.error && <FieldError errors={[fieldState.error]} />}
             </Field>
@@ -85,10 +95,9 @@ export const CreateOauthClientFormStep3: FC = () => {
                 Método de autenticación
               </FieldLabel>
               <Select
-                value={field.value ?? ""}
-                onValueChange={(value) =>
-                  field.onChange(value === "" ? undefined : value)
-                }
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
               >
                 <SelectTrigger
                   id={field.name}
@@ -98,12 +107,16 @@ export const CreateOauthClientFormStep3: FC = () => {
                   <SelectValue placeholder="Selecciona un método" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectLabel>Autenticación en el token endpoint</SelectLabel>
-                  {authMethods.map((method) => (
-                    <SelectItem key={method} value={method}>
-                      {method}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel>
+                      Autenticación en el token endpoint
+                    </SelectLabel>
+                    {authMethods.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
               <FieldDescription>
@@ -121,10 +134,9 @@ export const CreateOauthClientFormStep3: FC = () => {
             <Field orientation="vertical" data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={field.name}>Tipo de subject</FieldLabel>
               <Select
-                value={field.value ?? ""}
-                onValueChange={(value) =>
-                  field.onChange(value === "" ? undefined : value)
-                }
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
               >
                 <SelectTrigger
                   id={field.name}
@@ -134,12 +146,14 @@ export const CreateOauthClientFormStep3: FC = () => {
                   <SelectValue placeholder="Selecciona un tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectLabel>Tipo de subject</SelectLabel>
-                  {subjectTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel>Tipo de subject</SelectLabel>
+                    {subjectTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
               <FieldDescription>
@@ -255,7 +269,11 @@ export const CreateOauthClientFormStep3: FC = () => {
                 className="h-9"
                 value={field.value ?? 0}
                 onChange={(event) =>
-                  field.onChange(event.target.value === "" ? undefined : Number(event.target.value))
+                  field.onChange(
+                    event.target.value === ""
+                      ? undefined
+                      : Number(event.target.value),
+                  )
                 }
               />
               <FieldDescription>
@@ -270,7 +288,10 @@ export const CreateOauthClientFormStep3: FC = () => {
           name="require_pkce"
           control={form.control}
           render={({ field }) => (
-            <Field orientation="horizontal" className="items-start justify-between">
+            <Field
+              orientation="horizontal"
+              className="items-start justify-between"
+            >
               <FieldLabel htmlFor={field.name}>
                 Requerir PKCE
                 <FieldDescription>
@@ -290,7 +311,10 @@ export const CreateOauthClientFormStep3: FC = () => {
           name="skip_consent"
           control={form.control}
           render={({ field }) => (
-            <Field orientation="horizontal" className="items-start justify-between">
+            <Field
+              orientation="horizontal"
+              className="items-start justify-between"
+            >
               <FieldLabel htmlFor={field.name}>
                 Omitir consentimiento
                 <FieldDescription>
@@ -311,7 +335,10 @@ export const CreateOauthClientFormStep3: FC = () => {
           name="enable_end_session"
           control={form.control}
           render={({ field }) => (
-            <Field orientation="horizontal" className="items-start justify-between">
+            <Field
+              orientation="horizontal"
+              className="items-start justify-between"
+            >
               <FieldLabel htmlFor={field.name}>
                 Habilitar end session
                 <FieldDescription>

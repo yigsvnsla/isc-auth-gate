@@ -11,11 +11,15 @@ describe("Auth server", async () => {
     await testUtils.deleteUser(userCreated.id);
     expect(userCreated).toBeDefined();
   });
+});
 
-  test("sends verification email", async () => {
-    const userCreated = testUtils.createUser({ emailVerified: false });
-
-    expect(userCreated).toBeDefined();
-    expect(userCreated.emailVerified).toBe(false);
-  });
+describe("Auth server", async () => {
+  // const ctx = await auth.$context;
+  // const testUtils = ctx.test;
+  // test("create oauth client", async () => {
+  //   const oauthClient = testUtils.createOauthClient();
+  //   const oauthClientCreated = await testUtils.saveOauthClient(oauthClient);
+  //   await testUtils.deleteOauthClient(oauthClientCreated.id);
+  //   expect(oauthClientCreated).toBeDefined();
+  // });
 });

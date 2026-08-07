@@ -7,6 +7,7 @@ import { CreateOAuthClientData } from "./create-oauth-client-schema";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { AuthClientFormSteps } from "./create-oauth-client-form-steps";
 import { useCreateOauthClientMutation } from "./create-oauth-client-mutation";
+import { toast } from "@/components/ui/sonner";
 
 const stepFields: Array<Array<keyof CreateOAuthClientData>> = [
   [
@@ -45,33 +46,34 @@ export const CreateOauthClientDialogFooter: FC = () => {
 
   const { activeStep, setActiveStep } = useStepper();
 
+  const isValid = form.formState.isValid;
   const totalSteps = steps.length;
   const isLastStep = activeStep === totalSteps;
-  const isValid = form.formState.isValid;
 
   async function handleNext() {
     const isValid = await form.trigger(stepFields[activeStep - 1]);
-    if (isValid) {
-      setActiveStep(activeStep + 1);
-    }
+    if (isValid) setActiveStep(activeStep + 1);
   }
 
   const cancelHandler = () => {
-    form.reset();
+    form.reset({});
     setActiveStep(1);
   };
 
   const submitHandler = async () => {
-    //   try {
-    //     const client = await createMutation.trigger(value);
-    //     toast.success(`Cliente "${client.clientId}" creado`);
-    //     form.reset();
-    //     setOpen(false);
-    //   } catch (error) {
-    //     toast.error(
-    //       error instanceof Error ? error.message : "No se pudo crear el cliente",
-    //     );
-    //   }};
+    try {
+      console.log(form.getValues());
+
+      // const client = await createMutation.trigger(
+      //   form.getValues() as CreateOauthClient,
+      // );
+      // toast.success(`Cliente "${client.clientId}" creado`);
+      form.reset({});
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo crear el cliente",
+      );
+    }
   };
 
   return (

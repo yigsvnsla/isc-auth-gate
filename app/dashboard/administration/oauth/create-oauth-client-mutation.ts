@@ -3,7 +3,7 @@ import { OAuthClient } from "@better-auth/oauth-provider";
 import { BetterFetchError } from "better-auth/client";
 import useSWRMutation from "swr/mutation";
 
-type CreateOauthClient = Parameters<typeof authClient.oauth2.createClient>[0];
+export type CreateOauthClient = Parameters<typeof authClient.oauth2.createClient>[0];
 
 interface CreateOauthClientArg {
   arg: CreateOauthClient;

@@ -1,12 +1,4 @@
-import {
-  StepperIndicator,
-  StepperItem,
-  StepperNav,
-  StepperTitle,
-  StepperTrigger,
-  StepperPanel,
-  StepperContent,
-} from "@/components/reui/stepper";
+import { StepperPanel, StepperContent } from "@/components/reui/stepper";
 
 import { FC, useMemo } from "react";
 
