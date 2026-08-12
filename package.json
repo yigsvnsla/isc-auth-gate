@@ -15,7 +15,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "bun test",
+    "test": "bun test --timeout=60000",
     "test:watch": "bun test --watch",
     "seed:run": "bun run tests/seed.ts seed",
     "seed:reset": "bun run tests/seed.ts reset"

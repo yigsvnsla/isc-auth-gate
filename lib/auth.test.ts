@@ -2,7 +2,14 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { testDb } from "@/tests/database";
 import { env } from "@/env";
-import { admin as adminPlugin, organization, openAPI, testUtils } from "better-auth/plugins";
+import {
+  admin as adminPlugin,
+  jwt,
+  organization,
+  openAPI,
+  testUtils,
+} from "better-auth/plugins";
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { nextCookies } from "better-auth/next-js";
 import { accessControl, admin, user, moderator, orgSystemAdmin } from "./permissions";
 
@@ -43,6 +50,13 @@ export const testAuth = betterAuth({
       },
     }),
     openAPI(),
+    jwt(),
+    oauthProvider({
+      loginPage: "/auth/sign-in",
+      consentPage: "/auth/consent",
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+    }),
     nextCookies(),
   ],
 });
