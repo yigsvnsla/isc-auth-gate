@@ -9,29 +9,36 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { FC, ReactElement } from "react";
-import { useDeleteOauthClientMutation } from "./delete-oauth-client-mutation";
 import { toast } from "@/components/ui/sonner";
+import { OAuthClient } from "@better-auth/oauth-provider";
+import { FC, ReactElement } from "react";
+import { useSWRConfig } from "swr";
+import { useDeleteOauthClientMutation } from "./delete-oauth-client-mutation";
 
 export interface DeleteOauthClientDialogProps {
+  client: OAuthClient;
   children: ReactElement;
 }
 
+const clientsKey = "/oauth2/get-clients";
+
 export const DeleteOauthClientDialog: FC<DeleteOauthClientDialogProps> = ({
+  client,
   children,
 }) => {
   const mutation = useDeleteOauthClientMutation();
+  const { mutate } = useSWRConfig();
 
   const deleteClientHandler = async () => {
-    // if (!deleteTarget) return;
-    // try {
-    //   await mutation.trigger({ client_id: deleteTarget.client_id });
-    toast.success(`Client deleted`);
-    // //   setDeleteTarget(null);
-    //   mutate();
-    // } catch (err) {
-    //   toast.error(err instanceof Error ? err.message : "Failed to delete");
-    // }
+    try {
+      await mutation.trigger({ client_id: client.client_id });
+      toast.success("Cliente eliminado");
+      await mutate(clientsKey);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al eliminar el cliente",
+      );
+    }
   };
 
   return (

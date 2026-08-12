@@ -10,28 +10,34 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/sonner";
+import { OAuthClient } from "@better-auth/oauth-provider";
 import { FC, ReactElement } from "react";
+import { useSWRConfig } from "swr";
 import { useRotateSecretOauthClientMutation } from "./rotate-secret-oauth-client-mutation";
 
 export interface RotateSecretOauthClientDialogProps {
+  client: OAuthClient;
   children: ReactElement;
 }
 
+const clientsKey = "/oauth2/get-clients";
+
 export const RotateSecretOauthClientDialog: FC<
   RotateSecretOauthClientDialogProps
-> = ({ children }) => {
+> = ({ client, children }) => {
   const mutation = useRotateSecretOauthClientMutation();
+  const { mutate } = useSWRConfig();
 
   const rotateSecretHandler = async () => {
-    // if (!deleteTarget) return;
-    // try {
-    //   await mutation.trigger({ client_id: deleteTarget.client_id });
-    toast.success(`Client secret rotated`);
-    // //   setDeleteTarget(null);
-    //   mutate();
-    // } catch (err) {
-    //   toast.error(err instanceof Error ? err.message : "Failed to delete");
-    // }
+    try {
+      await mutation.trigger({ client_id: client.client_id });
+      toast.success("Client secret rotado");
+      await mutate(clientsKey);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al rotar el secret",
+      );
+    }
   };
 
   return (
