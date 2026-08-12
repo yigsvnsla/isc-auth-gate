@@ -24,11 +24,12 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { useParams } from "next/navigation";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -38,9 +39,11 @@ import {
 } from "@/components/ui/card";
 
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
+import { useAdminUpdateUser } from "@/hooks/use-admin-update-user";
 import { toast } from "@/components/ui/sonner";
 
 import { format, formatDistanceToNowStrict } from "date-fns";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -127,6 +130,15 @@ function getDeviceIcon(userAgent: string) {
 export default function UserIdPage() {
   const [copy] = useCopyToClipboard();
   const { id } = useParams<{ id: string }>();
+  const { mutate } = useSWRConfig();
+  const updateUserMutation = useAdminUpdateUser();
+
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editRole, setEditRole] = useState("user");
+  const [editInitializedId, setEditInitializedId] = useState<string | null>(
+    null,
+  );
 
   const { data: userInfo, isLoading: userLoading } = useSWR(
     ["/admin/get-user", id],
@@ -139,6 +151,32 @@ export default function UserIdPage() {
     },
     { fallbackData: {} as ReturnType<typeof authClient.admin.getUser> },
   );
+
+  if (userInfo && editInitializedId !== userInfo.id) {
+    setEditInitializedId(userInfo.id);
+    setEditName(userInfo.name ?? "");
+    setEditEmail(userInfo.email ?? "");
+    setEditRole(userInfo.role ?? "user");
+  }
+
+  const handleUpdateUser = async () => {
+    try {
+      await updateUserMutation.trigger({
+        userId: id,
+        data: {
+          name: editName,
+          email: editEmail,
+          role: editRole as "user" | "moderator" | "admin",
+        },
+      });
+      toast.success("Perfil actualizado");
+      await mutate(["/admin/get-user", id]);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al actualizar el perfil",
+      );
+    }
+  };
 
   const { data: sessionsInfo } = useSWR(
     ["/admin/list-user-sessions", id],
@@ -538,6 +576,87 @@ export default function UserIdPage() {
                       : "—"}
                   </p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Edit Profile</CardTitle>
+              <CardDescription>Update user account details</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <label
+                    htmlFor="edit-user-name"
+                    className="text-sm font-medium"
+                  >
+                    Name
+                  </label>
+                  <Input
+                    id="edit-user-name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <label
+                    htmlFor="edit-user-email"
+                    className="text-sm font-medium"
+                  >
+                    Email
+                  </label>
+                  <Input
+                    id="edit-user-email"
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <div className="grid gap-1.5 sm:col-span-2">
+                  <label
+                    htmlFor="edit-user-role"
+                    className="text-sm font-medium"
+                  >
+                    Role
+                  </label>
+                  <select
+                    id="edit-user-role"
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                  >
+                    <option value="user">user</option>
+                    <option value="moderator">moderator</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={updateUserMutation.isMutating}
+                  onClick={() => {
+                    setEditName(userInfo?.name ?? "");
+                    setEditEmail(userInfo?.email ?? "");
+                    setEditRole(userInfo?.role ?? "user");
+                  }}
+                >
+                  Reset
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={updateUserMutation.isMutating}
+                  onClick={handleUpdateUser}
+                >
+                  {updateUserMutation.isMutating
+                    ? "Saving..."
+                    : "Save Changes"}
+                </Button>
               </div>
             </CardContent>
           </Card>
