@@ -15,4 +15,7 @@ export const serverEnv = z.object({
     // Validamos que sea un array de strings que sean URLs válidas
     z.array(z.url()).min(1).default([]),
   ),
+  BETTER_AUTH_OAUTH_DYNAMIC_CLIENT_REGISTRATION: z.coerce
+    .boolean()
+    .default(false),
 });

@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { useStepper } from "@/components/reui/stepper";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useFormState } from "react-hook-form";
 import { FC, useMemo } from "react";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { CreateOAuthClientData } from "./create-oauth-client-schema";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { AuthClientFormSteps } from "./create-oauth-client-form-steps";
-import { useCreateOauthClientMutation } from "./create-oauth-client-mutation";
+import { useCreateOauthClientMutation, type CreateOauthClient } from "./create-oauth-client-mutation";
 import { toast } from "@/components/ui/sonner";
+import { OAuthClient } from "@better-auth/oauth-provider";
 
 const stepFields: Array<Array<keyof CreateOAuthClientData>> = [
   [
@@ -37,7 +38,13 @@ const stepFields: Array<Array<keyof CreateOAuthClientData>> = [
   ],
 ] as Array<Array<keyof CreateOAuthClientData>>;
 
-export const CreateOauthClientDialogFooter: FC = () => {
+export interface CreateOauthClientDialogFooterProps {
+  onCreated?: (client: OAuthClient) => void;
+}
+
+export const CreateOauthClientDialogFooter: FC<
+  CreateOauthClientDialogFooterProps
+> = ({ onCreated }) => {
   const createMutation = useCreateOauthClientMutation();
 
   const form = useFormContext<CreateOAuthClientData>();
@@ -46,9 +53,10 @@ export const CreateOauthClientDialogFooter: FC = () => {
 
   const { activeStep, setActiveStep } = useStepper();
 
-  const isValid = form.formState.isValid;
+  const { isValid } = useFormState({ control: form.control });
   const totalSteps = steps.length;
-  const isLastStep = activeStep === totalSteps;
+  const isSubmitStep = activeStep === totalSteps - 1;
+  const isCredentialsStep = activeStep === totalSteps;
 
   async function handleNext() {
     const isValid = await form.trigger(stepFields[activeStep - 1]);
@@ -56,24 +64,30 @@ export const CreateOauthClientDialogFooter: FC = () => {
   }
 
   const cancelHandler = () => {
-    form.reset({});
+    form.reset();
     setActiveStep(1);
   };
 
   const submitHandler = async () => {
     try {
-      console.log(form.getValues());
-
-      // const client = await createMutation.trigger(
-      //   form.getValues() as CreateOauthClient,
-      // );
-      // toast.success(`Cliente "${client.clientId}" creado`);
-      form.reset({});
+      const client = await createMutation.trigger(
+        form.getValues() as CreateOauthClient,
+      );
+      toast.success(
+        `Cliente "${client.client_name ?? client.client_id}" creado`,
+      );
+      onCreated?.(client);
+      setActiveStep(totalSteps);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "No se pudo crear el cliente",
       );
     }
+  };
+
+  const doneHandler = () => {
+    form.reset();
+    setActiveStep(1);
   };
 
   return (
@@ -95,7 +109,16 @@ export const CreateOauthClientDialogFooter: FC = () => {
           <ChevronLeftIcon data-icon="inline-start" />
           Anterior
         </Button>
-        {isLastStep ? (
+        {isCredentialsStep ? (
+          <DialogClose
+            render={
+              <Button onClick={doneHandler} variant="secondary">
+                <CheckIcon data-icon="inline-start" />
+                Done
+              </Button>
+            }
+          />
+        ) : isSubmitStep ? (
           <Button
             onClick={submitHandler}
             disabled={!isValid || createMutation.isMutating}

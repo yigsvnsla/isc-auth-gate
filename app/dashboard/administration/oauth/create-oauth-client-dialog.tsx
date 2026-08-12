@@ -1,7 +1,10 @@
+"use client";
+
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Stepper } from "@/components/reui/stepper";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FC, ReactElement } from "react";
+import { OAuthClient } from "@better-auth/oauth-provider";
+import { createContext, FC, ReactElement, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { CreateOauthClientForm } from "./create-oauth-client-form";
 import { CreateOauthClientDialogFooter } from "./create-oauth-client-dialog-footer";
@@ -11,6 +14,8 @@ import {
 } from "./create-oauth-client-schema";
 import { CreateOauthClientDialogHeader } from "./create-oauth-client-dialog-header";
 
+export const CreatedClientContext = createContext<OAuthClient | null>(null);
+
 export interface CreateClientDialogProps {
   children: ReactElement;
 }
@@ -18,6 +23,8 @@ export interface CreateClientDialogProps {
 export const CreateClientDialog: FC<CreateClientDialogProps> = ({
   children,
 }) => {
+  const [createdClient, setCreatedClient] = useState<OAuthClient | null>(null);
+
   const form = useForm<CreateOAuthClientData>({
     resolver: zodResolver(createOAuthClientDataSchema),
     mode: "onChange",
@@ -47,7 +54,11 @@ export const CreateClientDialog: FC<CreateClientDialogProps> = ({
   });
 
   return (
-    <Dialog>
+    <Dialog
+      onOpenChange={(open) => {
+        if (open) setCreatedClient(null);
+      }}
+    >
       <DialogTrigger render={children} />
       <DialogContent
         showCloseButton={false}
@@ -55,11 +66,15 @@ export const CreateClientDialog: FC<CreateClientDialogProps> = ({
       >
         <Stepper defaultValue={1} className="flex h-full w-full flex-col gap-4">
           <FormProvider {...form}>
-            <CreateOauthClientDialogHeader />
+            <CreatedClientContext.Provider value={createdClient}>
+              <CreateOauthClientDialogHeader />
 
-            <CreateOauthClientForm />
+              <CreateOauthClientForm />
 
-            <CreateOauthClientDialogFooter />
+              <CreateOauthClientDialogFooter
+                onCreated={setCreatedClient}
+              />
+            </CreatedClientContext.Provider>
           </FormProvider>
         </Stepper>
       </DialogContent>

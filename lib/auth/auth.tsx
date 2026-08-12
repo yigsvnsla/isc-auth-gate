@@ -86,8 +86,11 @@ export const auth = betterAuth({
   experimental: { joins: true },
 
   rateLimit: {
+    // ponytail: global default solo aplica a endpoints sin regla propia.
+    // Los paths /oauth2/* tienen límites por-endpoint (token/authorize/etc.)
+    // definidos abajo en oauthProvider — esos tienen precedencia.
     window: 60,
-    max: 10,
+    max: 50,
   },
 
   databaseHooks: {
@@ -256,7 +259,11 @@ export const auth = betterAuth({
     oauthProvider({
       loginPage: "/auth/sign-in",
       consentPage: "/auth/consent",
-      allowDynamicClientRegistration: true,
+      // ponytail: registro dinámico desactivado por defecto — solo admins crean
+      // clients vía dashboard. Activar con feature flag cuando haya onboarding público.
+      allowDynamicClientRegistration:
+        env.BETTER_AUTH_OAUTH_DYNAMIC_CLIENT_REGISTRATION,
+      allowUnauthenticatedClientRegistration: false,
 
       // ponytail: scopes mínimos OIDC. Custom scopes por resource → agregar cuando se definan
       scopes: ["openid", "profile", "email", "offline_access"],
@@ -264,7 +271,17 @@ export const auth = betterAuth({
       cachedTrustedClients: new Set(["isc-gate-dashboard"]),
       // Discovery metadata served at app/.well-known/oauth-authorization-server/[...issuerPath].
       // Warning is init-time advisory; route verified 200 (RFC 8414).
-      // silenceWarnings: { oauthAuthServerConfig: true },
+      silenceWarnings: { oauthAuthServerConfig: true },
+      // ponytail: límites por-endpoint para integraciones 3rd party.
+      // Token endpoint más holgado (1 req/s promedio por IP).
+      rateLimit: {
+        token: { window: 60, max: 60 },
+        authorize: { window: 60, max: 30 },
+        introspect: { window: 60, max: 100 },
+        revoke: { window: 60, max: 30 },
+        register: { window: 60, max: 5 },
+        userinfo: { window: 60, max: 60 },
+      },
     }),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
