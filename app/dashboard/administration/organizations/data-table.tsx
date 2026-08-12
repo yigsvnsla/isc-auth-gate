@@ -113,7 +113,7 @@ export const OrganizationsDataTable: FC = () => {
           <div className="relative flex-1">
             <div className="h-10 w-full animate-pulse rounded-md border bg-muted" />
           </div>
-          <div className="h-10 w-[160px] animate-pulse rounded-md border bg-muted" />
+          <div className="h-10 w-40 animate-pulse rounded-md border bg-muted" />
         </div>
 
         <div className="overflow-hidden rounded-md border">
