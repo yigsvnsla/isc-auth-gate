@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "./page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuthClientsPage } from "./page-clients";
+import { AuthConsentsPage } from "./page-consents";
 
 // interface OAuthClient {
 //   client_id: string;
@@ -372,6 +373,10 @@ const tabs = [
     title: "clients",
     content: <AuthClientsPage />,
   },
+  {
+    title: "consents",
+    content: <AuthConsentsPage />,
+  },
 ];
 
 export default function OAuthAdminPage() {
@@ -381,7 +386,7 @@ export default function OAuthAdminPage() {
 
       <Separator />
 
-      <Tabs defaultValue="account">
+      <Tabs defaultValue="clients">
         <TabsList>
           {tabs.map(({ title }, index) => {
             return (
