@@ -41,6 +41,7 @@ import {
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { useAdminUpdateUser } from "@/hooks/use-admin-update-user";
 import { toast } from "@/components/ui/sonner";
+import { UserConsentsTab } from "./user-consents";
 
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { useState } from "react";
@@ -379,6 +380,7 @@ export default function UserIdPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
+          <TabsTrigger value="consents">Consents</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
@@ -786,6 +788,10 @@ export default function UserIdPage() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="consents">
+          <UserConsentsTab userId={id} />
         </TabsContent>
 
         <TabsContent value="security">
