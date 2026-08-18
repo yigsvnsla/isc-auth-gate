@@ -18,7 +18,8 @@
     "test": "bun test --timeout=60000",
     "test:watch": "bun test --watch",
     "seed:run": "bun run tests/seed.ts seed",
-    "seed:reset": "bun run tests/seed.ts reset"
+    "seed:reset": "bun run tests/seed.ts reset",
+    "oauth:test-client": "bun run examples/oauth-test-client/index.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

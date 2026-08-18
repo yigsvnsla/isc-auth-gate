@@ -70,7 +70,7 @@ Bun.serve({
           </a>
           <pre style="margin-top:2rem;background:#f3f4f6;padding:1rem;border-radius:.5rem;overflow:auto">${authorizeUrl}</pre>
         </body></html>`,
-        { headers: { "content-type": "text/html", "set-cookie": cookie } },
+        { headers: { "content-type": "text/html; charset=utf-8", "set-cookie": cookie } },
       );
     }
 
@@ -151,7 +151,7 @@ function getCookie(header: string | null, name: string): string | null {
 
 function html(body: string): Response {
   return new Response(
-    `<html><body style="font-family:system-ui;padding:3rem;max-width:720px">${body}</body></html>`,
-    { headers: { "content-type": "text/html" } },
+    `<html><head><meta charset="utf-8"></head><body style="font-family:system-ui;padding:3rem;max-width:720px">${body}</body></html>`,
+    { headers: { "content-type": "text/html; charset=utf-8" } },
   );
 }
