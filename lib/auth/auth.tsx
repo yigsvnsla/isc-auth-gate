@@ -266,8 +266,10 @@ export const auth = betterAuth({
 
       // ponytail: scopes mínimos OIDC. Custom scopes por resource → agregar cuando se definan
       scopes: ["openid", "profile", "email", "offline_access"],
-      // ponytail: trusted client para el dashboard propio. Expandir con MCP agents si aplica
-      cachedTrustedClients: new Set(["isc-gate-dashboard"]),
+      // ponytail: trusted clients de primera parte (inmutables vía CRUD del
+      // plugin). Configurables por env; el dashboard los muestra con badge y
+      // bloquea eliminar/rotar. Expandir con MCP agents si aplica.
+      cachedTrustedClients: new Set(env.BETTER_AUTH_OAUTH_TRUSTED_CLIENTS),
       // Discovery metadata served at app/.well-known/oauth-authorization-server/[...issuerPath].
       // Warning is init-time advisory; route verified 200 (RFC 8414).
       silenceWarnings: { oauthAuthServerConfig: true },

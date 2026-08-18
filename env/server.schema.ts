@@ -15,6 +15,13 @@ export const serverEnv = z.object({
     // Validamos que sea un array de strings que sean URLs válidas
     z.array(z.url()).min(1).default([]),
   ),
+  // client_ids de primera parte (trusted) — inmutables vía CRUD del plugin.
+  // Lista separada por comas; espejo en NEXT_PUBLIC_BETTER_AUTH_OAUTH_TRUSTED_CLIENTS.
+  BETTER_AUTH_OAUTH_TRUSTED_CLIENTS: z.preprocess(
+    (val) =>
+      typeof val === "string" ? val.split(",").map((s) => s.trim()) : val,
+    z.array(z.string().min(1)).default(["isc-gate-dashboard"]),
+  ),
   BETTER_AUTH_OAUTH_DYNAMIC_CLIENT_REGISTRATION: z.coerce
     .boolean()
     .default(false),

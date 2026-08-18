@@ -55,6 +55,7 @@ import { format } from "date-fns";
 import { RotateSecretOauthClientDialog } from "../rotate-secret-oauth-client-dialog";
 import { useDeleteOauthClientMutation } from "../delete-oauth-client-mutation";
 import { useAdminDisableClient } from "@/hooks/use-admin-disable-client";
+import { isTrustedClient } from "@/lib/oauth-trusted-clients";
 import { useSWRConfig } from "swr";
 import { OAuthClient } from "@better-auth/oauth-provider";
 
@@ -216,6 +217,7 @@ function ClientDetailForm({
   };
 
   const clientIdShort = `${client.client_id.slice(0, 12)}...`;
+  const trusted = isTrustedClient(client.client_id);
 
   return (
     <div className="flex flex-col gap-4">
@@ -247,6 +249,14 @@ function ClientDetailForm({
               {client.skip_consent && (
                 <Badge variant="outline" className="text-[10px]">
                   Trusted
+                </Badge>
+              )}
+              {isTrustedClient(client.client_id) && (
+                <Badge
+                  variant="outline"
+                  className="border-primary/30 bg-primary/10 text-[10px] text-primary"
+                >
+                  First-party
                 </Badge>
               )}
             </div>
@@ -320,12 +330,18 @@ function ClientDetailForm({
                 <RefreshCcwIcon className="size-4" />
                 Client secret
               </div>
-              <RotateSecretOauthClientDialog client={client}>
-                <Button size="sm" variant="outline">
-                  <RefreshCcwIcon data-icon="inline-start" />
-                  Rotar secret
-                </Button>
-              </RotateSecretOauthClientDialog>
+              {trusted ? (
+                <span className="text-muted-foreground text-xs">
+                  Trusted (first-party) — gestionado por configuración
+                </span>
+              ) : (
+                <RotateSecretOauthClientDialog client={client}>
+                  <Button size="sm" variant="outline">
+                    <RefreshCcwIcon data-icon="inline-start" />
+                    Rotar secret
+                  </Button>
+                </RotateSecretOauthClientDialog>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -621,64 +637,82 @@ function ClientDetailForm({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-2">
-          <AlertDialog>
-            <AlertDialogTrigger
-              render={
-                <Button variant="outline">
-                  <PowerIcon data-icon="inline-start" />
-                  {client.disabled ? "Habilitar cliente" : "Deshabilitar cliente"}
-                </Button>
-              }
-            />
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {client.disabled ? "Habilitar cliente?" : "Deshabilitar cliente?"}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {client.disabled
-                    ? "El cliente volverá a poder emitir autorizaciones y tokens."
-                    : "El cliente dejará de emitir autorizaciones y tokens de inmediato. Las aplicaciones que lo usan recibirán invalid_client."}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleToggleDisabled}>
-                  {isDisabling
-                    ? "Aplicando..."
-                    : client.disabled
-                      ? "Habilitar"
-                      : "Deshabilitar"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {trusted ? (
+            <p className="text-muted-foreground text-sm">
+              Cliente first-party (trusted) — no se puede deshabilitar ni
+              eliminar desde el dashboard. Gestionado vía{" "}
+              <code className="bg-muted rounded px-1 font-mono text-xs">
+                BETTER_AUTH_OAUTH_TRUSTED_CLIENTS
+              </code>
+              .
+            </p>
+          ) : (
+            <>
+              <AlertDialog>
+                <AlertDialogTrigger
+                  render={
+                    <Button variant="outline">
+                      <PowerIcon data-icon="inline-start" />
+                      {client.disabled
+                        ? "Habilitar cliente"
+                        : "Deshabilitar cliente"}
+                    </Button>
+                  }
+                />
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      {client.disabled
+                        ? "Habilitar cliente?"
+                        : "Deshabilitar cliente?"}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {client.disabled
+                        ? "El cliente volverá a poder emitir autorizaciones y tokens."
+                        : "El cliente dejará de emitir autorizaciones y tokens de inmediato. Las aplicaciones que lo usan recibirán invalid_client."}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleToggleDisabled}>
+                      {isDisabling
+                        ? "Aplicando..."
+                        : client.disabled
+                          ? "Habilitar"
+                          : "Deshabilitar"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
-          <AlertDialog>
-            <AlertDialogTrigger
-              render={
-                <Button variant="destructive">
-                  <Trash2Icon data-icon="inline-start" />
-                  Eliminar cliente
-                </Button>
-              }
-            />
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Eliminar cliente?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción no se puede deshacer. Todos los tokens emitidos
-                  para este cliente quedarán inválidos de inmediato.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>
-                  {deleteMutation.isMutating ? "Eliminando..." : "Eliminar"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+              <AlertDialog>
+                <AlertDialogTrigger
+                  render={
+                    <Button variant="destructive">
+                      <Trash2Icon data-icon="inline-start" />
+                      Eliminar cliente
+                    </Button>
+                  }
+                />
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Eliminar cliente?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción no se puede deshacer. Todos los tokens
+                      emitidos para este cliente quedarán inválidos de
+                      inmediato.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>
+                      {deleteMutation.isMutating ? "Eliminando..." : "Eliminar"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

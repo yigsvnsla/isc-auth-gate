@@ -17,6 +17,7 @@ import {
 
 import { DeleteOauthClientDialog } from "./delete-oauth-client-dialog";
 import { RotateSecretOauthClientDialog } from "./rotate-secret-oauth-client-dialog";
+import { isTrustedClient } from "@/lib/oauth-trusted-clients";
 
 const StatusCell = ({ client }: { client: OAuthClient }) => (
   <div className="flex flex-wrap items-center gap-1.5">
@@ -34,11 +35,20 @@ const StatusCell = ({ client }: { client: OAuthClient }) => (
         Trusted
       </Badge>
     )}
+    {isTrustedClient(client.client_id) && (
+      <Badge
+        variant="outline"
+        className="border-primary/30 bg-primary/10 text-[10px] text-primary"
+      >
+        First-party
+      </Badge>
+    )}
   </div>
 );
 
 const ActionsCell = ({ client }: { client: OAuthClient }) => {
   const pathname = usePathname();
+  const trusted = isTrustedClient(client.client_id);
 
   return (
     <div className="flex justify-end gap-1">
@@ -56,27 +66,31 @@ const ActionsCell = ({ client }: { client: OAuthClient }) => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <RotateSecretOauthClientDialog client={client}>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label="Rotate secret"
-          title="Rotate secret"
-        >
-          <RefreshCcwIcon />
-        </Button>
-      </RotateSecretOauthClientDialog>
+      {!trusted && (
+        <>
+          <RotateSecretOauthClientDialog client={client}>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Rotate secret"
+              title="Rotate secret"
+            >
+              <RefreshCcwIcon />
+            </Button>
+          </RotateSecretOauthClientDialog>
 
-      <DeleteOauthClientDialog client={client}>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label="Delete client"
-          title="Delete client"
-        >
-          <Trash2Icon />
-        </Button>
-      </DeleteOauthClientDialog>
+          <DeleteOauthClientDialog client={client}>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label="Delete client"
+              title="Delete client"
+            >
+              <Trash2Icon />
+            </Button>
+          </DeleteOauthClientDialog>
+        </>
+      )}
     </div>
   );
 };
