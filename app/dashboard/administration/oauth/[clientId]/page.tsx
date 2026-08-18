@@ -43,6 +43,7 @@ import {
   CheckIcon,
   CopyIcon,
   Link2Icon,
+  PowerIcon,
   RefreshCcwIcon,
   Trash2Icon,
   XIcon,
@@ -53,6 +54,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { RotateSecretOauthClientDialog } from "../rotate-secret-oauth-client-dialog";
 import { useDeleteOauthClientMutation } from "../delete-oauth-client-mutation";
+import { useAdminDisableClient } from "@/hooks/use-admin-disable-client";
 import { useSWRConfig } from "swr";
 import { OAuthClient } from "@better-auth/oauth-provider";
 
@@ -189,6 +191,27 @@ function ClientDetailForm({
       window.location.href = "/dashboard/administration/oauth";
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error al eliminar");
+    }
+  };
+
+  const { disableClient } = useAdminDisableClient();
+  const [isDisabling, setIsDisabling] = useState(false);
+
+  const handleToggleDisabled = async () => {
+    setIsDisabling(true);
+    try {
+      await disableClient({
+        clientId: client.client_id,
+        disabled: !client.disabled,
+      });
+      toast.success(client.disabled ? "Cliente habilitado" : "Cliente deshabilitado");
+      await onMutate();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al cambiar el estado",
+      );
+    } finally {
+      setIsDisabling(false);
     }
   };
 
@@ -598,6 +621,39 @@ function ClientDetailForm({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={
+                <Button variant="outline">
+                  <PowerIcon data-icon="inline-start" />
+                  {client.disabled ? "Habilitar cliente" : "Deshabilitar cliente"}
+                </Button>
+              }
+            />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {client.disabled ? "Habilitar cliente?" : "Deshabilitar cliente?"}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {client.disabled
+                    ? "El cliente volverá a poder emitir autorizaciones y tokens."
+                    : "El cliente dejará de emitir autorizaciones y tokens de inmediato. Las aplicaciones que lo usan recibirán invalid_client."}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleToggleDisabled}>
+                  {isDisabling
+                    ? "Aplicando..."
+                    : client.disabled
+                      ? "Habilitar"
+                      : "Deshabilitar"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           <AlertDialog>
             <AlertDialogTrigger
               render={
