@@ -97,12 +97,32 @@ curl -s -X POST "${issuer}/oauth2/token" \\
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">4. Llama a la API con el token</h2>
+        <h2 className="text-lg font-semibold">4. Llama a una API con el token</h2>
+        <p className="text-muted-foreground text-sm">
+          El endpoint de userinfo (OIDC) valida el token y devuelve los claims
+          del usuario autorizado:
+        </p>
         <CodeBlock
           language="bash"
-          code={`curl -s ${baseUrl}/api/oauth-example \\
+          code={`curl -s ${issuer}/oauth2/userinfo \\
   -H "Authorization: Bearer ${"$"}{ACCESS_TOKEN}" | jq .`}
         />
+        <p className="text-muted-foreground text-sm">
+          Con un token válido responde{" "}
+          <code className="bg-muted rounded px-1 font-mono text-xs">
+            {"{ \"sub\": \"...\", \"email\": \"...\", ... }"}
+          </code>{" "}
+          y sin token o token inválido responde{" "}
+          <code className="bg-muted rounded px-1 font-mono text-xs">401</code>.
+          Para proteger tus propias APIs, ver{" "}
+          <a
+            href="/developers/resource-server"
+            className="text-primary underline underline-offset-2"
+          >
+            Resource Server
+          </a>
+          .
+        </p>
       </section>
 
       <section className="flex flex-col gap-3">

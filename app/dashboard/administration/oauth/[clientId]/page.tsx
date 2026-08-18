@@ -7,7 +7,13 @@ import { toast } from "@/components/ui/sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -65,7 +71,11 @@ const CopyButton: React.FC<{ value: string }> = ({ value }) => {
         toast.success("Copiado");
       }}
     >
-      {isCopied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+      {isCopied ? (
+        <CheckIcon className="size-3.5" />
+      ) : (
+        <CopyIcon className="size-3.5" />
+      )}
     </Button>
   );
 };
@@ -87,7 +97,9 @@ function ClientDetailForm({
   const deleteMutation = useDeleteOauthClientMutation();
   const { mutate: mutateList } = useSWRConfig();
 
-  const [redirectUris, setRedirectUris] = useState<string[]>(client.redirect_uris ?? []);
+  const [redirectUris, setRedirectUris] = useState<string[]>(
+    client.redirect_uris ?? [],
+  );
   const [postLogoutUris, setPostLogoutUris] = useState<string[]>(
     client.post_logout_redirect_uris ?? [],
   );
@@ -132,13 +144,18 @@ function ClientDetailForm({
     try {
       await updateMutation.trigger({
         client_id: client.client_id,
-        update: { redirect_uris: redirectUris, post_logout_redirect_uris: postLogoutUris },
+        update: {
+          redirect_uris: redirectUris,
+          post_logout_redirect_uris: postLogoutUris,
+        },
       });
       toast.success("Redirect URIs actualizadas");
       setSettingsDirty(false);
       await onMutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al actualizar");
+      toast.error(
+        error instanceof Error ? error.message : "Error al actualizar",
+      );
     }
   };
 
@@ -182,8 +199,13 @@ function ClientDetailForm({
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <Avatar className="size-11">
-            <AvatarImage src={client.logo_uri || undefined} alt={client.client_name || clientIdShort} />
-            <AvatarFallback>{shortName(client.client_name || clientIdShort)}</AvatarFallback>
+            <AvatarImage
+              src={client.logo_uri || undefined}
+              alt={client.client_name || clientIdShort}
+            />
+            <AvatarFallback>
+              {shortName(client.client_name || clientIdShort)}
+            </AvatarFallback>
           </Avatar>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -206,13 +228,20 @@ function ClientDetailForm({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs text-muted-foreground">{client.client_id}</span>
+              <span className="font-mono text-xs text-muted-foreground">
+                {client.client_id}
+              </span>
               <CopyButton value={client.client_id} />
             </div>
           </div>
         </div>
 
-        <Button variant="outline" size="sm" render={<Link href="/dashboard/administration/oauth" />}>
+        <Button
+          nativeButton={false}
+          variant="outline"
+          size="sm"
+          render={<Link href="/dashboard/administration/oauth" />}
+        >
           <ArrowLeftIcon data-icon="inline-start" />
           Volver
         </Button>
@@ -244,7 +273,10 @@ function ClientDetailForm({
               <span className="text-muted-foreground">Creado</span>
               <span>
                 {client.client_id_issued_at
-                  ? format(new Date(client.client_id_issued_at * 1000), "MMM d, yyyy")
+                  ? format(
+                      new Date(client.client_id_issued_at * 1000),
+                      "MMM d, yyyy",
+                    )
                   : "—"}
               </span>
             </div>
@@ -252,7 +284,10 @@ function ClientDetailForm({
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Secret expira</span>
                 <span>
-                  {format(new Date(client.client_secret_expires_at * 1000), "MMM d, yyyy")}
+                  {format(
+                    new Date(client.client_secret_expires_at * 1000),
+                    "MMM d, yyyy",
+                  )}
                 </span>
               </div>
             ) : null}
@@ -282,18 +317,29 @@ function ClientDetailForm({
             <Field orientation="vertical">
               <FieldLabel>Scopes</FieldLabel>
               <div className="flex flex-wrap gap-1">
-                {(client.scope ?? "openid profile email").split(" ").filter(Boolean).map((s) => (
-                  <Badge key={s} variant="secondary" className="font-mono text-[10px]">
-                    {s}
-                  </Badge>
-                ))}
+                {(client.scope ?? "openid profile email")
+                  .split(" ")
+                  .filter(Boolean)
+                  .map((s) => (
+                    <Badge
+                      key={s}
+                      variant="secondary"
+                      className="font-mono text-[10px]"
+                    >
+                      {s}
+                    </Badge>
+                  ))}
               </div>
             </Field>
             <Field orientation="vertical">
               <FieldLabel>Grant types</FieldLabel>
               <div className="flex flex-wrap gap-1">
                 {(client.grant_types ?? ["authorization_code"]).map((g) => (
-                  <Badge key={g} variant="outline" className="font-mono text-[10px]">
+                  <Badge
+                    key={g}
+                    variant="outline"
+                    className="font-mono text-[10px]"
+                  >
                     {g}
                   </Badge>
                 ))}
@@ -320,7 +366,11 @@ function ClientDetailForm({
             <div className="flex items-center justify-between">
               <FieldLabel>Redirect URIs</FieldLabel>
               {settingsDirty && (
-                <Button size="sm" onClick={saveUris} disabled={updateMutation.isMutating}>
+                <Button
+                  size="sm"
+                  onClick={saveUris}
+                  disabled={updateMutation.isMutating}
+                >
                   <CheckIcon data-icon="inline-start" />
                   Guardar
                 </Button>
@@ -328,8 +378,14 @@ function ClientDetailForm({
             </div>
             <div className="flex flex-wrap gap-1.5">
               {redirectUris.map((uri, i) => (
-                <Badge key={`${uri}-${i}`} variant="secondary" className="gap-1 pr-1">
-                  <span className="max-w-60 truncate font-mono text-[10px]">{uri}</span>
+                <Badge
+                  key={`${uri}-${i}`}
+                  variant="secondary"
+                  className="gap-1 pr-1"
+                >
+                  <span className="max-w-60 truncate font-mono text-[10px]">
+                    {uri}
+                  </span>
                   <button
                     type="button"
                     aria-label={`Quitar ${uri}`}
@@ -341,7 +397,9 @@ function ClientDetailForm({
                 </Badge>
               ))}
               {redirectUris.length === 0 && (
-                <span className="text-sm text-muted-foreground">Sin URIs registradas</span>
+                <span className="text-sm text-muted-foreground">
+                  Sin URIs registradas
+                </span>
               )}
             </div>
             <div className="flex gap-2">
@@ -354,7 +412,12 @@ function ClientDetailForm({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    addUri(redirectUris, setRedirectUris, uriDraft, setUriDraft);
+                    addUri(
+                      redirectUris,
+                      setRedirectUris,
+                      uriDraft,
+                      setUriDraft,
+                    );
                   }
                 }}
               />
@@ -363,7 +426,9 @@ function ClientDetailForm({
                 variant="outline"
                 size="sm"
                 className="h-9"
-                onClick={() => addUri(redirectUris, setRedirectUris, uriDraft, setUriDraft)}
+                onClick={() =>
+                  addUri(redirectUris, setRedirectUris, uriDraft, setUriDraft)
+                }
               >
                 <Link2Icon data-icon="inline-start" />
                 Agregar
@@ -377,20 +442,30 @@ function ClientDetailForm({
             <FieldLabel>Post-logout redirect URIs</FieldLabel>
             <div className="flex flex-wrap gap-1.5">
               {postLogoutUris.map((uri, i) => (
-                <Badge key={`${uri}-${i}`} variant="outline" className="gap-1 pr-1">
-                  <span className="max-w-60 truncate font-mono text-[10px]">{uri}</span>
+                <Badge
+                  key={`${uri}-${i}`}
+                  variant="outline"
+                  className="gap-1 pr-1"
+                >
+                  <span className="max-w-60 truncate font-mono text-[10px]">
+                    {uri}
+                  </span>
                   <button
                     type="button"
                     aria-label={`Quitar ${uri}`}
                     className="rounded-full p-0.5 text-muted-foreground transition-colors hover:text-destructive"
-                    onClick={() => removeUri(postLogoutUris, setPostLogoutUris, i)}
+                    onClick={() =>
+                      removeUri(postLogoutUris, setPostLogoutUris, i)
+                    }
                   >
                     <XIcon className="size-3" />
                   </button>
                 </Badge>
               ))}
               {postLogoutUris.length === 0 && (
-                <span className="text-sm text-muted-foreground">Sin URIs registradas</span>
+                <span className="text-sm text-muted-foreground">
+                  Sin URIs registradas
+                </span>
               )}
             </div>
             <div className="flex gap-2">
@@ -403,7 +478,12 @@ function ClientDetailForm({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    addUri(postLogoutUris, setPostLogoutUris, postLogoutDraft, setPostLogoutDraft);
+                    addUri(
+                      postLogoutUris,
+                      setPostLogoutUris,
+                      postLogoutDraft,
+                      setPostLogoutDraft,
+                    );
                   }
                 }}
               />
@@ -412,7 +492,14 @@ function ClientDetailForm({
                 variant="outline"
                 size="sm"
                 className="h-9"
-                onClick={() => addUri(postLogoutUris, setPostLogoutUris, postLogoutDraft, setPostLogoutDraft)}
+                onClick={() =>
+                  addUri(
+                    postLogoutUris,
+                    setPostLogoutUris,
+                    postLogoutDraft,
+                    setPostLogoutDraft,
+                  )
+                }
               >
                 <Link2Icon data-icon="inline-start" />
                 Agregar
@@ -474,7 +561,9 @@ function ClientDetailForm({
             <select
               value={type}
               onChange={(e) => {
-                setType(e.target.value as "web" | "native" | "user-agent-based");
+                setType(
+                  e.target.value as "web" | "native" | "user-agent-based",
+                );
                 setSettingsDirty(true);
               }}
               className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
@@ -487,7 +576,11 @@ function ClientDetailForm({
 
           {settingsDirty && (
             <div className="flex justify-end">
-              <Button size="sm" onClick={saveSettings} disabled={updateMutation.isMutating}>
+              <Button
+                size="sm"
+                onClick={saveSettings}
+                disabled={updateMutation.isMutating}
+              >
                 <CheckIcon data-icon="inline-start" />
                 Guardar cambios
               </Button>
@@ -500,7 +593,9 @@ function ClientDetailForm({
       <Card>
         <CardHeader>
           <CardTitle className="text-destructive">Zona de peligro</CardTitle>
-          <CardDescription>Acciones irreversibles sobre este cliente.</CardDescription>
+          <CardDescription>
+            Acciones irreversibles sobre este cliente.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-2">
           <AlertDialog>
@@ -567,7 +662,11 @@ export default function OAuthClientDetailPage() {
           </div>
         </div>
       ) : (
-        <ClientDetailForm key={client.client_id} client={client} onMutate={mutate} />
+        <ClientDetailForm
+          key={client.client_id}
+          client={client}
+          onMutate={mutate}
+        />
       )}
     </div>
   );

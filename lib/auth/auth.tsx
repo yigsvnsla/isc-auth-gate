@@ -35,7 +35,6 @@ import {
 // ponytail: AC reuse from static RBAC so dynamic org roles share the same
 // statements (auth, project, defaultStatements) defined in permissions.ts
 
-
 /**
  * Better Auth server instance.
  *
@@ -236,7 +235,7 @@ export const auth = betterAuth({
   }),
 
   plugins: [
-    openAPI(),
+    openAPI({}),
     jwt(),
     adminPlugin({
       adminUserIds: [],

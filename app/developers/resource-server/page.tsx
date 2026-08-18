@@ -63,27 +63,64 @@ curl -s ${issuer}/jwks | jq .`}
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">3. Ejemplo de API protegida</h2>
         <p className="text-muted-foreground text-sm">
-          ISC Auth incluye un ejemplo en{" "}
-          <code className="bg-muted rounded px-1 font-mono text-xs">
-            /api/oauth-example
-          </code>{" "}
-          que verifica el Bearer token y responde el{" "}
-          <code className="bg-muted rounded px-1 font-mono text-xs">sub</code>{" "}
-          y los scopes autorizados:
+          El endpoint de userinfo (OIDC) actúa como recurso protegido de
+          referencia: valida el Bearer token y devuelve los claims del
+          usuario:
         </p>
         <CodeBlock
           language="bash"
-          code={`curl -s ${baseUrl}/api/oauth-example \\
+          code={`curl -s ${issuer}/oauth2/userinfo \\
   -H "Authorization: Bearer ${"$"}{ACCESS_TOKEN}" | jq .`}
         />
         <p className="text-muted-foreground text-sm">
-          Con scopes válidos responde{" "}
+          Con un token válido responde{" "}
           <code className="bg-muted rounded px-1 font-mono text-xs">
-            {"{ \"sub\": \"...\", \"scopes\": [...] }"}
+            {"{ \"sub\": \"...\", \"email\": \"...\" }"}
           </code>{" "}
-          y sin token responde{" "}
+          y sin token o inválido responde{" "}
           <code className="bg-muted rounded px-1 font-mono text-xs">401</code>.
         </p>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">
+          4. Verificación server-side con resource client (lib)
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          ISC Auth expone{" "}
+          <code className="bg-muted rounded px-1 font-mono text-xs">
+            lib/auth/server-client.ts
+          </code>{" "}
+          , un resource client listo para proteger tus endpoints (verificación
+          local con JWKS por defecto, introspect remoto opcional):
+        </p>
+        <CodeBlock
+          language="ts"
+          code={`import { serverClient } from "@/lib/auth/server-client";
+import { env } from "@/env";
+
+const baseUrl = env.BETTER_AUTH_URL.replace(/\\/+$/, "");
+
+export async function GET(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  const accessToken = authHeader?.startsWith("Bearer ")
+    ? authHeader.replace("Bearer ", "")
+    : authHeader;
+
+  try {
+    const payload = await serverClient.verifyAccessToken(accessToken, {
+      verifyOptions: {
+        issuer: \`\${baseUrl}/api/auth\`,
+        audience: baseUrl,
+      },
+      scopes: ["profile"],
+    });
+    return Response.json({ sub: payload.sub, scopes: payload.scope });
+  } catch {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+}`}
+        />
       </section>
     </div>
   );

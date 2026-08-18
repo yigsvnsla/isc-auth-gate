@@ -61,9 +61,17 @@ curl -s -X POST "${issuer}/oauth2/token" \\
         <h2 className="text-lg font-semibold">
           2. Usa el token contra tus APIs
         </h2>
+        <p className="text-muted-foreground text-sm">
+          El endpoint de userinfo valida el token (para client_credentials el
+          <code className="bg-muted rounded px-1 font-mono text-xs">sub</code>{" "}
+          es el <code className="bg-muted rounded px-1 font-mono text-xs">
+            client_id
+          </code>
+          ):
+        </p>
         <CodeBlock
           language="bash"
-          code={`curl -s ${baseUrl}/api/oauth-example \\
+          code={`curl -s ${issuer}/oauth2/userinfo \\
   -H "Authorization: Bearer ${"$"}{ACCESS_TOKEN}" | jq .`}
         />
       </section>
