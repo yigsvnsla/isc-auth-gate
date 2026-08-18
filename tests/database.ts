@@ -14,6 +14,13 @@ const testPool = new Pool({
 export const testDb = drizzle(testPool, { schema });
 
 export async function cleanupTestDb() {
+  if (!env.BETTER_AUTH_TEST_ALLOW_TRUNCATE) {
+    throw new Error(
+      "cleanupTestDb() truncaría la DB de desarrollo. " +
+        "Si realmente quieres correr tests destructivos, define " +
+        "BETTER_AUTH_TEST_ALLOW_TRUNCATE=true en tu entorno.",
+    );
+  }
   await testPool.query(`
     TRUNCATE TABLE sessions, accounts, verifications, members, invitations, organizations, users, organization_roles RESTART IDENTITY CASCADE;
   `);
