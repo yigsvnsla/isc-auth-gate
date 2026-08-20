@@ -566,3 +566,45 @@ export const twoFactorsRelations = relations(twoFactors, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+export const apikeys = pgTable(
+  "apikeys",
+  {
+    id: text("id").primaryKey(),
+    configId: text("config_id").default("default").notNull(),
+    name: text("name"),
+    start: text("start"),
+    prefix: text("prefix"),
+    key: text("key").notNull(),
+    referenceId: text("reference_id").notNull(),
+    refillInterval: integer("refill_interval"),
+    refillAmount: integer("refill_amount"),
+    lastRefillAt: timestamp("last_refill_at"),
+    enabled: boolean("enabled").default(true),
+    rateLimitEnabled: boolean("rate_limit_enabled").default(false),
+    rateLimitTimeWindow: integer("rate_limit_time_window"),
+    rateLimitMax: integer("rate_limit_max"),
+    requestCount: integer("request_count"),
+    remaining: integer("remaining"),
+    lastRequest: timestamp("last_request"),
+    expiresAt: timestamp("expires_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+    permissions: text("permissions"),
+    metadata: text("metadata"),
+  },
+  (table) => [
+    index("apikeys_reference_id_idx").on(table.referenceId),
+    index("apikeys_config_id_idx").on(table.configId),
+  ],
+);
+
+export const apikeysRelations = relations(apikeys, ({ one }) => ({
+  user: one(users, {
+    fields: [apikeys.referenceId],
+    references: [users.id],
+  }),
+}));

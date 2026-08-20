@@ -10,6 +10,7 @@ import {
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
+import { apiKey } from "@better-auth/api-key";
 import { smtp_transporter } from "../smtp";
 import { createElement } from "react";
 import { render } from "@react-email/render";
@@ -349,6 +350,12 @@ export const auth = betterAuth({
         storeBackupCodes: "encrypted",
       },
       trustDeviceMaxAge: 30 * 24 * 60 * 60,
+    }),
+    // API Key management (native plugin). enableSessionForAPIKeys permite que
+    // un `x-api-key` válido resuelva una sesión automática en cualquier endpoint
+    // de Better Auth (útil para autenticar requests de API/servicio).
+    apiKey({
+      enableSessionForAPIKeys: true,
     }),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),

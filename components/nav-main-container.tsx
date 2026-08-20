@@ -18,12 +18,19 @@ import {
   UserIcon,
   UsersIcon,
   ShieldCheckIcon,
+  KeyRound,
 } from "lucide-react";
 
 const securityItem = {
   title: "security",
   url: "/dashboard/settings/security",
   icon: ShieldCheckIcon,
+};
+
+const apiKeysItem = {
+  title: "api keys",
+  url: "/dashboard/settings/api-keys",
+  icon: KeyRound,
 };
 
 const adminItems = [
@@ -94,6 +101,7 @@ export function NavMainContainer() {
 
   const navMain = [
     securityItem,
+    apiKeysItem,
     ...(role === "admin"
       ? [
           {

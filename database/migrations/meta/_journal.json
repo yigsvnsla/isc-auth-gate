@@ -43,6 +43,13 @@
       "when": 1787247247950,
       "tag": "0005_narrow_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787253104701,
+      "tag": "0006_loving_guardsmen",
+      "breakpoints": true
     }
   ]
 }

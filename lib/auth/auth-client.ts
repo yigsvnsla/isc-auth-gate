@@ -2,6 +2,7 @@ import { adminClient, inferAdditionalFields, organizationClient } from "better-a
 import { createAuthClient } from "better-auth/react";
 import { oauthProviderClient, oauthDeviceAuthorizationClient } from "@better-auth/oauth-provider/client";
 import { twoFactorClient } from "better-auth/client/plugins";
+import { apiKeyClient } from "@better-auth/api-key/client";
 
 import { auth } from "./auth";
 import { accessControl, admin, moderator, user, orgRoles } from "../permissions";
@@ -37,6 +38,7 @@ export const authClient = createAuthClient({
       },
     }),
     inferAdditionalFields<typeof auth>(),
+    apiKeyClient(),
   ],
 });
 

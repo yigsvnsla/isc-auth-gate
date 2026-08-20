@@ -14,6 +14,7 @@ import {
   oauthProvider,
   oauthDeviceAuthorization,
 } from "@better-auth/oauth-provider";
+import { apiKey } from "@better-auth/api-key";
 import { nextCookies } from "better-auth/next-js";
 import { accessControl, admin, user, moderator, orgRoles } from "./permissions";
 
@@ -81,6 +82,9 @@ export const testAuth = betterAuth({
       otpOptions: {
         sendOTP: async () => {},
       },
+    }),
+    apiKey({
+      enableSessionForAPIKeys: true,
     }),
     nextCookies(),
   ],
