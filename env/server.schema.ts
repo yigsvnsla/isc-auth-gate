@@ -25,6 +25,12 @@ export const serverEnv = z.object({
   BETTER_AUTH_OAUTH_DYNAMIC_CLIENT_REGISTRATION: z.coerce
     .boolean()
     .default(false),
+  // Rate-limit storage backend. "memory" = por instancia de app (default).
+  // "redis" = compartido entre instancias vía Redis (requiere REDIS_URL).
+  // Feature flag para activar Redis sin tocar código.
+  BETTER_AUTH_RATE_LIMIT_STORAGE: z.enum(["memory", "redis"]).default("memory"),
+  // Conexión a Redis (usada solo cuando BETTER_AUTH_RATE_LIMIT_STORAGE=redis).
+  REDIS_URL: z.string().optional(),
   // Recursos protegidos (RFC 8707) del OAuth provider. Seed inicial de
   // bootstrap: el plugin los inserta en la tabla oauth_resources con modo
   // insertOnly (nunca pisa filas editadas por CRUD admin). La fuente de

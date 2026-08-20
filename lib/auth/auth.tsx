@@ -28,6 +28,7 @@ import { oauthProvider, oauthDeviceAuthorization } from "@better-auth/oauth-prov
 import { env } from "@/env";
 import { email } from "../email";
 import { WelcomeEmail } from "@/lib/email/templates/welcome-email";
+import { createRateLimitStorage } from "@/lib/rate-limit-storage";
 import {
   EmailSdkError,
   EmailValidationError,
@@ -95,6 +96,10 @@ export const auth = betterAuth({
     // al schema + migración, o usar secondary-storage.
     enabled: true,
     storage: "memory",
+    // Si BETTER_AUTH_RATE_LIMIT_STORAGE=redis, createRateLimitStorage() devuelve
+    // un customStorage respaldado por Redis (compartido entre instancias).
+    // Si no, devuelve undefined y Better Auth usa `storage: "memory"`.
+    customStorage: createRateLimitStorage(),
     window: 60,
     max: 50,
     // Reglas por-endpoint. Tienen precedencia sobre las especiales built-in

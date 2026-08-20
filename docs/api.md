@@ -186,6 +186,31 @@ deleted), so clients must persist the new session.
 `tests/unit/two-factor-flow.test.ts` covers enable → verify TOTP → disable,
 backup-code verification, and wrong-code rejection.
 
+## Rate limiting
+
+Habilitado en todos los entornos (`enabled: true`). Por defecto usa storage en
+memoria (por instancia de app). Límites por-endpoint:
+
+- `/sign-in/*`: 10 req/min
+- `/sign-up/*`: 5 req/min
+- `/two-factor/verify-*`: 10 req/min
+- `/forget-password`, `/reset-password`: 5 req/min
+
+Better Auth NO genera la tabla `rateLimit`, así que el storage en DB no está
+disponible sin migración manual. Para un límite **compartido entre
+instancias** (multi-nodo), configurar Redis mediante el feature flag:
+
+```bash
+BETTER_AUTH_RATE_LIMIT_STORAGE=redis
+REDIS_URL=redis://host:6379
+```
+
+Con el flag `redis`, el rate-limit se respalda en Redis vía un `customStorage`
+atómico (script Lua: count + lastRequest por clave, con `EXPIRE` para purga).
+Si Redis cae, el límite falla abierto (permite la petición) para no romper el
+auth. Sin el flag, se usa memoria. Ver
+[`docs/rate-limiting.md`](./rate-limiting.md) para detalles.
+
 ## Error responses
 
 Standard Better Auth error format:
