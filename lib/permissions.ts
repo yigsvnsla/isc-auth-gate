@@ -53,3 +53,38 @@ export const orgSystemAdmin = accessControl.newRole({
   auth: ["create", "read", "update", "delete", "access"],
   project: ["create", "read", "update", "delete"],
 });
+
+// Roles org por defecto (mirror de better-auth/plugins organization access
+// statement.mjs). Necesarios explícitos: hasPermission del plugin usa
+// `options.roles || defaultRoles` sin merge — si pasamos `roles` parcial,
+// owner/admin/member desaparecen del acceso.
+export const orgOwner = accessControl.newRole({
+  organization: ["update", "delete"],
+  member: ["create", "update", "delete"],
+  invitation: ["create", "cancel"],
+  team: ["create", "update", "delete"],
+  ac: ["create", "read", "update", "delete"],
+});
+
+export const orgAdmin = accessControl.newRole({
+  organization: ["update"],
+  invitation: ["create", "cancel"],
+  member: ["create", "update", "delete"],
+  team: ["create", "update", "delete"],
+  ac: ["create", "read", "update", "delete"],
+});
+
+export const orgMember = accessControl.newRole({
+  organization: [],
+  member: [],
+  invitation: [],
+  team: [],
+  ac: ["read"],
+});
+
+export const orgRoles = {
+  owner: orgOwner,
+  admin: orgAdmin,
+  member: orgMember,
+  systemAdmin: orgSystemAdmin,
+} as const;

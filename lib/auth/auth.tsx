@@ -20,9 +20,9 @@ import {
   admin,
   user,
   moderator,
-  orgSystemAdmin,
+  orgRoles,
 } from "../permissions";
-import { oauthProvider } from "@better-auth/oauth-provider";
+import { oauthProvider, oauthDeviceAuthorization } from "@better-auth/oauth-provider";
 // import { microsoft } from "@/plugins/providers/microsoft"; // Coming Soon
 import { env } from "@/env";
 import { email } from "../email";
@@ -44,7 +44,8 @@ import {
  * 3. openAPI — Swagger at /api/auth/reference
  * 4. jwt — JWT support (required by oauthProvider)
  * 5. oauthProvider — OAuth 2.1 server (authorize, token, userinfo)
- * 6. nextCookies — cookie serialization for server components.
+ * 6. oauthDeviceAuthorization — RFC 8628 device flow (OAuth grant)
+ * 7. nextCookies — cookie serialization for server components.
  *    MUST be LAST: plugins whose hooks.after run after it would set
  *    Set-Cookie headers that never reach the Next.js cookie store.
  *
@@ -251,7 +252,7 @@ export const auth = betterAuth({
         enabled: true,
       },
       roles: {
-        systemAdmin: orgSystemAdmin,
+        ...orgRoles,
       },
     }),
 
@@ -270,9 +271,15 @@ export const auth = betterAuth({
       // plugin). Configurables por env; el dashboard los muestra con badge y
       // bloquea eliminar/rotar. Expandir con MCP agents si aplica.
       cachedTrustedClients: new Set(env.BETTER_AUTH_OAUTH_TRUSTED_CLIENTS),
-      // Discovery metadata served at app/.well-known/oauth-authorization-server/[...issuerPath].
-      // Warning is init-time advisory; route verified 200 (RFC 8414).
-      silenceWarnings: { oauthAuthServerConfig: true },
+      // Resources protegidos (RFC 8707). Seed inicial opcional de bootstrap
+      // (insertOnly, no pisa edits de admin); fuente de verdad = tabla
+      // oauth_resources gestionada por CRUD admin + dashboard (ver
+      // env/server.schema.ts).
+      resources: env.BETTER_AUTH_OAUTH_RESOURCES,
+      // ponytail: CRUD admin de clients/resources solo para admins. Sin estos
+      // gates el plugin permite gestionarlos a cualquier sesión autenticada.
+      clientPrivileges: async ({ user }) => user?.role === "admin",
+      resourcePrivileges: async ({ user }) => user?.role === "admin",
       // ponytail: límites por-endpoint para integraciones 3rd party.
       // Token endpoint más holgado (1 req/s promedio por IP).
       rateLimit: {
@@ -283,6 +290,11 @@ export const auth = betterAuth({
         register: { window: 60, max: 5 },
         userinfo: { window: 60, max: 60 },
       },
+    }),
+    // RFC 8628 device flow: /oauth2/device/authorize (código de dispositivo) +
+    // página /auth/device para aprobar/negar el acceso con sesión.
+    oauthDeviceAuthorization({
+      verificationUri: "/auth/device",
     }),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),

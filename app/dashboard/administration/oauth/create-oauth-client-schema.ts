@@ -70,7 +70,12 @@ export const clientOAuthConfigSchema = z.object({
     .optional(),
   grant_types: z
     .array(
-      z.enum(["authorization_code", "client_credentials", "refresh_token"]),
+      z.enum([
+        "authorization_code",
+        "client_credentials",
+        "refresh_token",
+        "urn:ietf:params:oauth:grant-type:device_code",
+      ]),
     )
     .min(1)
     .default(["authorization_code"])
@@ -80,7 +85,8 @@ export const clientOAuthConfigSchema = z.object({
     .min(1)
     .default(["code"])
     .optional(),
-  type: z.enum(["web", "native", "user-agent-based"]).optional(),
+  application_type: z.enum(["web", "native"]).optional(),
+  resources: z.array(z.string().min(1)).optional(),
   client_secret_expires_at: z
     .union([z.number().int().nonnegative(), z.string()])
     .optional()

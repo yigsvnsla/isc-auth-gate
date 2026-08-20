@@ -28,12 +28,13 @@ const authMethods = [
   "client_secret_basic",
   "client_secret_post",
 ] as const;
-const clientTypes = ["web", "native", "user-agent-based"] as const;
+const clientTypes = ["web", "native"] as const;
 const subjectTypes = ["public", "pairwise"] as const;
 const grantOptions = [
   "authorization_code",
   "client_credentials",
   "refresh_token",
+  "urn:ietf:params:oauth:grant-type:device_code",
 ] as const;
 
 const responseOptions = ["code"] as const;
@@ -50,7 +51,7 @@ export const CreateOauthClientFormStep3: FC = () => {
       </FieldDescription>
       <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Controller
-          name="type"
+          name="application_type"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field orientation="vertical" data-invalid={fieldState.invalid}>
@@ -79,7 +80,7 @@ export const CreateOauthClientFormStep3: FC = () => {
                 </SelectContent>
               </Select>
               <FieldDescription>
-                web: servidor con secret · native: app móvil · user-agent: SPA.
+                web: servidor con secret · native: app móvil o dispositivo.
               </FieldDescription>
               {fieldState.error && <FieldError errors={[fieldState.error]} />}
             </Field>
@@ -179,6 +180,35 @@ export const CreateOauthClientFormStep3: FC = () => {
               />
               <FieldDescription>
                 Scopes por defecto del cliente, separados por espacio.
+              </FieldDescription>
+              {fieldState.error && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+
+        <Controller
+          name="resources"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field orientation="vertical" data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Resources (RFC 8707)</FieldLabel>
+              <Input
+                id={field.name}
+                placeholder="https://api.example.com"
+                aria-invalid={fieldState.invalid}
+                className="h-9"
+                value={field.value?.join(" ") ?? ""}
+                onChange={(event) =>
+                  field.onChange(
+                    event.target.value
+                      .split(/\s+/)
+                      .filter(Boolean),
+                  )
+                }
+              />
+              <FieldDescription>
+                Identificadores de recursos protegidos, separados por espacio.
+                Vacío = sin acceso a recursos.
               </FieldDescription>
               {fieldState.error && <FieldError errors={[fieldState.error]} />}
             </Field>

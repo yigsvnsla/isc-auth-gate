@@ -44,7 +44,7 @@ export const CreateClientDialog: FC<CreateClientDialogProps> = ({
       token_endpoint_auth_method: "client_secret_basic",
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
-      type: "web",
+      application_type: "web",
       client_secret_expires_at: 0,
       skip_consent: false,
       enable_end_session: true,

@@ -24,7 +24,7 @@ import { auth } from "./auth";
  *     : authHeader;
  *
  *   try {
- *     const payload = await serverClient.verifyAccessToken(accessToken, {
+ *     const payload = await serverClient.verifyBearerToken(accessToken, {
  *       verifyOptions: {
  *         issuer: `${baseUrl}/api/auth`,
  *         audience: baseUrl,
@@ -40,7 +40,7 @@ import { auth } from "./auth";
  *
  * @example Verificación remota por introspect:
  * ```ts
- * await serverClient.verifyAccessToken(accessToken, {
+ * await serverClient.verifyBearerToken(accessToken, {
  *   remoteVerify: {
  *     url: `${baseUrl}/api/auth/oauth2/introspect`,
  *     auth: { clientId, clientSecret },

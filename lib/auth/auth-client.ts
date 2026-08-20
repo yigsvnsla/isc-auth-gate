@@ -1,9 +1,9 @@
 import { adminClient, inferAdditionalFields, organizationClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
-import { oauthProviderClient } from "@better-auth/oauth-provider/client";
+import { oauthProviderClient, oauthDeviceAuthorizationClient } from "@better-auth/oauth-provider/client";
 
 import { auth } from "./auth";
-import { accessControl, admin, moderator, user, orgSystemAdmin } from "../permissions";
+import { accessControl, admin, moderator, user, orgRoles } from "../permissions";
 
 /**
  * Typed Better Auth client for browser-side calls.
@@ -23,10 +23,11 @@ export const authClient = createAuthClient({
       ac: accessControl,
       dynamicAccessControl: { enabled: true },
       roles: {
-        systemAdmin: orgSystemAdmin,
+        ...orgRoles,
       },
     }),
     oauthProviderClient(),
+    oauthDeviceAuthorizationClient(),
     inferAdditionalFields<typeof auth>(),
   ],
 });

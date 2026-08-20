@@ -87,6 +87,7 @@ const grantOptions = [
   "authorization_code",
   "client_credentials",
   "refresh_token",
+  "urn:ietf:params:oauth:grant-type:device_code",
 ] as const;
 
 function ClientDetailForm({
@@ -112,9 +113,9 @@ function ClientDetailForm({
   const [grantTypes, setGrantTypes] = useState<string[]>(
     client.grant_types ?? ["authorization_code"],
   );
-  const [type, setType] = useState<"web" | "native" | "user-agent-based">(
-    client.type ?? "web",
-  );
+  const [applicationType, setApplicationType] = useState<
+    "web" | "native"
+  >(client.application_type === "native" ? "native" : "web");
   const [settingsDirty, setSettingsDirty] = useState(false);
 
   const addUri = (
@@ -173,7 +174,7 @@ function ClientDetailForm({
         update: {
           scope,
           grant_types: grantTypes as (typeof grantOptions)[number][],
-          type: type as "web" | "native" | "user-agent-based",
+          application_type: applicationType as "web" | "native",
         },
       });
       toast.success("Configuración guardada");
@@ -300,7 +301,7 @@ function ClientDetailForm({
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Tipo</span>
-              <span className="capitalize">{client.type ?? "web"}</span>
+              <span className="capitalize">{client.application_type ?? "web"}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Creado</span>
@@ -598,18 +599,15 @@ function ClientDetailForm({
           <Field orientation="vertical">
             <FieldLabel>Tipo</FieldLabel>
             <select
-              value={type}
+              value={applicationType}
               onChange={(e) => {
-                setType(
-                  e.target.value as "web" | "native" | "user-agent-based",
-                );
+                setApplicationType(e.target.value as "web" | "native");
                 setSettingsDirty(true);
               }}
               className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
             >
               <option value="web">web</option>
               <option value="native">native</option>
-              <option value="user-agent-based">user-agent-based</option>
             </select>
           </Field>
 
