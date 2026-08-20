@@ -91,10 +91,9 @@ describe("OAuth 2.1 Authorization Code + PKCE flow", () => {
       responseTypes: ["code"],
       scopes: ["openid", "profile", "email", "offline_access"],
       tokenEndpointAuthMethod: "client_secret_basic",
-      type: "web",
+      applicationType: "web",
       requirePKCE: true,
       subjectType: "public",
-      public: false,
       disabled: false,
       skipConsent: opts.skipConsent ?? false,
       createdAt: now,
@@ -197,7 +196,7 @@ describe("OAuth 2.1 Authorization Code + PKCE flow", () => {
     expect(refreshed.status).toBe(200);
     expect(refreshed.json.access_token).toBeDefined();
 
-    // 5. Revoke the refreshed token
+    // 5. Revoke the refreshed refresh token (1.7: revocar JWT → 400)
     const revoked = await call("/oauth2/revoke", {
       method: "POST",
       headers: {
@@ -205,7 +204,7 @@ describe("OAuth 2.1 Authorization Code + PKCE flow", () => {
         "content-type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        token: (refreshed.json as { access_token: string }).access_token,
+        token: (refreshed.json as { refresh_token: string }).refresh_token,
       }).toString(),
     });
     expect(revoked.status).toBe(200);
@@ -297,6 +296,7 @@ describe("OAuth 2.1 Authorization Code + PKCE flow", () => {
       headers: tokenHeaders,
       body,
     });
-    expect(second.status).toBe(401);
+    // 1.7: reuso de code → 400 invalid_grant (RFC 6749 envelope)
+    expect(second.status).toBe(400);
   });
 });

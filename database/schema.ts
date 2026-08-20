@@ -4,6 +4,7 @@ import {
   text,
   timestamp,
   boolean,
+  integer,
   jsonb,
   index,
   uniqueIndex,
@@ -15,9 +16,10 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
-  createdAt: timestamp("created_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
-    .$onUpdate(() => new Date())
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   role: text("role"),
   banned: boolean("banned").default(false),
@@ -31,9 +33,9 @@ export const sessions = pgTable(
     id: text("id").primaryKey(),
     expiresAt: timestamp("expires_at").notNull(),
     token: text("token").notNull().unique(),
-    createdAt: timestamp("created_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => new Date())
+      .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
@@ -50,6 +52,7 @@ export const accounts = pgTable(
   "accounts",
   {
     id: text("id").primaryKey(),
+    issuer: text("issuer").notNull(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
     userId: text("user_id")
@@ -62,12 +65,18 @@ export const accounts = pgTable(
     refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
     scope: text("scope"),
     password: text("password"),
-    createdAt: timestamp("created_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => new Date())
+      .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [index("accounts_userId_idx").on(table.userId)],
+  (table) => [
+    uniqueIndex("accounts_issuer_accountId_uidx").on(
+      table.issuer,
+      table.accountId,
+    ),
+    index("accounts_userId_idx").on(table.userId),
+  ],
 );
 
 export const verifications = pgTable(
@@ -77,26 +86,33 @@ export const verifications = pgTable(
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
     expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => new Date())
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
   (table) => [index("verifications_identifier_idx").on(table.identifier)],
 );
 
-export const organizations = pgTable(
-  "organizations",
-  {
-    id: text("id").primaryKey(),
-    name: text("name").notNull(),
-    slug: text("slug").notNull().unique(),
-    logo: text("logo"),
-    createdAt: timestamp("created_at").notNull(),
-    metadata: text("metadata"),
-  },
-  (table) => [uniqueIndex("organizations_slug_uidx").on(table.slug)],
-);
+export const jwkss = pgTable("jwkss", {
+  id: text("id").primaryKey(),
+  publicKey: text("public_key").notNull(),
+  privateKey: text("private_key").notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  expiresAt: timestamp("expires_at"),
+  alg: text("alg"),
+  crv: text("crv"),
+});
+
+export const organizations = pgTable("organizations", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  logo: text("logo"),
+  createdAt: timestamp("created_at").notNull(),
+  metadata: text("metadata"),
+});
 
 export const organizationRoles = pgTable(
   "organization_roles",
@@ -107,8 +123,10 @@ export const organizationRoles = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
     role: text("role").notNull(),
     permission: text("permission").notNull(),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").$onUpdate(() => new Date()),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").$onUpdate(
+      () => /* @__PURE__ */ new Date(),
+    ),
   },
   (table) => [
     index("organizationRoles_organizationId_idx").on(table.organizationId),
@@ -146,7 +164,7 @@ export const invitations = pgTable(
     role: text("role"),
     status: text("status").default("pending").notNull(),
     expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
     inviterId: text("inviter_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -157,25 +175,21 @@ export const invitations = pgTable(
   ],
 );
 
-export const jwkss = pgTable("jwkss", {
-  id: text("id").primaryKey(),
-  publicKey: text("public_key").notNull(),
-  privateKey: text("private_key").notNull(),
-  createdAt: timestamp("created_at").notNull(),
-  expiresAt: timestamp("expires_at"),
-});
-
 export const oauthClients = pgTable(
   "oauth_clients",
   {
     id: text("id").primaryKey(),
     clientId: text("client_id").notNull().unique(),
     clientSecret: text("client_secret"),
+    clientDiscoveryId: text("client_discovery_id"),
     disabled: boolean("disabled").default(false),
     skipConsent: boolean("skip_consent"),
     enableEndSession: boolean("enable_end_session"),
     subjectType: text("subject_type"),
     scopes: text("scopes").array(),
+    clientCredentialsScopes: text("client_credentials_scopes")
+      .array()
+      .default([]),
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at"),
     updatedAt: timestamp("updated_at"),
@@ -190,16 +204,65 @@ export const oauthClients = pgTable(
     softwareStatement: text("software_statement"),
     redirectUris: text("redirect_uris").array().notNull(),
     postLogoutRedirectUris: text("post_logout_redirect_uris").array(),
+    backchannelLogoutUri: text("backchannel_logout_uri"),
+    backchannelLogoutSessionRequired: boolean(
+      "backchannel_logout_session_required",
+    ),
     tokenEndpointAuthMethod: text("token_endpoint_auth_method"),
+    applicationType: text("application_type"),
+    jwks: text("jwks"),
+    jwksUri: text("jwks_uri"),
     grantTypes: text("grant_types").array(),
     responseTypes: text("response_types").array(),
-    public: boolean("public"),
-    type: text("type"),
     requirePKCE: boolean("require_pkce"),
+    dpopBoundAccessTokens: boolean("dpop_bound_access_tokens").default(false),
     referenceId: text("reference_id"),
     metadata: jsonb("metadata"),
   },
   (table) => [index("oauthClients_userId_idx").on(table.userId)],
+);
+
+export const oauthResources = pgTable("oauth_resources", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull().unique(),
+  name: text("name").notNull(),
+  accessTokenTtl: integer("access_token_ttl"),
+  refreshTokenTtl: integer("refresh_token_ttl"),
+  signingAlgorithm: text("signing_algorithm"),
+  signingKeyId: text("signing_key_id"),
+  allowedScopes: text("allowed_scopes").array(),
+  customClaims: jsonb("custom_claims"),
+  dpopBoundAccessTokensRequired: boolean(
+    "dpop_bound_access_tokens_required",
+  ).default(false),
+  disabled: boolean("disabled").default(false),
+  createdAt: timestamp("created_at"),
+  updatedAt: timestamp("updated_at"),
+  policyVersion: integer("policy_version").default(1),
+  metadata: jsonb("metadata"),
+});
+
+export const oauthClientResources = pgTable(
+  "oauth_client_resources",
+  {
+    id: text("id").primaryKey(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => oauthClients.clientId, { onDelete: "cascade" }),
+    resourceId: text("resource_id")
+      .notNull()
+      .references(() => oauthResources.identifier, { onDelete: "cascade" }),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at"),
+  },
+  (table) => [
+    uniqueIndex("oauthClientResources_clientId_resourceId_uidx").on(
+      table.clientId,
+      table.resourceId,
+    ),
+    index("oauthClientResources_clientId_idx").on(table.clientId),
+    index("oauthClientResources_resourceId_idx").on(table.resourceId),
+  ],
 );
 
 export const oauthRefreshTokens = pgTable(
@@ -217,16 +280,26 @@ export const oauthRefreshTokens = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     referenceId: text("reference_id"),
+    authorizationCodeId: text("authorization_code_id"),
+    resources: text("resources").array(),
+    requestedUserInfoClaims: text("requested_user_info_claims").array(),
     expiresAt: timestamp("expires_at").notNull(),
     createdAt: timestamp("created_at").notNull(),
     revoked: timestamp("revoked"),
+    rotatedAt: timestamp("rotated_at"),
+    rotationReplayResponse: text("rotation_replay_response"),
+    rotationReplayExpiresAt: timestamp("rotation_replay_expires_at"),
     authTime: timestamp("auth_time"),
+    confirmation: jsonb("confirmation"),
     scopes: text("scopes").array().notNull(),
   },
   (table) => [
     index("oauthRefreshTokens_clientId_idx").on(table.clientId),
     index("oauthRefreshTokens_sessionId_idx").on(table.sessionId),
     index("oauthRefreshTokens_userId_idx").on(table.userId),
+    index("oauthRefreshTokens_authorizationCodeId_idx").on(
+      table.authorizationCodeId,
+    ),
   ],
 );
 
@@ -243,17 +316,25 @@ export const oauthAccessTokens = pgTable(
     }),
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
     referenceId: text("reference_id"),
+    authorizationCodeId: text("authorization_code_id"),
+    resources: text("resources").array(),
+    requestedUserInfoClaims: text("requested_user_info_claims").array(),
     refreshId: text("refresh_id").references(() => oauthRefreshTokens.id, {
       onDelete: "cascade",
     }),
     expiresAt: timestamp("expires_at").notNull(),
     createdAt: timestamp("created_at").notNull(),
+    revoked: timestamp("revoked"),
+    confirmation: jsonb("confirmation"),
     scopes: text("scopes").array().notNull(),
   },
   (table) => [
     index("oauthAccessTokens_clientId_idx").on(table.clientId),
     index("oauthAccessTokens_sessionId_idx").on(table.sessionId),
     index("oauthAccessTokens_userId_idx").on(table.userId),
+    index("oauthAccessTokens_authorizationCodeId_idx").on(
+      table.authorizationCodeId,
+    ),
     index("oauthAccessTokens_refreshId_idx").on(table.refreshId),
   ],
 );
@@ -267,6 +348,8 @@ export const oauthConsents = pgTable(
       .references(() => oauthClients.clientId, { onDelete: "cascade" }),
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
     referenceId: text("reference_id"),
+    resources: text("resources").array(),
+    requestedUserInfoClaims: text("requested_user_info_claims").array(),
     scopes: text("scopes").array().notNull(),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
@@ -274,6 +357,33 @@ export const oauthConsents = pgTable(
   (table) => [
     index("oauthConsents_clientId_idx").on(table.clientId),
     index("oauthConsents_userId_idx").on(table.userId),
+  ],
+);
+
+export const oauthClientAssertions = pgTable("oauth_client_assertions", {
+  id: text("id").primaryKey(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export const deviceCodes = pgTable(
+  "device_codes",
+  {
+    id: text("id").primaryKey(),
+    deviceCode: text("device_code").notNull(),
+    userCode: text("user_code").notNull(),
+    userId: text("user_id"),
+    expiresAt: timestamp("expires_at").notNull(),
+    status: text("status").notNull(),
+    lastPolledAt: timestamp("last_polled_at"),
+    pollingInterval: integer("polling_interval"),
+    clientId: text("client_id"),
+    scope: text("scope"),
+    resources: text("resources").array(),
+    oauthClientId: text("oauth_client_id"),
+  },
+  (table) => [
+    uniqueIndex("deviceCodes_deviceCode_uidx").on(table.deviceCode),
+    uniqueIndex("deviceCodes_userCode_uidx").on(table.userCode),
   ],
 );
 
@@ -289,7 +399,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
-  users: one(users, {
+  user: one(users, {
     fields: [sessions.userId],
     references: [users.id],
   }),
@@ -298,7 +408,7 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
-  users: one(users, {
+  user: one(users, {
     fields: [accounts.userId],
     references: [users.id],
   }),
@@ -313,7 +423,7 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
 export const organizationRolesRelations = relations(
   organizationRoles,
   ({ one }) => ({
-    organizations: one(organizations, {
+    organization: one(organizations, {
       fields: [organizationRoles.organizationId],
       references: [organizations.id],
     }),
@@ -321,22 +431,22 @@ export const organizationRolesRelations = relations(
 );
 
 export const membersRelations = relations(members, ({ one }) => ({
-  organizations: one(organizations, {
+  organization: one(organizations, {
     fields: [members.organizationId],
     references: [organizations.id],
   }),
-  users: one(users, {
+  user: one(users, {
     fields: [members.userId],
     references: [users.id],
   }),
 }));
 
 export const invitationsRelations = relations(invitations, ({ one }) => ({
-  organizations: one(organizations, {
+  organization: one(organizations, {
     fields: [invitations.organizationId],
     references: [organizations.id],
   }),
-  users: one(users, {
+  user: one(users, {
     fields: [invitations.inviterId],
     references: [users.id],
   }),
@@ -345,28 +455,50 @@ export const invitationsRelations = relations(invitations, ({ one }) => ({
 export const oauthClientsRelations = relations(
   oauthClients,
   ({ one, many }) => ({
-    users: one(users, {
+    user: one(users, {
       fields: [oauthClients.userId],
       references: [users.id],
     }),
+    oauthClientResources: many(oauthClientResources),
     oauthRefreshTokens: many(oauthRefreshTokens),
     oauthAccessTokens: many(oauthAccessTokens),
     oauthConsents: many(oauthConsents),
   }),
 );
 
+export const oauthResourcesRelations = relations(
+  oauthResources,
+  ({ many }) => ({
+    oauthClientResources: many(oauthClientResources),
+  }),
+);
+
+export const oauthClientResourcesRelations = relations(
+  oauthClientResources,
+  ({ one }) => ({
+    oauthClient: one(oauthClients, {
+      fields: [oauthClientResources.clientId],
+      references: [oauthClients.clientId],
+    }),
+    oauthResource: one(oauthResources, {
+      fields: [oauthClientResources.resourceId],
+      references: [oauthResources.identifier],
+    }),
+  }),
+);
+
 export const oauthRefreshTokensRelations = relations(
   oauthRefreshTokens,
   ({ one, many }) => ({
-    oauthClients: one(oauthClients, {
+    oauthClient: one(oauthClients, {
       fields: [oauthRefreshTokens.clientId],
       references: [oauthClients.clientId],
     }),
-    sessions: one(sessions, {
+    session: one(sessions, {
       fields: [oauthRefreshTokens.sessionId],
       references: [sessions.id],
     }),
-    users: one(users, {
+    user: one(users, {
       fields: [oauthRefreshTokens.userId],
       references: [users.id],
     }),
@@ -377,19 +509,19 @@ export const oauthRefreshTokensRelations = relations(
 export const oauthAccessTokensRelations = relations(
   oauthAccessTokens,
   ({ one }) => ({
-    oauthClients: one(oauthClients, {
+    oauthClient: one(oauthClients, {
       fields: [oauthAccessTokens.clientId],
       references: [oauthClients.clientId],
     }),
-    sessions: one(sessions, {
+    session: one(sessions, {
       fields: [oauthAccessTokens.sessionId],
       references: [sessions.id],
     }),
-    users: one(users, {
+    user: one(users, {
       fields: [oauthAccessTokens.userId],
       references: [users.id],
     }),
-    oauthRefreshTokens: one(oauthRefreshTokens, {
+    oauthRefreshToken: one(oauthRefreshTokens, {
       fields: [oauthAccessTokens.refreshId],
       references: [oauthRefreshTokens.id],
     }),
@@ -397,11 +529,11 @@ export const oauthAccessTokensRelations = relations(
 );
 
 export const oauthConsentsRelations = relations(oauthConsents, ({ one }) => ({
-  oauthClients: one(oauthClients, {
+  oauthClient: one(oauthClients, {
     fields: [oauthConsents.clientId],
     references: [oauthClients.clientId],
   }),
-  users: one(users, {
+  user: one(users, {
     fields: [oauthConsents.userId],
     references: [users.id],
   }),

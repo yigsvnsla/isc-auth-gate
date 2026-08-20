@@ -22,7 +22,7 @@ export async function cleanupTestDb() {
     );
   }
   await testPool.query(`
-    TRUNCATE TABLE sessions, accounts, verifications, members, invitations, organizations, users, organization_roles RESTART IDENTITY CASCADE;
+    TRUNCATE TABLE sessions, accounts, verifications, members, invitations, organizations, users, organization_roles, oauth_clients, oauth_access_tokens, oauth_refresh_tokens, oauth_consents, oauth_client_resources, oauth_resources, oauth_client_assertions, device_codes RESTART IDENTITY CASCADE;
   `);
 }
 
