@@ -14,6 +14,7 @@ const navItems = [
   { href: "/developers", label: "Overview", exact: true },
   { href: "/developers/quickstart", label: "Quickstart" },
   { href: "/developers/flows", label: "Authorization Code + PKCE" },
+  { href: "/developers/flows/device", label: "Device Flow" },
   { href: "/developers/scopes", label: "Scopes" },
   { href: "/developers/m2m", label: "Machine to Machine" },
   { href: "/developers/resource-server", label: "Resource Server" },

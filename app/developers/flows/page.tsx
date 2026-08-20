@@ -139,12 +139,16 @@ curl -s -X POST "${issuer}/oauth2/token" \\
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">6. Revoca un token</h2>
+        <p className="text-muted-foreground text-sm">
+          Revoca el refresh token (o un access token opaco). Los access tokens
+          JWT no se pueden revocar: expiran por sí solos.
+        </p>
         <CodeBlock
           language="bash"
           code={`curl -s -X POST "${issuer}/oauth2/revoke" \\
   -H "Content-Type: application/x-www-form-urlencoded" \\
   -u "${"$"}{CLIENT_ID}:${"$"}{CLIENT_SECRET}" \\
-  -d "token=${"$"}{ACCESS_TOKEN}"`}
+  -d "token=${"$"}{REFRESH_TOKEN}"`}
         />
       </section>
 
@@ -162,6 +166,10 @@ curl -s -X POST "${issuer}/oauth2/token" \\
             El refresh token rotativo se invalida al usarse (puedes reutilizar
             el anterior si el nuevo no llegó, dentro de la ventana de
             tolerancia).
+          </li>
+          <li>
+            El id_token solo contiene identidad (sub, iss, aud); los claims de
+            profile y email se leen desde el endpoint de userinfo.
           </li>
           <li>
             El id_token se valida con las claves del jwks_uri y su{" "}
