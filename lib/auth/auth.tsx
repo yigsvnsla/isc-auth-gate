@@ -87,11 +87,29 @@ export const auth = betterAuth({
   experimental: { joins: true },
 
   rateLimit: {
-    // ponytail: global default solo aplica a endpoints sin regla propia.
-    // Los paths /oauth2/* tienen límites por-endpoint (token/authorize/etc.)
-    // definidos abajo en oauthProvider — esos tienen precedencia.
+    // ponytail: activo en todos los entornos (no solo producción) para
+    // proteger contra brute-force. Better Auth NO genera la tabla `rateLimit`
+    // en schema.ts ni la auto-crea, así que usamos storage en memoria
+    // (por instancia de app). Si se requiere límite compartido entre
+    // múltiples instancias, hay que añadir la tabla `rateLimit` manualmente
+    // al schema + migración, o usar secondary-storage.
+    enabled: true,
+    storage: "memory",
     window: 60,
     max: 50,
+    // Reglas por-endpoint. Tienen precedencia sobre las especiales built-in
+    // (que limitan /sign-in y /sign-up a 3/10s, demasiado estricto para
+    // usuarios legítimos). Relajamos a 10/min para login y 5/min para
+    // registro/reset sin perder protección.
+    customRules: {
+      "/sign-in/*": { window: 60, max: 10 },
+      "/sign-up/*": { window: 60, max: 5 },
+      "/two-factor/verify-totp": { window: 60, max: 10 },
+      "/two-factor/verify-otp": { window: 60, max: 10 },
+      "/two-factor/verify-backup-code": { window: 60, max: 10 },
+      "/forget-password": { window: 60, max: 5 },
+      "/reset-password": { window: 60, max: 5 },
+    },
   },
 
   databaseHooks: {
