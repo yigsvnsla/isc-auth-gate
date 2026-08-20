@@ -9,9 +9,12 @@ import {
   openAPI,
   testUtils,
 } from "better-auth/plugins";
-import { oauthProvider } from "@better-auth/oauth-provider";
+import {
+  oauthProvider,
+  oauthDeviceAuthorization,
+} from "@better-auth/oauth-provider";
 import { nextCookies } from "better-auth/next-js";
-import { accessControl, admin, user, moderator, orgSystemAdmin } from "./permissions";
+import { accessControl, admin, user, moderator, orgRoles } from "./permissions";
 
 export const testAuth = betterAuth({
   debug: env.BETTER_AUTH_SERVER_DEBUG,
@@ -46,7 +49,7 @@ export const testAuth = betterAuth({
       membershipLimit: 100,
       dynamicAccessControl: { enabled: true },
       roles: {
-        systemAdmin: orgSystemAdmin,
+        ...orgRoles,
       },
     }),
     openAPI(),
@@ -56,6 +59,18 @@ export const testAuth = betterAuth({
       consentPage: "/auth/consent",
       allowDynamicClientRegistration: true,
       allowUnauthenticatedClientRegistration: true,
+      resources: [
+        {
+          identifier: "https://api.test.example.com",
+          name: "API de prueba",
+          allowedScopes: ["openid", "profile", "email", "offline_access"],
+        },
+      ],
+      resourcePrivileges: async ({ user }) => user?.role === "admin",
+      clientPrivileges: async ({ user }) => user?.role === "admin",
+    }),
+    oauthDeviceAuthorization({
+      verificationUri: "/auth/device",
     }),
     nextCookies(),
   ],

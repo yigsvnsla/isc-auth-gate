@@ -5,6 +5,7 @@ import { PageHeader } from "./page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuthClientsPage } from "./page-clients";
 import { AuthConsentsPage } from "./page-consents";
+import { AuthResourcesPage } from "./page-resources";
 
 // interface OAuthClient {
 //   client_id: string;
@@ -376,6 +377,10 @@ const tabs = [
   {
     title: "consents",
     content: <AuthConsentsPage />,
+  },
+  {
+    title: "resources",
+    content: <AuthResourcesPage />,
   },
 ];
 

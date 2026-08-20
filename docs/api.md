@@ -108,6 +108,33 @@ Via `authClient.oauth2.*` (client-side, no server actions):
 
 Admin UI at `/dashboard/administration/oauth`.
 
+### Resource servers (RFC 8707)
+
+Protected APIs that validate the access tokens issued by this server. Each
+resource has an `identifier` (its URI) that travels in the token `aud` claim.
+Endpoints are `SERVER_ONLY` — they are **not** exposed on the client
+(`authClient.oauth2.*` has no resource methods). They are invoked
+server-side via `auth.api.admin*OAuthResource` and wrapped by the admin route
+handlers at `/api/admin/resources`.
+
+| Method | Route handler | `auth.api` call | Purpose |
+|--------|---------------|-----------------|---------|
+| GET | `/api/admin/resources` | `adminListOAuthResources` | List resources |
+| POST | `/api/admin/resources` | `adminCreateOAuthResource` | Create resource |
+| PATCH | `/api/admin/resources/:identifier` | `adminUpdateOAuthResource` | Update resource |
+| DELETE | `/api/admin/resources/:identifier` | `adminDeleteOAuthResource` | Delete resource |
+
+All four require an `admin` session (`resourcePrivileges` / `clientPrivileges`
+hooks in `lib/auth/auth.tsx` return `user?.role === "admin"`). Unauthenticated
+requests get `401`; non-admin sessions get `403` at the route layer.
+
+Seeding: `BETTER_AUTH_OAUTH_RESOURCES` (env, JSON array) is an **insert-only
+seed** — it only inserts resources that don't already exist, so admin edits in
+the DB are never overwritten. Leave it `[]` to manage resources entirely via
+the UI/DB. See [Resource servers](./resource-server.md).
+
+Admin UI at `/dashboard/administration/oauth` → **Resources** tab.
+
 ## Error responses
 
 Standard Better Auth error format:

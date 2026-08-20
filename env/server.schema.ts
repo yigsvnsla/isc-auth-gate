@@ -25,4 +25,28 @@ export const serverEnv = z.object({
   BETTER_AUTH_OAUTH_DYNAMIC_CLIENT_REGISTRATION: z.coerce
     .boolean()
     .default(false),
+  // Recursos protegidos (RFC 8707) del OAuth provider. Seed inicial de
+  // bootstrap: el plugin los inserta en la tabla oauth_resources con modo
+  // insertOnly (nunca pisa filas editadas por CRUD admin). La fuente de
+  // verdad en runtime es la tabla, gestionada desde el dashboard admin
+  // (/admin/oauth2/resources). Vacío por defecto — crear resources por UI.
+  BETTER_AUTH_OAUTH_RESOURCES: z.preprocess(
+    (val) => {
+      if (typeof val !== "string") return val;
+      try {
+        return JSON.parse(val);
+      } catch {
+        return val;
+      }
+    },
+    z
+      .array(
+        z.object({
+          identifier: z.string(),
+          name: z.string().optional(),
+          allowedScopes: z.array(z.string()).optional(),
+        }),
+      )
+      .default([]),
+  ),
 });
