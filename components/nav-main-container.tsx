@@ -17,7 +17,14 @@ import {
   GlobeIcon,
   UserIcon,
   UsersIcon,
+  ShieldCheckIcon,
 } from "lucide-react";
+
+const securityItem = {
+  title: "security",
+  url: "/dashboard/settings/security",
+  icon: ShieldCheckIcon,
+};
 
 const adminItems = [
   {
@@ -86,6 +93,7 @@ export function NavMainContainer() {
   const role = data?.user?.role;
 
   const navMain = [
+    securityItem,
     ...(role === "admin"
       ? [
           {

@@ -135,6 +135,57 @@ the UI/DB. See [Resource servers](./resource-server.md).
 
 Admin UI at `/dashboard/administration/oauth` → **Resources** tab.
 
+## Two-Factor Authentication (RFC 6238 / OTP / backup)
+
+Enabled natively via the `twoFactor` plugin in `lib/auth/auth.tsx`. It applies
+**only to email/password accounts** — Microsoft OAuth users are not
+subject to 2FA (Better Auth limitation). All flows are framework-native;
+no custom 2FA logic was written.
+
+Configuration highlights (`lib/auth/auth.tsx`):
+
+- `issuer`: `BETTER_AUTH_SERVER_NAME`
+- `totpOptions`: TOTP authenticator apps
+- `otpOptions.sendOTP`: reuses the existing `email.send` hook to deliver
+  email OTP codes (no custom transport)
+- `backupCodeOptions`: 10 codes, length 10, encrypted at rest
+- `trustDeviceMaxAge`: 30 days
+
+### Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/api/auth/two-factor/enable` | Enable 2FA (returns TOTP URI + backup codes) |
+| POST | `/api/auth/two-factor/disable` | Disable 2FA (password required) |
+| POST | `/api/auth/two-factor/get-totp-uri` | Get TOTP provisioning URI |
+| POST | `/api/auth/two-factor/send-otp` | Send email OTP |
+| POST | `/api/auth/two-factor/verify-totp` | Verify a TOTP code |
+| POST | `/api/auth/two-factor/verify-otp` | Verify an email OTP |
+| POST | `/api/auth/two-factor/generate-backup-codes` | (Re)generate backup codes |
+| POST | `/api/auth/two-factor/verify-backup-code` | Verify a backup code |
+
+`/two-factor/enable`, `/disable` and `/get-totp-uri` use
+`sensitiveSessionMiddleware` and require password re-verification
+(`shouldRequirePassword`). When 2FA is enabled and verified,
+`/two-factor/verify-totp` rotates the session cookie (the old session is
+deleted), so clients must persist the new session.
+
+`onTwoFactorRedirect` (in `lib/auth/auth-client.ts`) sends the browser to
+`/2fa` when a sign-in requires a second factor.
+
+### UI
+
+- `/2fa` — second-factor challenge (TOTP / email OTP / backup code), with
+  "trust this device" option.
+- `/dashboard/settings/security` — self-service: enable / disable / regenerate
+  backup codes. Shows the TOTP secret as a QR (`react-qr-code`) and the raw
+  backup codes on enable.
+
+### Tests
+
+`tests/unit/two-factor-flow.test.ts` covers enable → verify TOTP → disable,
+backup-code verification, and wrong-code rejection.
+
 ## Error responses
 
 Standard Better Auth error format:

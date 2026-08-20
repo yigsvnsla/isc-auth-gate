@@ -8,6 +8,7 @@ import {
   organization,
   openAPI,
   testUtils,
+  twoFactor,
 } from "better-auth/plugins";
 import {
   oauthProvider,
@@ -33,6 +34,9 @@ export const testAuth = betterAuth({
     provider: "pg",
     usePlural: true,
   }),
+  emailAndPassword: {
+    enabled: true,
+  },
   plugins: [
     testUtils({
       captureOTP: true,
@@ -71,6 +75,12 @@ export const testAuth = betterAuth({
     }),
     oauthDeviceAuthorization({
       verificationUri: "/auth/device",
+    }),
+    twoFactor({
+      issuer: env.BETTER_AUTH_SERVER_NAME,
+      otpOptions: {
+        sendOTP: async () => {},
+      },
     }),
     nextCookies(),
   ],

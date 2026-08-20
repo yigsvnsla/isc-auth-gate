@@ -25,6 +25,7 @@ export const users = pgTable("users", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
 });
 
 export const sessions = pgTable(
@@ -387,6 +388,25 @@ export const deviceCodes = pgTable(
   ],
 );
 
+export const twoFactors = pgTable(
+  "two_factors",
+  {
+    id: text("id").primaryKey(),
+    secret: text("secret").notNull(),
+    backupCodes: text("backup_codes").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    verified: boolean("verified").default(true),
+    failedVerificationCount: integer("failed_verification_count").default(0),
+    lockedUntil: timestamp("locked_until"),
+  },
+  (table) => [
+    index("twoFactors_secret_idx").on(table.secret),
+    index("twoFactors_userId_idx").on(table.userId),
+  ],
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   accounts: many(accounts),
@@ -396,6 +416,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   oauthRefreshTokens: many(oauthRefreshTokens),
   oauthAccessTokens: many(oauthAccessTokens),
   oauthConsents: many(oauthConsents),
+  twoFactors: many(twoFactors),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
@@ -535,6 +556,13 @@ export const oauthConsentsRelations = relations(oauthConsents, ({ one }) => ({
   }),
   user: one(users, {
     fields: [oauthConsents.userId],
+    references: [users.id],
+  }),
+}));
+
+export const twoFactorsRelations = relations(twoFactors, ({ one }) => ({
+  user: one(users, {
+    fields: [twoFactors.userId],
     references: [users.id],
   }),
 }));

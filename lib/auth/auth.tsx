@@ -6,6 +6,7 @@ import {
   openAPI,
   organization,
   jwt,
+  twoFactor,
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -295,6 +296,36 @@ export const auth = betterAuth({
     // página /auth/device para aprobar/negar el acceso con sesión.
     oauthDeviceAuthorization({
       verificationUri: "/auth/device",
+    }),
+    // 2FA (RFC 6238 TOTP + OTP por email + backup codes + trusted devices).
+    // Todo nativo del plugin: cifrado en reposo, rate-limit y cookies
+    // temporales las maneja Better Auth. El único hook custom es sendOTP,
+    // que usa la infra de email ya existente (no es lógica 2FA).
+    twoFactor({
+      issuer: env.BETTER_AUTH_SERVER_NAME,
+      totpOptions: {
+        digits: 6,
+        period: 30,
+      },
+      otpOptions: {
+        sendOTP: async ({ user, otp }) => {
+          await email.send({
+            from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
+            to: user.email,
+            subject: "Tu código de verificación (2FA)",
+            text: `Tu código de verificación es: ${otp}`,
+          });
+        },
+        period: 5,
+        allowedAttempts: 5,
+        storeOTP: "encrypted",
+      },
+      backupCodeOptions: {
+        amount: 10,
+        length: 10,
+        storeBackupCodes: "encrypted",
+      },
+      trustDeviceMaxAge: 30 * 24 * 60 * 60,
     }),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),

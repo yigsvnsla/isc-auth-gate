@@ -25,7 +25,7 @@ import { useId, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { MicrosoftLoginButton } from "./MicrosoftLoginButton";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const signInFormSchema = z.object({
   username: z.string().min(2, {
@@ -41,6 +41,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"form">) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const componentId = useId();
 
   const form = useForm<z.infer<typeof signInFormSchema>>({
@@ -56,11 +57,20 @@ export function LoginForm({
   async function onSubmit(values: z.infer<typeof signInFormSchema>) {
     setIsSubmitting(true);
     try {
-      const { error } = await authClient.signIn.email({
-        email: values.username,
-        password: values.password,
-        callbackURL: "/dashboard",
-      });
+      const { error } = await authClient.signIn.email(
+        {
+          email: values.username,
+          password: values.password,
+          callbackURL: "/dashboard",
+        },
+        {
+          onSuccess(context) {
+            if ((context.data as { twoFactorRedirect?: boolean })?.twoFactorRedirect) {
+              router.push("/2fa");
+            }
+          },
+        },
+      );
       if (error) {
         toast.error(error.message || "Error al iniciar sesión");
       }

@@ -1,6 +1,7 @@
 import { adminClient, inferAdditionalFields, organizationClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { oauthProviderClient, oauthDeviceAuthorizationClient } from "@better-auth/oauth-provider/client";
+import { twoFactorClient } from "better-auth/client/plugins";
 
 import { auth } from "./auth";
 import { accessControl, admin, moderator, user, orgRoles } from "../permissions";
@@ -28,6 +29,13 @@ export const authClient = createAuthClient({
     }),
     oauthProviderClient(),
     oauthDeviceAuthorizationClient(),
+    twoFactorClient({
+      onTwoFactorRedirect() {
+        if (typeof window !== "undefined") {
+          window.location.href = "/2fa";
+        }
+      },
+    }),
     inferAdditionalFields<typeof auth>(),
   ],
 });
