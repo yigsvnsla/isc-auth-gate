@@ -26,6 +26,8 @@ export const users = pgTable("users", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  username: text("username").unique(),
+  displayUsername: text("display_username"),
 });
 
 export const sessions = pgTable(

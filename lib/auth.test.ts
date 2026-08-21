@@ -9,6 +9,7 @@ import {
   openAPI,
   testUtils,
   twoFactor,
+  username,
 } from "better-auth/plugins";
 import {
   oauthProvider,
@@ -85,6 +86,10 @@ export const testAuth = betterAuth({
     }),
     apiKey({
       enableSessionForAPIKeys: true,
+    }),
+    username({
+      minUsernameLength: 3,
+      maxUsernameLength: 30,
     }),
     nextCookies(),
   ],

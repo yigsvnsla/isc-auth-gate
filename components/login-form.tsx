@@ -57,20 +57,26 @@ export function LoginForm({
   async function onSubmit(values: z.infer<typeof signInFormSchema>) {
     setIsSubmitting(true);
     try {
-      const { error } = await authClient.signIn.email(
-        {
-          email: values.username,
-          password: values.password,
-          callbackURL: "/dashboard",
-        },
-        {
-          onSuccess(context) {
-            if ((context.data as { twoFactorRedirect?: boolean })?.twoFactorRedirect) {
-              router.push("/2fa");
-            }
-          },
-        },
-      );
+      const identifier = values.username.trim();
+      const isEmail = identifier.includes("@");
+      const base = {
+        password: values.password,
+        callbackURL: "/dashboard",
+      };
+      const onSuccess = (context: { data?: { twoFactorRedirect?: boolean } }) => {
+        if (context.data?.twoFactorRedirect) {
+          router.push("/2fa");
+        }
+      };
+      const { error } = isEmail
+        ? await authClient.signIn.email(
+            { ...base, email: identifier },
+            { onSuccess: onSuccess as never },
+          )
+        : await authClient.signIn.username(
+            { ...base, username: identifier },
+            { onSuccess: onSuccess as never },
+          );
       if (error) {
         toast.error(error.message || "Error al iniciar sesión");
       }
@@ -127,15 +133,15 @@ export function LoginForm({
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={`login-form-${componentId}-email`}>
-                Correo Electronico
+                Correo electrónico o usuario
               </FieldLabel>
               <Input
                 {...field}
                 required
-                type="email"
+                type="text"
                 id={`login-form-${componentId}-email`}
                 aria-invalid={fieldState.invalid}
-                placeholder="me@example.com"
+                placeholder="me@example.com o usuario"
                 autoComplete="off"
               />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}

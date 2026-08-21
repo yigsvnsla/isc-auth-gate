@@ -7,6 +7,7 @@ import {
   organization,
   jwt,
   twoFactor,
+  username,
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -356,6 +357,11 @@ export const auth = betterAuth({
     // de Better Auth (útil para autenticar requests de API/servicio).
     apiKey({
       enableSessionForAPIKeys: true,
+    }),
+    // Username: login por nombre de usuario (además de email). Columna única.
+    username({
+      minUsernameLength: 3,
+      maxUsernameLength: 30,
     }),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
