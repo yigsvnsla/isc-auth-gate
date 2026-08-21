@@ -11,6 +11,7 @@ import {
   phoneNumber,
   emailOTP,
   magicLink,
+  multiSession,
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -406,6 +407,8 @@ export const auth = betterAuth({
         });
       },
     }),
+    // Multi-session: permite varias sesiones activas (dispositivo) a la vez.
+    multiSession({ maximumSessions: 5 }),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
   ],

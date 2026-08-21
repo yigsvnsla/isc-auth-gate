@@ -13,6 +13,7 @@ import {
   phoneNumber,
   emailOTP,
   magicLink,
+  multiSession,
 } from "better-auth/plugins";
 import {
   oauthProvider,
@@ -116,6 +117,7 @@ export const testAuth = betterAuth({
         lastMagicLink.token = token;
       },
     }),
+    multiSession({ maximumSessions: 5 }),
     nextCookies(),
   ],
 });
