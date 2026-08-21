@@ -8,6 +8,7 @@ import {
   jwt,
   twoFactor,
   username,
+  phoneNumber,
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -362,6 +363,23 @@ export const auth = betterAuth({
     username({
       minUsernameLength: 3,
       maxUsernameLength: 30,
+    }),
+    // Phone number: registration + verification OTP. Sin SMS provider, el
+    // código OTP se envía por email (reusa infra existente) igual que 2FA.
+    phoneNumber({
+      sendOTPOnSignUp: false,
+      requireVerificationOnSignIn: false,
+      otpLength: 6,
+      sendOTP: async ({ phoneNumber, code, user }) => {
+        if (user?.email) {
+          await email.send({
+            from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
+            to: user.email,
+            subject: "Tu código de verificación de teléfono",
+            text: `Tu código de verificación es: ${code}`,
+          });
+        }
+      },
     }),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),

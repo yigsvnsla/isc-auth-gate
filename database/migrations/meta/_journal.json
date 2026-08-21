@@ -57,6 +57,13 @@
       "when": 1787262412906,
       "tag": "0007_greedy_rawhide_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787270908898,
+      "tag": "0008_military_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }

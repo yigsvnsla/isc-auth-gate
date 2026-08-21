@@ -10,6 +10,7 @@ import {
   testUtils,
   twoFactor,
   username,
+  phoneNumber,
 } from "better-auth/plugins";
 import {
   oauthProvider,
@@ -90,6 +91,12 @@ export const testAuth = betterAuth({
     username({
       minUsernameLength: 3,
       maxUsernameLength: 30,
+    }),
+    phoneNumber({
+      sendOTPOnSignUp: false,
+      requireVerificationOnSignIn: false,
+      otpLength: 6,
+      sendOTP: async () => {},
     }),
     nextCookies(),
   ],
