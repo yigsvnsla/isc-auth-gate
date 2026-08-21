@@ -30,6 +30,7 @@ export const users = pgTable("users", {
   displayUsername: text("display_username"),
   phoneNumber: text("phone_number").unique(),
   phoneNumberVerified: boolean("phone_number_verified"),
+  lastLoginMethod: text("last_login_method"),
 });
 
 export const sessions = pgTable(

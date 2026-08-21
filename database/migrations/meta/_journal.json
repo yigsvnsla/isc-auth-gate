@@ -64,6 +64,13 @@
       "when": 1787270908898,
       "tag": "0008_military_daimon_hellstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787272264635,
+      "tag": "0009_mighty_george_stacy",
+      "breakpoints": true
     }
   ]
 }

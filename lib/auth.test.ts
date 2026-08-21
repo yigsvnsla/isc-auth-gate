@@ -14,6 +14,7 @@ import {
   emailOTP,
   magicLink,
   multiSession,
+  lastLoginMethod,
 } from "better-auth/plugins";
 import {
   oauthProvider,
@@ -118,6 +119,7 @@ export const testAuth = betterAuth({
       },
     }),
     multiSession({ maximumSessions: 5 }),
+    lastLoginMethod({ storeInDatabase: true }),
     nextCookies(),
   ],
 });
