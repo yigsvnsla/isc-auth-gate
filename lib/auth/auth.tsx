@@ -362,6 +362,7 @@ export const auth = betterAuth({
     // de Better Auth (útil para autenticar requests de API/servicio).
     apiKey({
       enableSessionForAPIKeys: true,
+      enableMetadata: true,
     }),
     // Username: login por nombre de usuario (además de email). Columna única.
     username({

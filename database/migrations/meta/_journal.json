@@ -71,6 +71,13 @@
       "when": 1787272264635,
       "tag": "0009_mighty_george_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787324956592,
+      "tag": "0010_tidy_goliath",
+      "breakpoints": true
     }
   ]
 }

@@ -94,6 +94,7 @@ export const testAuth = betterAuth({
     }),
     apiKey({
       enableSessionForAPIKeys: true,
+      enableMetadata: true,
     }),
     username({
       minUsernameLength: 3,

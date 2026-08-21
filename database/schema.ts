@@ -600,10 +600,12 @@ export const apikeys = pgTable(
       .notNull(),
     permissions: text("permissions"),
     metadata: text("metadata"),
+    organizationId: text("organization_id"),
   },
   (table) => [
     index("apikeys_reference_id_idx").on(table.referenceId),
     index("apikeys_config_id_idx").on(table.configId),
+    index("apikeys_organization_id_idx").on(table.organizationId),
   ],
 );
 
