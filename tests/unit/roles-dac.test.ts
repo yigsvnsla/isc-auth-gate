@@ -4,6 +4,7 @@ import { cleanupTestDb, testDb } from "@/tests/database";
 
 describe("Dynamic Access Control (organization roles)", () => {
   let ctx: Awaited<typeof testAuth.$context>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let testHelpers: any;
 
   beforeEach(async () => {

@@ -30,7 +30,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Controller } from "react-hook-form";
-import { ArrowLeftIcon, UserPlusIcon, LoaderCircleIcon, MailIcon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  UserPlusIcon,
+  LoaderCircleIcon,
+  MailIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { toast } from "@/components/ui/sonner";
 import { useAdminCreateUser } from "@/hooks/use-admin-create-user";
@@ -57,7 +62,11 @@ type FormData = z.infer<typeof formSchema>;
 
 const roles = [
   { label: "Usuario", value: "user", description: "Acceso básico" },
-  { label: "Moderador", value: "moderator", description: "Puede moderar usuarios" },
+  {
+    label: "Moderador",
+    value: "moderator",
+    description: "Puede moderar usuarios",
+  },
   { label: "Administrador", value: "admin", description: "Acceso completo" },
 ];
 
@@ -89,8 +98,10 @@ export default function CreateUserPage() {
 
       toast.success("Usuario " + data.name + " creado exitosamente");
       router.push("/dashboard/administration/users");
-    } catch (error: any) {
-      toast.error(error?.message || "Error al crear usuario");
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al crear usuario",
+      );
     }
   };
 
@@ -98,7 +109,12 @@ export default function CreateUserPage() {
     <div className="flex flex-col gap-6">
       {/* Header con botón de regreso */}
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon-sm" nativeButton={false} render={<Link href="/dashboard/administration/users" />}>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          nativeButton={false}
+          render={<Link href="/dashboard/administration/users" />}
+        >
           <ArrowLeftIcon data-icon="inline-start" />
         </Button>
         <div>
@@ -135,9 +151,14 @@ export default function CreateUserPage() {
                   name="name"
                   control={form.control}
                   render={({ field, fieldState }) => (
-                    <Field orientation="vertical" data-invalid={fieldState.invalid}>
+                    <Field
+                      orientation="vertical"
+                      data-invalid={fieldState.invalid}
+                    >
                       <FieldLabel htmlFor={field.name}>Nombre</FieldLabel>
-                      <FieldDescription>Nombre completo del usuario</FieldDescription>
+                      <FieldDescription>
+                        Nombre completo del usuario
+                      </FieldDescription>
                       <Input
                         {...field}
                         id={field.name}
@@ -145,7 +166,9 @@ export default function CreateUserPage() {
                         aria-invalid={fieldState.invalid}
                         className="h-9"
                       />
-                      {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.error && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -154,9 +177,14 @@ export default function CreateUserPage() {
                   name="email"
                   control={form.control}
                   render={({ field, fieldState }) => (
-                    <Field orientation="vertical" data-invalid={fieldState.invalid}>
+                    <Field
+                      orientation="vertical"
+                      data-invalid={fieldState.invalid}
+                    >
                       <FieldLabel htmlFor={field.name}>Email</FieldLabel>
-                      <FieldDescription>Correo electrónico de acceso</FieldDescription>
+                      <FieldDescription>
+                        Correo electrónico de acceso
+                      </FieldDescription>
                       <Input
                         {...field}
                         id={field.name}
@@ -165,7 +193,9 @@ export default function CreateUserPage() {
                         aria-invalid={fieldState.invalid}
                         className="h-9"
                       />
-                      {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.error && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -177,9 +207,14 @@ export default function CreateUserPage() {
                   name="password"
                   control={form.control}
                   render={({ field, fieldState }) => (
-                    <Field orientation="vertical" data-invalid={fieldState.invalid}>
+                    <Field
+                      orientation="vertical"
+                      data-invalid={fieldState.invalid}
+                    >
                       <FieldLabel htmlFor={field.name}>Contraseña</FieldLabel>
-                      <FieldDescription>Mínimo 8 caracteres, una mayúscula y un número</FieldDescription>
+                      <FieldDescription>
+                        Mínimo 8 caracteres, una mayúscula y un número
+                      </FieldDescription>
                       <Input
                         {...field}
                         id={field.name}
@@ -188,7 +223,9 @@ export default function CreateUserPage() {
                         aria-invalid={fieldState.invalid}
                         className="h-9"
                       />
-                      {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.error && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -197,8 +234,13 @@ export default function CreateUserPage() {
                   name="confirmPassword"
                   control={form.control}
                   render={({ field, fieldState }) => (
-                    <Field orientation="vertical" data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor={field.name}>Confirmar Contraseña</FieldLabel>
+                    <Field
+                      orientation="vertical"
+                      data-invalid={fieldState.invalid}
+                    >
+                      <FieldLabel htmlFor={field.name}>
+                        Confirmar Contraseña
+                      </FieldLabel>
                       <Input
                         {...field}
                         id={field.name}
@@ -207,7 +249,9 @@ export default function CreateUserPage() {
                         aria-invalid={fieldState.invalid}
                         className="h-9"
                       />
-                      {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.error && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -220,9 +264,14 @@ export default function CreateUserPage() {
                 name="role"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field orientation="vertical" data-invalid={fieldState.invalid}>
+                  <Field
+                    orientation="vertical"
+                    data-invalid={fieldState.invalid}
+                  >
                     <FieldLabel htmlFor="role">Rol</FieldLabel>
-                    <FieldDescription>Nivel de acceso del usuario</FieldDescription>
+                    <FieldDescription>
+                      Nivel de acceso del usuario
+                    </FieldDescription>
                     <Select
                       name={field.name}
                       value={field.value}
@@ -254,7 +303,9 @@ export default function CreateUserPage() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.error && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -274,7 +325,10 @@ export default function CreateUserPage() {
                         <MailIcon className="size-4 text-muted-foreground" />
                       </div>
                       <div className="grid gap-1 flex-1 min-w-0">
-                        <FieldLabel htmlFor={field.name} className="font-normal">
+                        <FieldLabel
+                          htmlFor={field.name}
+                          className="font-normal"
+                        >
                           Enviar email de verificación
                         </FieldLabel>
                         <FieldDescription className="text-xs">
@@ -284,7 +338,9 @@ export default function CreateUserPage() {
                           <Checkbox
                             id={field.name}
                             checked={field.value}
-                            onCheckedChange={(checked) => field.onChange(checked)}
+                            onCheckedChange={(checked) =>
+                              field.onChange(checked)
+                            }
                           />
                         </div>
                       </div>
@@ -298,12 +354,23 @@ export default function CreateUserPage() {
           </CardContent>
 
           <CardFooter className="flex justify-between border-t border-foreground/10 pt-6">
-            <Button variant="outline" nativeButton={false} render={<Link href="/dashboard/administration/users">Cancelar</Link>}>
-            </Button>
-            <Button type="submit" disabled={isMutating || !form.formState.isValid}>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={
+                <Link href="/dashboard/administration/users">Cancelar</Link>
+              }
+            ></Button>
+            <Button
+              type="submit"
+              disabled={isMutating || !form.formState.isValid}
+            >
               {isMutating ? (
                 <>
-                  <LoaderCircleIcon data-icon="inline-start" className="size-4 animate-spin" />
+                  <LoaderCircleIcon
+                    data-icon="inline-start"
+                    className="size-4 animate-spin"
+                  />
                   Creando...
                 </>
               ) : (

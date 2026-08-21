@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 
 describe("Session Management", () => {
   let ctx: Awaited<typeof testAuth.$context>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let testHelpers: any;
 
   beforeEach(async () => {

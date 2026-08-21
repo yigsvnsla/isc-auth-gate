@@ -6,6 +6,7 @@ import { organizations, members } from "@/database/schema";
 
 describe("Organization Management", () => {
   let ctx: Awaited<typeof testAuth.$context>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let testHelpers: any;
 
   beforeEach(async () => {

@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import React from "react"
-import { cn } from "@/lib/utils"
+import React from "react";
+import { cn } from "@/lib/utils";
 
 interface GridPatternProps {
-  width?: number
-  height?: number
-  x?: number
-  y?: number
-  squares?: [number, number][]
-  strokeDasharray?: string
-  className?: string
-  [key: string]: any
+  width?: number;
+  height?: number;
+  x?: number;
+  y?: number;
+  squares?: [number, number][];
+  strokeDasharray?: string;
+  className?: string;
+  [key: string]: unknown;
 }
 
 export function GridPattern({
@@ -24,7 +24,7 @@ export function GridPattern({
   className,
   ...props
 }: GridPatternProps) {
-  const id = React.useId()
+  const id = React.useId();
 
   return (
     <svg
@@ -33,16 +33,33 @@ export function GridPattern({
         "pointer-events-none absolute inset-0 h-full w-full fill-gray-400/30 stroke-gray-400/30",
         className,
       )}
-      {...(props as any)}
+      {...(props as unknown as React.SVGProps<SVGSVGElement>)}
     >
       <defs>
-        <pattern height={height} id={id} patternUnits="userSpaceOnUse" width={width} x={x} y={y}>
-          <path d={`M.5 ${height}V.5H${width}`} fill="none" strokeDasharray={strokeDasharray} />
+        <pattern
+          height={height}
+          id={id}
+          patternUnits="userSpaceOnUse"
+          width={width}
+          x={x}
+          y={y}
+        >
+          <path
+            d={`M.5 ${height}V.5H${width}`}
+            fill="none"
+            strokeDasharray={strokeDasharray}
+          />
         </pattern>
       </defs>
       <rect fill={`url(#${id})`} height="100%" strokeWidth={0} width="100%" />
       {squares && (
-        <svg aria-label="Grid squares" className="overflow-visible" role="img" x={x} y={y}>
+        <svg
+          aria-label="Grid squares"
+          className="overflow-visible"
+          role="img"
+          x={x}
+          y={y}
+        >
           {squares.map(([x, y], index) => (
             <rect
               height={height - 1}
@@ -56,9 +73,9 @@ export function GridPattern({
         </svg>
       )}
     </svg>
-  )
+  );
 }
 
-export type { GridPatternProps }
+export type { GridPatternProps };
 
-export default GridPattern
+export default GridPattern;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { authClient } from "@/lib/auth/auth-client";
@@ -42,7 +42,9 @@ function uaLabel(ua?: string | null) {
 export default function SessionsSettingsPage() {
   const { data: sessionData } = authClient.useSession();
   const currentToken = sessionData?.session?.token;
-  const lastMethod = (sessionData?.user as { lastLoginMethod?: string } | undefined)?.lastLoginMethod;
+  const lastMethod = (
+    sessionData?.user as { lastLoginMethod?: string } | undefined
+  )?.lastLoginMethod;
 
   const { data, isLoading, mutate } = useSWR<{ sessions: Session[] }>(
     "sessions",
@@ -72,7 +74,8 @@ export default function SessionsSettingsPage() {
   );
 
   const sessions = data?.sessions ?? [];
-  const now = Date.now();
+  // eslint-disable-next-line react-hooks/purity
+  const now = useMemo(() => Date.now(), []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,11 +86,7 @@ export default function SessionsSettingsPage() {
           </h1>
           <p className="text-muted-foreground text-sm">
             Dispositivos con acceso activo a tu cuenta. Último método de acceso:{" "}
-            {lastMethod ? (
-              <Badge variant="secondary">{lastMethod}</Badge>
-            ) : (
-              "—"
-            )}
+            {lastMethod ? <Badge variant="secondary">{lastMethod}</Badge> : "—"}
           </p>
         </div>
         <Button
@@ -124,7 +123,9 @@ export default function SessionsSettingsPage() {
                   >
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{uaLabel(s.userAgent)}</span>
+                        <span className="font-medium">
+                          {uaLabel(s.userAgent)}
+                        </span>
                         {current && <Badge>Esta sesión</Badge>}
                         {expired && <Badge variant="outline">Expirada</Badge>}
                       </div>

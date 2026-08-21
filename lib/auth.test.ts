@@ -27,7 +27,8 @@ import { nextCookies } from "better-auth/next-js";
 import { accessControl, admin, user, moderator, orgRoles } from "./permissions";
 
 export const lastEmailOtp: { email?: string; code?: string } = {};
-export const lastMagicLink: { email?: string; url?: string; token?: string } = {};
+export const lastMagicLink: { email?: string; url?: string; token?: string } =
+  {};
 export const lastInviteEmail: {
   email?: string;
   id?: string;
@@ -72,7 +73,13 @@ export const testAuth = betterAuth({
       roles: {
         ...orgRoles,
       },
-      sendInvitationEmail: async (data: any) => {
+      sendInvitationEmail: async (data: {
+        email: string;
+        organization: { name: string };
+        inviter: { user: { name?: string; email: string } };
+        role: string;
+        id: string;
+      }) => {
         lastInviteEmail.email = data.email;
         lastInviteEmail.id = data.id;
         lastInviteEmail.org = data.organization?.name;
