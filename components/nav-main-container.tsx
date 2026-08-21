@@ -20,6 +20,7 @@ import {
   ShieldCheckIcon,
   KeyRound,
   PhoneIcon,
+  MonitorIcon,
 } from "lucide-react";
 
 const securityItem = {
@@ -38,6 +39,12 @@ const phoneItem = {
   title: "phone",
   url: "/dashboard/settings/phone",
   icon: PhoneIcon,
+};
+
+const sessionsItem = {
+  title: "sessions",
+  url: "/dashboard/settings/sessions",
+  icon: MonitorIcon,
 };
 
 const adminItems = [
@@ -110,6 +117,7 @@ export function NavMainContainer() {
     securityItem,
     apiKeysItem,
     phoneItem,
+    sessionsItem,
     ...(role === "admin"
       ? [
           {
