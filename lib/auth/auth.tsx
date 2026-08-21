@@ -13,6 +13,7 @@ import {
   magicLink,
   multiSession,
   lastLoginMethod,
+  bearer,
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -413,6 +414,8 @@ export const auth = betterAuth({
     multiSession({ maximumSessions: 5 }),
     // Last login method: registra el último método de acceso en el usuario.
     lastLoginMethod({ storeInDatabase: true }),
+    // Bearer: autentica requests vía `Authorization: Bearer <token>`.
+    bearer(),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
   ],
