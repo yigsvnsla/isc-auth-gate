@@ -36,9 +36,15 @@ export default async function LoginPage() {
             <ThemeToggle />
           </div>
 
-          <div className="flex flex-1 items-center justify-center">
+              <div className="flex flex-1 items-center justify-center">
             <div className="w-full max-w-xs">
               <LoginForm />
+              <a
+                href="/auth/email-otp"
+                className="mt-4 block text-center text-sm text-muted-foreground hover:underline"
+              >
+                Acceder con código por correo (sin contraseña)
+              </a>
             </div>
           </div>
         </div>

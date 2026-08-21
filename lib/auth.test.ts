@@ -11,6 +11,7 @@ import {
   twoFactor,
   username,
   phoneNumber,
+  emailOTP,
 } from "better-auth/plugins";
 import {
   oauthProvider,
@@ -19,6 +20,8 @@ import {
 import { apiKey } from "@better-auth/api-key";
 import { nextCookies } from "better-auth/next-js";
 import { accessControl, admin, user, moderator, orgRoles } from "./permissions";
+
+export const lastEmailOtp: { email?: string; code?: string } = {};
 
 export const testAuth = betterAuth({
   debug: env.BETTER_AUTH_SERVER_DEBUG,
@@ -97,6 +100,12 @@ export const testAuth = betterAuth({
       requireVerificationOnSignIn: false,
       otpLength: 6,
       sendOTP: async () => {},
+    }),
+    emailOTP({
+      sendVerificationOTP: async ({ email, otp }) => {
+        lastEmailOtp.email = email;
+        lastEmailOtp.code = otp;
+      },
     }),
     nextCookies(),
   ],

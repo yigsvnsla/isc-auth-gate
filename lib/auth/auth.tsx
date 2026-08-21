@@ -9,6 +9,7 @@ import {
   twoFactor,
   username,
   phoneNumber,
+  emailOTP,
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -379,6 +380,18 @@ export const auth = betterAuth({
             text: `Tu código de verificación es: ${code}`,
           });
         }
+      },
+    }),
+    // Email OTP: passwordless sign-in / verificación por correo. Reusa la
+    // tabla `verifications`; no añade columnas.
+    emailOTP({
+      sendVerificationOTP: async ({ email, otp }) => {
+        await email.send({
+          from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
+          to: email,
+          subject: "Tu código de acceso (OTP)",
+          text: `Tu código de acceso es: ${otp}`,
+        });
       },
     }),
     nextCookies(),

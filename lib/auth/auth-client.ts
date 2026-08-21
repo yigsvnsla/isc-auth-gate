@@ -1,7 +1,7 @@
 import { adminClient, inferAdditionalFields, organizationClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { oauthProviderClient, oauthDeviceAuthorizationClient } from "@better-auth/oauth-provider/client";
-import { twoFactorClient, usernameClient, phoneNumberClient } from "better-auth/client/plugins";
+import { twoFactorClient, usernameClient, phoneNumberClient, emailOTPClient } from "better-auth/client/plugins";
 import { apiKeyClient } from "@better-auth/api-key/client";
 
 import { auth } from "./auth";
@@ -41,6 +41,7 @@ export const authClient = createAuthClient({
     apiKeyClient(),
     usernameClient(),
     phoneNumberClient(),
+    emailOTPClient(),
   ],
 });
 
