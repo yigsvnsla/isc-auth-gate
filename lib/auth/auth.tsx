@@ -14,6 +14,7 @@ import {
   multiSession,
   lastLoginMethod,
   bearer,
+  haveIBeenPwned,
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -416,6 +417,11 @@ export const auth = betterAuth({
     lastLoginMethod({ storeInDatabase: true }),
     // Bearer: autentica requests vía `Authorization: Bearer <token>`.
     bearer(),
+    // HaveIBeenPwned: bloquea contraseñas filtradas (HIBP Pwned Passwords).
+    haveIBeenPwned({
+      customPasswordCompromisedMessage:
+        "Esta contraseña ha aparecido en filtraciones. Elige otra.",
+    }),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
   ],

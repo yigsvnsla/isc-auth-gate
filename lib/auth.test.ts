@@ -16,6 +16,7 @@ import {
   multiSession,
   lastLoginMethod,
   bearer,
+  haveIBeenPwned,
 } from "better-auth/plugins";
 import {
   oauthProvider,
@@ -123,6 +124,9 @@ export const testAuth = betterAuth({
     multiSession({ maximumSessions: 5 }),
     lastLoginMethod({ storeInDatabase: true }),
     bearer(),
+    // Inerto en tests: el chequeo real contra HIBP requiere red y no debe
+    // bloquear el sign-up de los demás tests cuando la red es inestable.
+    haveIBeenPwned({ enabled: false }),
     nextCookies(),
   ],
 });
