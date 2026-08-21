@@ -45,6 +45,12 @@ export default async function LoginPage() {
               >
                 Acceder con código por correo (sin contraseña)
               </a>
+              <a
+                href="/auth/magic-link"
+                className="block text-center text-sm text-muted-foreground hover:underline"
+              >
+                Acceder con enlace mágico por correo
+              </a>
             </div>
           </div>
         </div>

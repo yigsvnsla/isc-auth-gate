@@ -12,6 +12,7 @@ import {
   username,
   phoneNumber,
   emailOTP,
+  magicLink,
 } from "better-auth/plugins";
 import {
   oauthProvider,
@@ -22,6 +23,7 @@ import { nextCookies } from "better-auth/next-js";
 import { accessControl, admin, user, moderator, orgRoles } from "./permissions";
 
 export const lastEmailOtp: { email?: string; code?: string } = {};
+export const lastMagicLink: { email?: string; url?: string; token?: string } = {};
 
 export const testAuth = betterAuth({
   debug: env.BETTER_AUTH_SERVER_DEBUG,
@@ -105,6 +107,13 @@ export const testAuth = betterAuth({
       sendVerificationOTP: async ({ email, otp }) => {
         lastEmailOtp.email = email;
         lastEmailOtp.code = otp;
+      },
+    }),
+    magicLink({
+      sendMagicLink: async ({ email, url, token }) => {
+        lastMagicLink.email = email;
+        lastMagicLink.url = url;
+        lastMagicLink.token = token;
       },
     }),
     nextCookies(),

@@ -10,6 +10,7 @@ import {
   username,
   phoneNumber,
   emailOTP,
+  magicLink,
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -391,6 +392,17 @@ export const auth = betterAuth({
           to: email,
           subject: "Tu código de acceso (OTP)",
           text: `Tu código de acceso es: ${otp}`,
+        });
+      },
+    }),
+    // Magic link: enlace de acceso sin contraseña por correo. Reusa `verifications`.
+    magicLink({
+      sendMagicLink: async ({ email, url }) => {
+        await email.send({
+          from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
+          to: email,
+          subject: "Tu enlace de acceso",
+          text: `Haz clic para iniciar sesión: ${url}`,
         });
       },
     }),
