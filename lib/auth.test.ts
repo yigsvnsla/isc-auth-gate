@@ -113,8 +113,7 @@ export const testAuth = betterAuth({
       maxUsernameLength: 30,
     }),
     phoneNumber({
-      sendOTPOnSignUp: false,
-      requireVerificationOnSignIn: false,
+      requireVerification: false,
       otpLength: 6,
       sendOTP: async () => {},
     }),

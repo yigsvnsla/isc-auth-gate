@@ -42,7 +42,7 @@ export default function PhoneSettingsPage() {
   async function updatePhone() {
     if (!phone) return toast.error("Ingresa un número");
     setLoading(true);
-    const { error } = await authClient.phoneNumber.updatePhoneNumber({ phoneNumber: phone });
+    const { error } = await authClient.phoneNumber.verify({ phoneNumber: phone, code });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Teléfono actualizado");

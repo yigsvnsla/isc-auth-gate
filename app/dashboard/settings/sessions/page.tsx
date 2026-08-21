@@ -42,14 +42,14 @@ function uaLabel(ua?: string | null) {
 export default function SessionsSettingsPage() {
   const { data: sessionData } = authClient.useSession();
   const currentToken = sessionData?.session?.token;
-  const lastMethod = sessionData?.user?.lastLoginMethod;
+  const lastMethod = (sessionData?.user as { lastLoginMethod?: string } | undefined)?.lastLoginMethod;
 
   const { data, isLoading, mutate } = useSWR<{ sessions: Session[] }>(
     "sessions",
     async () => {
       const { data, error } = await authClient.listSessions();
       if (error) throw error;
-      return data as { sessions: Session[] };
+      return { sessions: data };
     },
   );
 

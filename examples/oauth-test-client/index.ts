@@ -15,7 +15,7 @@
  */
 import { createHash, randomBytes } from "crypto";
 
-const PORT = Number(process.env.PORT ?? 4000);
+const PORT = Number(process.env.PORT ?? 4900);
 const ISSUER = process.env.ISC_ISSUER ?? "http://localhost:3000/api/auth";
 const CLIENT_ID = process.env.ISC_CLIENT_ID;
 const CLIENT_SECRET = process.env.ISC_CLIENT_SECRET;

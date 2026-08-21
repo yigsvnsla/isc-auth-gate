@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { eq } from "drizzle-orm";
 import { db } from "@/database";
+import { users } from "@/database/schema";
 import {
   admin as adminPlugin,
   openAPI,
@@ -290,11 +292,11 @@ export const auth = betterAuth({
       },
       // Invitaciones por email (reusa infra SMTP). El enlace apunta al
       // panel de invitaciones de la organización.
-      sendInvitationEmail: async ({ email, organization, inviter, role, id }) => {
+      sendInvitationEmail: async ({ email: inviteeEmail, organization, inviter, role, id }) => {
         const acceptUrl = `${env.BETTER_AUTH_URL}/dashboard/organizations/invitations?id=${id}`;
         await email.send({
           from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
-          to: email,
+          to: inviteeEmail,
           subject: `Invitación a ${organization.name}`,
           text: `${inviter.user.name ?? inviter.user.email} te ha invitado a unirte a ${organization.name} como ${role}. Acepta aquí: ${acceptUrl}`,
         });
@@ -386,14 +388,18 @@ export const auth = betterAuth({
     // Phone number: registration + verification OTP. Sin SMS provider, el
     // código OTP se envía por email (reusa infra existente) igual que 2FA.
     phoneNumber({
-      sendOTPOnSignUp: false,
-      requireVerificationOnSignIn: false,
+      requireVerification: false,
       otpLength: 6,
-      sendOTP: async ({ phoneNumber, code, user }) => {
-        if (user?.email) {
+      sendOTP: async ({ phoneNumber, code }) => {
+        const [userRow] = await db
+          .select({ email: users.email })
+          .from(users)
+          .where(eq(users.phoneNumber, phoneNumber))
+          .limit(1);
+        if (userRow?.email) {
           await email.send({
             from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
-            to: user.email,
+            to: userRow.email,
             subject: "Tu código de verificación de teléfono",
             text: `Tu código de verificación es: ${code}`,
           });
@@ -403,10 +409,10 @@ export const auth = betterAuth({
     // Email OTP: passwordless sign-in / verificación por correo. Reusa la
     // tabla `verifications`; no añade columnas.
     emailOTP({
-      sendVerificationOTP: async ({ email, otp }) => {
+      sendVerificationOTP: async ({ email: toEmail, otp }) => {
         await email.send({
           from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
-          to: email,
+          to: toEmail,
           subject: "Tu código de acceso (OTP)",
           text: `Tu código de acceso es: ${otp}`,
         });
@@ -414,10 +420,10 @@ export const auth = betterAuth({
     }),
     // Magic link: enlace de acceso sin contraseña por correo. Reusa `verifications`.
     magicLink({
-      sendMagicLink: async ({ email, url }) => {
+      sendMagicLink: async ({ email: toEmail, url }) => {
         await email.send({
           from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
-          to: email,
+          to: toEmail,
           subject: "Tu enlace de acceso",
           text: `Haz clic para iniciar sesión: ${url}`,
         });

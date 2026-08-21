@@ -1,6 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
+import { UserWithRole } from "better-auth/plugins";
 import { authClient } from "@/lib/auth/auth-client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -98,7 +99,7 @@ const ActionsCell = ({
   );
 };
 
-export const columns: ColumnDef<typeof authClient.$Infer.Session.user>[] = [
+export const columns: ColumnDef<UserWithRole>[] = [
   {
     id: "select",
     header: ({ table }) => (

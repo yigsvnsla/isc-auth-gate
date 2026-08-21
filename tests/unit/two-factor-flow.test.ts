@@ -6,6 +6,13 @@ import { base32 } from "@better-auth/utils/base32";
 const decodeTotpSecret = (totpURI: string) =>
   new TextDecoder().decode(base32.decode(new URL(totpURI).searchParams.get("secret")!));
 
+type Enable2FAResult = {
+  error?: { message?: string } | null;
+  totpURI?: string;
+  backupCodes?: string[];
+  method?: "otp" | "totp";
+};
+
 // Los endpoints twoFactor son nativos de Better Auth. getTOTPURI + generateTOTP
 // (server-only) se usan para derivar un código TOTP válido en el test sin
 // implementar TOTP a mano.
@@ -14,11 +21,14 @@ await cleanupTestDb();
 
 describe("Two-Factor Authentication (RFC 6238 + OTP + backup)", () => {
   const enable = (h: Headers, password: string) =>
-    testAuth.api.enableTwoFactor({ headers: h, body: { password } });
+    testAuth.api.enableTwoFactor({ headers: h, body: { password } }) as Promise<Enable2FAResult>;
   const verifyTotp = (h: Headers, code: string) =>
     testAuth.api.verifyTOTP({ headers: h, body: { code, trustDevice: true } });
   const disable = (h: Headers, password: string) =>
-    testAuth.api.disableTwoFactor({ headers: h, body: { password } });
+    testAuth.api.disableTwoFactor({ headers: h, body: { password } }) as Promise<{
+      error?: unknown;
+      status?: boolean;
+    }>;
 
   async function makeSession() {
     const ctx = await testAuth.$context;
@@ -27,6 +37,7 @@ describe("Two-Factor Authentication (RFC 6238 + OTP + backup)", () => {
       body: { email, name: "2FA User", password: "securepassword123" },
     })) as { user?: { id: string }; data?: { user?: { id: string } } };
     const userId = signup.user?.id ?? signup.data?.user?.id;
+    if (!userId) throw new Error("signup did not return a user id");
     const login = await ctx.test.login({ userId });
     return { headers: login.headers as Headers, userId };
   }
@@ -43,7 +54,7 @@ describe("Two-Factor Authentication (RFC 6238 + OTP + backup)", () => {
     const { headers, userId } = await makeSession();
     const en = await enable(headers, "securepassword123");
     const totp = await testAuth.api.generateTOTP({
-      body: { secret: decodeTotpSecret(en.totpURI) },
+      body: { secret: decodeTotpSecret(en.totpURI!) },
     });
     expect(totp.code).toBeDefined();
 
@@ -57,10 +68,10 @@ describe("Two-Factor Authentication (RFC 6238 + OTP + backup)", () => {
   it("verifies a backup code", async () => {
     const { headers } = await makeSession();
     const en = await enable(headers, "securepassword123");
-    const { error } = await testAuth.api.verifyBackupCode({
+    const { error } = (await testAuth.api.verifyBackupCode({
       headers,
-      body: { code: en.backupCodes[0], trustDevice: true },
-    });
+      body: { code: en.backupCodes![0], trustDevice: true },
+    })) as { error?: unknown };
     expect(error).toBeUndefined();
   });
 
@@ -80,7 +91,7 @@ describe("Two-Factor Authentication (RFC 6238 + OTP + backup)", () => {
     const { headers, userId } = await makeSession();
     const en = await enable(headers, "securepassword123");
     const totp = await testAuth.api.generateTOTP({
-      body: { secret: decodeTotpSecret(en.totpURI) },
+      body: { secret: decodeTotpSecret(en.totpURI!) },
     });
     await verifyTotp(headers, totp.code);
 

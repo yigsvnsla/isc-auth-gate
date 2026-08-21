@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth/auth-client";
-import { useSession } from "@/lib/auth/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,7 +18,7 @@ import { ShieldCheckIcon, ShieldOffIcon } from "lucide-react";
 import QRCode from "react-qr-code";
 
 export default function SecuritySettingsPage() {
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const twoFactorEnabled = session?.user?.twoFactorEnabled ?? false;
 
   const [password, setPassword] = useState("");
@@ -40,7 +39,7 @@ export default function SecuritySettingsPage() {
         toast.error(error.message || "No se pudo iniciar 2FA");
         return;
       }
-      if (data) {
+      if (data?.method === "totp") {
         setTotpURI(data.totpURI ?? null);
         setBackupCodes(data.backupCodes ?? []);
       }

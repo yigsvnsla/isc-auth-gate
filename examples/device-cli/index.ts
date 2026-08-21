@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+export {};
 /**
  * Device Flow (RFC 8628) CLI test — app 3rd party en un dispositivo sin
  * navegador (CLI, TV, IoT).
