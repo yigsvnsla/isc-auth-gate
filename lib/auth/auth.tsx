@@ -16,7 +16,6 @@ import {
   bearer,
   haveIBeenPwned,
   captcha,
-  Providers,
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -442,14 +441,15 @@ export const auth = betterAuth({
     ...(env.BETTER_AUTH_CAPTCHA_ENABLED && env.BETTER_AUTH_CAPTCHA_SECRET_KEY
       ? [
           captcha({
+            // Valores literales del enum Providers del plugin captcha.
             provider:
               env.BETTER_AUTH_CAPTCHA_PROVIDER === "recaptcha"
-                ? Providers.GOOGLE_RECAPTCHA
+                ? "google-recaptcha"
                 : env.BETTER_AUTH_CAPTCHA_PROVIDER === "hcaptcha"
-                  ? Providers.HCAPTCHA
+                  ? "hcaptcha"
                   : env.BETTER_AUTH_CAPTCHA_PROVIDER === "captchafox"
-                    ? Providers.CAPTCHAFOX
-                    : Providers.CLOUDFLARE_TURNSTILE,
+                    ? "captchafox"
+                    : "cloudflare-turnstile",
             secretKey: env.BETTER_AUTH_CAPTCHA_SECRET_KEY,
             siteKey: env.BETTER_AUTH_CAPTCHA_SITE_KEY,
           }),
