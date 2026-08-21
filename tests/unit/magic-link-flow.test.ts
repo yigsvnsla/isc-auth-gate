@@ -22,7 +22,6 @@ describe("Magic link (native plugin)", () => {
     const headers = await sessionHeadersFor(email);
     const sent = await testAuth.api.signInMagicLink({ body: { email }, headers });
     expect((sent as { error?: unknown }).error).toBeUndefined();
-    expect((globalThis as any).lastMagicLink?.token ?? true).toBeDefined();
     const verified = await testAuth.api.magicLinkVerify({
       query: { token: (await import("@/lib/auth.test")).lastMagicLink.token! },
       headers,

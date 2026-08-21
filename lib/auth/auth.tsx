@@ -15,6 +15,8 @@ import {
   lastLoginMethod,
   bearer,
   haveIBeenPwned,
+  captcha,
+  Providers,
 } from "better-auth/plugins";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -422,6 +424,26 @@ export const auth = betterAuth({
       customPasswordCompromisedMessage:
         "Esta contraseña ha aparecido en filtraciones. Elige otra.",
     }),
+    // CAPTCHA (feature flag): protege sign-up / sign-in. Solo se activa si
+    // está habilitado Y hay secret configurado. Proveedor nativo soportado
+    // (turnstile | recaptcha | hcaptcha | captchafox). trycap.dev (Cap) no
+    // es proveedor nativo. Por defecto desactivado.
+    ...(env.BETTER_AUTH_CAPTCHA_ENABLED && env.BETTER_AUTH_CAPTCHA_SECRET_KEY
+      ? [
+          captcha({
+            provider:
+              env.BETTER_AUTH_CAPTCHA_PROVIDER === "recaptcha"
+                ? Providers.GOOGLE_RECAPTCHA
+                : env.BETTER_AUTH_CAPTCHA_PROVIDER === "hcaptcha"
+                  ? Providers.HCAPTCHA
+                  : env.BETTER_AUTH_CAPTCHA_PROVIDER === "captchafox"
+                    ? Providers.CAPTCHAFOX
+                    : Providers.CLOUDFLARE_TURNSTILE,
+            secretKey: env.BETTER_AUTH_CAPTCHA_SECRET_KEY,
+            siteKey: env.BETTER_AUTH_CAPTCHA_SITE_KEY,
+          }),
+        ]
+      : []),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
   ],

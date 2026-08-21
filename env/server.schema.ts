@@ -55,4 +55,15 @@ export const serverEnv = z.object({
       )
       .default([]),
   ),
+  // CAPTCHA (feature flag): protege sign-up / sign-in con un challenge.
+  // Nativo de Better Auth (soporta turnstile | recaptcha | hcaptcha |
+  // captchafox). Desactivado por defecto hasta configurar un proveedor.
+  // Nota: trycap.dev (Cap) NO es un proveedor nativo; usar un proveedor
+  // soportado y activar con BETTER_AUTH_CAPTCHA_ENABLED=true.
+  BETTER_AUTH_CAPTCHA_ENABLED: z.coerce.boolean().default(false),
+  BETTER_AUTH_CAPTCHA_PROVIDER: z
+    .enum(["turnstile", "recaptcha", "hcaptcha", "captchafox"])
+    .default("turnstile"),
+  BETTER_AUTH_CAPTCHA_SECRET_KEY: z.string().optional(),
+  BETTER_AUTH_CAPTCHA_SITE_KEY: z.string().optional(),
 });
