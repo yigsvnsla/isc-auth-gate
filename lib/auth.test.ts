@@ -28,6 +28,11 @@ import { accessControl, admin, user, moderator, orgRoles } from "./permissions";
 
 export const lastEmailOtp: { email?: string; code?: string } = {};
 export const lastMagicLink: { email?: string; url?: string; token?: string } = {};
+export const lastInviteEmail: {
+  email?: string;
+  id?: string;
+  org?: string;
+} = {};
 
 export const testAuth = betterAuth({
   debug: env.BETTER_AUTH_SERVER_DEBUG,
@@ -66,6 +71,11 @@ export const testAuth = betterAuth({
       dynamicAccessControl: { enabled: true },
       roles: {
         ...orgRoles,
+      },
+      sendInvitationEmail: async (data: any) => {
+        lastInviteEmail.email = data.email;
+        lastInviteEmail.id = data.id;
+        lastInviteEmail.org = data.organization?.name;
       },
     }),
     openAPI(),

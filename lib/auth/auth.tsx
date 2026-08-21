@@ -289,6 +289,17 @@ export const auth = betterAuth({
       roles: {
         ...orgRoles,
       },
+      // Invitaciones por email (reusa infra SMTP). El enlace apunta al
+      // panel de invitaciones de la organización.
+      sendInvitationEmail: async ({ email, organization, inviter, role, id }) => {
+        const acceptUrl = `${env.BETTER_AUTH_URL}/dashboard/organizations/invitations?id=${id}`;
+        await email.send({
+          from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
+          to: email,
+          subject: `Invitación a ${organization.name}`,
+          text: `${inviter.user.name ?? inviter.user.email} te ha invitado a unirte a ${organization.name} como ${role}. Acepta aquí: ${acceptUrl}`,
+        });
+      },
     }),
 
     oauthProvider({
