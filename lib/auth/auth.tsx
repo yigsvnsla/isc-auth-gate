@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "@better-auth/core/error";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { eq } from "drizzle-orm";
 import { db } from "@/database";
@@ -18,7 +19,11 @@ import {
   bearer,
   haveIBeenPwned,
   captcha,
+  oneTimeToken,
+  oauthPopup,
 } from "better-auth/plugins";
+import { genericOAuth, microsoftEntraId } from "better-auth/plugins";
+import { passkey } from "@better-auth/passkey";
 import { testUtils } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { apiKey } from "@better-auth/api-key";
@@ -80,24 +85,31 @@ export const auth = betterAuth({
       enabled: true,
     },
   },
-  socialProviders: {
-    microsoft: {
-      enabled: true,
+  experimental: { joins: true },
 
-      prompt: env.BETTER_AUTH_MICROSOFT_PROMPT,
-      clientId: env.BETTER_AUTH_MICROSOFT_CLIENT_ID,
-      tenantId: env.BETTER_AUTH_MICROSOFT_TENANT_ID,
-      authority: env.BETTER_AUTH_MICROSOFT_AUTHORITY,
-      clientSecret: env.BETTER_AUTH_MICROSOFT_CLIENT_SECRET,
-      profilePhotoSize: env.BETTER_AUTH_MICROSOFT_PROFILE_PHOTO_SIZE,
-      overrideUserInfoOnSignIn:
-        env.BETTER_AUTH_MICROSOFT_OVERRIDE_USER_INFO_ON_SIGN_IN,
-      // ponytail: Microsoft ID token doesn't always include email_verified (optional claim).
-      // Since Microsoft authenticated the user, trust their verification.
-      // mapProfileToUser: () => ({ emailVerified: true }),
+  // Additional fields: campos custom en user/session (DB only, no en JWT).
+  // securityLevel: nivel de seguridad de la cuenta; mfaEnforcedAt: cuándo se forzó MFA.
+  user: {
+    additionalFields: {
+      securityLevel: { type: "string", defaultValue: "standard", required: false },
+      mfaEnforcedAt: { type: "date", required: false },
     },
   },
-  experimental: { joins: true },
+  // Core session hardening config + additionalFields.
+  // expiresIn: 7 días absolutos; updateAge: sliding 24h; freshAge: 15 min para re-auth sensible;
+  // cookieCache: 5 min para performance; preserveSessionInDatabase: auditoría;
+  // revokeSessionsOnPasswordReset: invalida sesiones al cambiar password.
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
+    freshAge: 60 * 15,
+    cookieCache: { enabled: true, maxAge: 60 * 5 },
+    preserveSessionInDatabase: true,
+    revokeSessionsOnPasswordReset: true,
+    additionalFields: {
+      securityLevel: { type: "string", required: false },
+    },
+  },
 
   rateLimit: {
     // ponytail: activo en todos los entornos (no solo producción) para
@@ -131,9 +143,6 @@ export const auth = betterAuth({
 
   databaseHooks: {
     verification: {},
-
-    session: {},
-
     account: {},
 
     user: {
@@ -433,6 +442,23 @@ export const auth = betterAuth({
     multiSession({ maximumSessions: 5 }),
     // Last login method: registra el último método de acceso en el usuario.
     lastLoginMethod({ storeInDatabase: true }),
+    // Microsoft Entra ID: OAuth2/OIDC nativo para Azure AD (via genericOAuth).
+    // ponytail: providerId "microsoft" fuerza callback /api/auth/callback/microsoft (ya registrado en Azure).
+    // accountIssuer + requireIdTokenVerification: false aseguran init robusto sin depender de discovery.
+    genericOAuth({
+      config: [
+        {
+          ...microsoftEntraId({
+            clientId: env.BETTER_AUTH_MICROSOFT_CLIENT_ID,
+            clientSecret: env.BETTER_AUTH_MICROSOFT_CLIENT_SECRET,
+            tenantId: env.BETTER_AUTH_MICROSOFT_TENANT_ID ?? "common",
+          }),
+          providerId: "microsoft",
+          accountIssuer: `https://login.microsoftonline.com/${env.BETTER_AUTH_MICROSOFT_TENANT_ID ?? "common"}/v2.0`,
+          requireIdTokenVerification: false,
+        },
+      ],
+    }),
     // Bearer: autentica requests vía `Authorization: Bearer <token>`.
     bearer(),
     // HaveIBeenPwned: bloquea contraseñas filtradas (HIBP Pwned Passwords).
@@ -461,6 +487,55 @@ export const auth = betterAuth({
           }),
         ]
       : []),
+    // One-time token (OTT): tokens de un solo uso, ligados a sesión, para
+    // re-auth / confirmación de acción vía email-link. Reusa `verifications`
+    // (sin migración). storeToken "hashed" nunca guarda plaintext;
+    // disableClientRequest true => solo el server mintea (server action),
+    // cerrando el vector de minting client-side (XSS).
+    oneTimeToken({
+      expiresIn: 10,
+      storeToken: "hashed",
+      disableClientRequest: true,
+    }),
+    // OAuth Popup: UX popup para "Conectar con Microsoft/Google" sin redirect full-page.
+    oauthPopup(),
+    // Passkey (WebAuthn/FIDO2): autenticación sin contraseña con claves criptográficas.
+    // Paquete separado @better-auth/passkey (v1.7.1). Requiere migración DB para tabla `passkeys`.
+    passkey({
+      registration: {
+        requireSession: false, // permite registro sin sesión (passkey-first onboarding)
+        resolveUser: async ({ ctx, context }) => {
+          // context = email pasado desde el client (query param en generate-register-options)
+          const email = context as string;
+          if (!email || !email.includes("@")) {
+            throw APIError.from("BAD_REQUEST", { code: "EMAIL_REQUIRED", message: "Email requerido para passkey-first" });
+          }
+
+          // Buscar usuario existente
+          const existing = (await ctx.context.adapter.findOne({
+            model: "user",
+            where: [{ field: "email", value: email }],
+          })) as { id: string; name: string | null; email: string } | null;
+
+          if (existing) {
+            return { id: existing.id, name: existing.name || email, displayName: existing.email };
+          }
+
+          // Crear usuario nuevo sin password (passkey-first = email verificado implícito)
+          const user = (await ctx.context.adapter.create({
+            model: "user",
+            data: {
+              email,
+              name: email.split("@")[0],
+              emailVerified: true, // passkey-first = email verificado implícito
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          })) as { id: string; name: string; email: string };
+          return { id: user.id, name: user.name, displayName: user.email };
+        },
+      },
+    }),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
   ],

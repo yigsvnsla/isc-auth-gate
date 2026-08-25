@@ -1,13 +1,13 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "@better-auth/core/error";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { testDb } from "@/tests/database";
 import { env } from "@/env";
 import {
   admin as adminPlugin,
-  jwt,
-  organization,
   openAPI,
-  testUtils,
+  organization,
+  jwt,
   twoFactor,
   username,
   phoneNumber,
@@ -17,7 +17,13 @@ import {
   lastLoginMethod,
   bearer,
   haveIBeenPwned,
+  captcha,
+  oneTimeToken,
+  oauthPopup,
+  testUtils,
 } from "better-auth/plugins";
+import { genericOAuth, microsoftEntraId } from "better-auth/plugins";
+import { passkey } from "@better-auth/passkey";
 import {
   oauthProvider,
   oauthDeviceAuthorization,
@@ -52,6 +58,18 @@ export const testAuth = betterAuth({
     provider: "pg",
     usePlural: true,
   }),
+  // Additional fields: campos custom en user/session (DB only, no en JWT).
+  user: {
+    additionalFields: {
+      securityLevel: { type: "string", default: "standard", required: false },
+      mfaEnforcedAt: { type: "date", required: false },
+    },
+  },
+  session: {
+    additionalFields: {
+      securityLevel: { type: "string", required: false },
+    },
+  },
   emailAndPassword: {
     enabled: true,
   },
@@ -139,10 +157,55 @@ export const testAuth = betterAuth({
     }),
     multiSession({ maximumSessions: 5 }),
     lastLoginMethod({ storeInDatabase: true }),
+    // Microsoft Entra ID: OAuth2/OIDC nativo para Azure AD (via genericOAuth).
+    // ponytail: providerId "microsoft" fuerza callback /api/auth/callback/microsoft (ya registrado en Azure)
+    genericOAuth({
+      config: [
+        {
+          ...microsoftEntraId({
+            clientId: env.BETTER_AUTH_MICROSOFT_CLIENT_ID,
+            clientSecret: env.BETTER_AUTH_MICROSOFT_CLIENT_SECRET,
+            tenantId: env.BETTER_AUTH_MICROSOFT_TENANT_ID ?? "common",
+          }),
+          providerId: "microsoft",
+          accountIssuer: `https://login.microsoftonline.com/${env.BETTER_AUTH_MICROSOFT_TENANT_ID ?? "common"}/v2.0`,
+          requireIdTokenVerification: false,
+        },
+      ],
+    }),
     bearer(),
+    // OAuth Popup: UX popup para "Conectar con Microsoft/Google" sin redirect full-page.
+    oauthPopup(),
+    // Passkey (WebAuthn/FIDO2): autenticación sin contraseña.
+    passkey({
+      registration: {
+        requireSession: false,
+        resolveUser: async ({ ctx, context }) => {
+          const email = context as string;
+          if (!email || !email.includes("@")) {
+            throw APIError.from("BAD_REQUEST", { code: "EMAIL_REQUIRED", message: "Email requerido para passkey-first" });
+          }
+          const existing = (await ctx.context.adapter.findOne({
+            model: "user",
+            where: [{ field: "email", value: email }],
+          })) as { id: string; name: string | null; email: string } | null;
+          if (existing) return { id: existing.id, name: existing.name || email, displayName: existing.email };
+          const user = (await ctx.context.adapter.create({
+            model: "user",
+            data: { email, name: email.split("@")[0], emailVerified: true, createdAt: new Date(), updatedAt: new Date() },
+          })) as { id: string; name: string; email: string };
+          return { id: user.id, name: user.name, displayName: user.email };
+        },
+      },
+    }),
     // Inerto en tests: el chequeo real contra HIBP requiere red y no debe
     // bloquear el sign-up de los demás tests cuando la red es inestable.
     haveIBeenPwned({ enabled: false }),
+    oneTimeToken({
+      expiresIn: 10,
+      storeToken: "hashed",
+      disableClientRequest: true,
+    }),
     nextCookies(),
   ],
 });

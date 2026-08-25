@@ -27,6 +27,7 @@
     "@better-auth/api-key": "1.7.1",
     "@better-auth/drizzle-adapter": "1.7.1",
     "@better-auth/oauth-provider": "1.7.1",
+    "@better-auth/passkey": "^1.7.1",
     "@hookform/resolvers": "^5.7.1",
     "@opencoredev/email-sdk": "^1.1.0",
     "@react-email/components": "^1.0.12",

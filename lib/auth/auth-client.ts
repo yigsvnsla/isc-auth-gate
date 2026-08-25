@@ -1,8 +1,9 @@
 import { adminClient, inferAdditionalFields, organizationClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { oauthProviderClient, oauthDeviceAuthorizationClient } from "@better-auth/oauth-provider/client";
-import { twoFactorClient, usernameClient, phoneNumberClient, emailOTPClient, magicLinkClient, multiSessionClient, lastLoginMethodClient } from "better-auth/client/plugins";
+import { twoFactorClient, usernameClient, phoneNumberClient, emailOTPClient, magicLinkClient, multiSessionClient, lastLoginMethodClient, oneTimeTokenClient, oauthPopupClient } from "better-auth/client/plugins";
 import { apiKeyClient } from "@better-auth/api-key/client";
+import { passkeyClient } from "@better-auth/passkey/client";
 
 import { auth } from "./auth";
 import { accessControl, admin, moderator, user, orgRoles } from "../permissions";
@@ -30,6 +31,7 @@ export const authClient = createAuthClient({
     }),
     oauthProviderClient(),
     oauthDeviceAuthorizationClient(),
+    oauthPopupClient(),
     twoFactorClient({
       onTwoFactorRedirect() {
         if (typeof window !== "undefined") {
@@ -45,6 +47,8 @@ export const authClient = createAuthClient({
     magicLinkClient(),
     multiSessionClient(),
     lastLoginMethodClient(),
+    oneTimeTokenClient(),
+    passkeyClient(),
   ],
 });
 

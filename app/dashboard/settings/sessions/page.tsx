@@ -13,8 +13,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Monitor, Trash2, LogOut } from "lucide-react";
+import { Monitor, Trash2, LogOut, KeyRound, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { generateOneTimeTokenAction } from "@/app/auth/ott/actions";
 
 type Session = {
   id: string;
@@ -40,6 +41,10 @@ function uaLabel(ua?: string | null) {
 }
 
 export default function SessionsSettingsPage() {
+  const [ottLink, setOttLink] = useState<string | null>(null);
+  const [isGeneratingOtt, setIsGeneratingOtt] = useState(false);
+  const [copiedOtt, setCopiedOtt] = useState(false);
+
   const { data: sessionData } = authClient.useSession();
   const currentToken = sessionData?.session?.token;
   const lastMethod = (
@@ -151,6 +156,82 @@ export default function SessionsSettingsPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="size-5" /> Enlace de un solo uso (OTT)
+          </CardTitle>
+          <CardDescription>
+            Genera un token de un solo uso ligado a tu sesión activa.
+            Útil para re-autenticación segura o confirmación de acciones desde un enlace.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div>
+            <Button
+              variant="outline"
+              disabled={isGeneratingOtt}
+              onClick={async () => {
+                setIsGeneratingOtt(true);
+                try {
+                  const res = await generateOneTimeTokenAction();
+                  if ("error" in res) {
+                    toast.error(res.error);
+                  } else {
+                    const origin =
+                      typeof window !== "undefined"
+                        ? window.location.origin
+                        : "";
+                    const link = `${origin}/auth/ott/verify?token=${res.token}`;
+                    setOttLink(link);
+                    toast.success("Enlace de un solo uso generado.");
+                  }
+                } catch {
+                  toast.error("Error al generar el token de un solo uso.");
+                } finally {
+                  setIsGeneratingOtt(false);
+                }
+              }}
+            >
+              <KeyRound className="mr-2 size-4" />
+              {isGeneratingOtt ? "Generando…" : "Generar enlace de un solo uso"}
+            </Button>
+          </div>
+
+          {ottLink && (
+            <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-3">
+              <span className="text-xs font-medium text-muted-foreground">
+                Enlace generado (expira en 10 min, un solo uso):
+              </span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={ottLink}
+                  className="w-full rounded border bg-background px-2 py-1 font-mono text-xs"
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(ottLink);
+                    setCopiedOtt(true);
+                    toast.success("Enlace copiado al portapapeles.");
+                    setTimeout(() => setCopiedOtt(false), 2000);
+                  }}
+                >
+                  {copiedOtt ? (
+                    <Check className="size-4 text-green-600" />
+                  ) : (
+                    <Copy className="size-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

@@ -31,6 +31,8 @@ export const users = pgTable("users", {
   phoneNumber: text("phone_number").unique(),
   phoneNumberVerified: boolean("phone_number_verified"),
   lastLoginMethod: text("last_login_method"),
+  securityLevel: text("security_level").default("standard"),
+  mfaEnforcedAt: timestamp("mfa_enforced_at"),
 });
 
 export const sessions = pgTable(
@@ -50,6 +52,7 @@ export const sessions = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     impersonatedBy: text("impersonated_by"),
     activeOrganizationId: text("active_organization_id"),
+    securityLevel: text("security_level"),
   },
   (table) => [index("sessions_userId_idx").on(table.userId)],
 );
@@ -99,6 +102,29 @@ export const verifications = pgTable(
       .notNull(),
   },
   (table) => [index("verifications_identifier_idx").on(table.identifier)],
+);
+
+export const passkeys = pgTable(
+  "passkeys",
+  {
+    id: text("id").primaryKey(),
+    name: text("name"),
+    publicKey: text("public_key").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    credentialID: text("credential_id").notNull().unique(),
+    counter: integer("counter").notNull(),
+    deviceType: text("device_type").notNull(),
+    backedUp: boolean("backed_up").notNull(),
+    transports: text("transports"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    aaguid: text("aaguid"),
+  },
+  (table) => [
+    index("passkeys_userId_idx").on(table.userId),
+    index("passkeys_credentialID_idx").on(table.credentialID),
+  ],
 );
 
 export const jwkss = pgTable("jwkss", {

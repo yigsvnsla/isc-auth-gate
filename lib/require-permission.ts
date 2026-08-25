@@ -14,3 +14,15 @@ export async function requirePermission(permissions: Record<string, string[]>) {
   }
   return session;
 }
+
+export async function checkPermission(permissions: Record<string, string[]>): Promise<boolean> {
+  const h = await headers();
+  const session = await auth.api.getSession({ headers: h });
+  if (!session) return false;
+  try {
+    const result = await auth.api.userHasPermission({ headers: h, body: { permissions } });
+    return result.success ?? false;
+  } catch {
+    return false;
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { authClient } from "@/lib/auth/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ShieldCheckIcon, ShieldOffIcon } from "lucide-react";
+import { ShieldCheckIcon, ShieldOffIcon, Link2, Monitor, Fingerprint, Trash2, Plus, Loader2, Mail, CheckCircle2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import QRCode from "react-qr-code";
+
+type Passkey = {
+  id: string;
+  name?: string;
+  credentialID: string;
+  deviceType: string;
+  transports?: string;
+  createdAt: Date | string;
+  aaguid?: string;
+};
 
 export default function SecuritySettingsPage() {
   const { data: session } = authClient.useSession();
@@ -26,6 +36,85 @@ export default function SecuritySettingsPage() {
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [verifyCode, setVerifyCode] = useState("");
   const [pending, setPending] = useState(false);
+  const [connectingMicrosoft, setConnectingMicrosoft] = useState(false);
+  const [passkeys, setPasskeys] = useState<Passkey[]>([]);
+  const [loadingPasskeys, setLoadingPasskeys] = useState(false);
+  const [addingPasskey, setAddingPasskey] = useState(false);
+  const [deletingPasskeyId, setDeletingPasskeyId] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showVerifyCode, setShowVerifyCode] = useState(false);
+
+  const loadPasskeys = async () => {
+    setLoadingPasskeys(true);
+    try {
+      const res = await authClient.passkey.listUserPasskeys();
+      if (res.error) {
+        toast.error(res.error.message || "Error cargando passkeys");
+      } else if (res.data) {
+        setPasskeys(res.data);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error cargando passkeys");
+    } finally {
+      setLoadingPasskeys(false);
+    }
+  };
+
+  const addPasskey = async () => {
+    setAddingPasskey(true);
+    try {
+      const res = await authClient.passkey.addPasskey({
+        createSession: false,
+      });
+      if (res.error) {
+        toast.error(res.error.message || "Error añadiendo passkey");
+      } else {
+        toast.success("Passkey añadida correctamente");
+        await loadPasskeys();
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error añadiendo passkey");
+    } finally {
+      setAddingPasskey(false);
+    }
+  };
+
+  const deletePasskey = async (id: string) => {
+    setDeletingPasskeyId(id);
+    try {
+      const res = await authClient.passkey.deletePasskey({ id });
+      if (res.error) {
+        toast.error(res.error.message || "Error eliminando passkey");
+      } else {
+        toast.success("Passkey eliminada");
+        setPasskeys((prev) => prev.filter((p) => p.id !== id));
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error eliminando passkey");
+    } finally {
+      setDeletingPasskeyId(null);
+    }
+  };
+
+  // Load passkeys on mount
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+    loadPasskeys();
+  }, []);
+
+  const connectMicrosoft = async () => {
+    setConnectingMicrosoft(true);
+    try {
+      await authClient.signIn.popup({
+        provider: "microsoft",
+        callbackURL: "/dashboard/settings/security",
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al conectar Microsoft");
+    } finally {
+      setConnectingMicrosoft(false);
+    }
+  };
 
   const startEnable = async () => {
     if (!password) {
@@ -193,13 +282,25 @@ export default function SecuritySettingsPage() {
                 <Label htmlFor="totp-verify">
                   3. Ingresa el código de la app para confirmar
                 </Label>
-                <Input
-                  id="totp-verify"
-                  value={verifyCode}
-                  onChange={(e) => setVerifyCode(e.target.value)}
-                  placeholder="123456"
-                  inputMode="text"
-                />
+                <div className="relative">
+                  <Input
+                    id="totp-verify"
+                    type={showVerifyCode ? "text" : "password"}
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value)}
+                    placeholder="123456"
+                    inputMode="text"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    onClick={() => setShowVerifyCode(!showVerifyCode)}
+                  >
+                    {showVerifyCode ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </Button>
+                </div>
               </div>
               <Button onClick={confirmEnable} disabled={pending}>
                 {pending ? "Verificando..." : "Confirmar activación"}
@@ -223,13 +324,24 @@ export default function SecuritySettingsPage() {
               )}
               <div className="flex flex-col gap-2">
                 <Label htmlFor="pwd-manage">Contraseña</Label>
-                <Input
-                  id="pwd-manage"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Tu contraseña"
-                />
+                <div className="relative">
+                  <Input
+                    id="pwd-manage"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Tu contraseña"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </Button>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={regenerate} disabled={pending}>
@@ -240,6 +352,117 @@ export default function SecuritySettingsPage() {
                 </Button>
               </div>
             </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link2 className="size-5" /> Cuentas vinculadas
+          </CardTitle>
+          <CardDescription>
+            Conecta proveedores OAuth para iniciar sesión sin contraseña.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex items-center justify-between rounded-md border bg-muted/40 p-4">
+            <div className="flex items-center gap-3">
+              <Monitor className="size-6 text-blue-600" />
+              <div>
+                <p className="font-medium">Microsoft Entra ID</p>
+                <p className="text-sm text-muted-foreground">
+                  Inicio de sesión corporativo (Azure AD / Office 365)
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={connectMicrosoft}
+              disabled={connectingMicrosoft}
+            >
+              {connectingMicrosoft ? "Conectando..." : "Conectar cuenta Microsoft"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Usa OAuth Popup: se abre una ventana emergente sin salir de la página.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Fingerprint className="size-5" /> Passkeys
+          </CardTitle>
+          <CardDescription>
+            Gestiona tus llaves de acceso (WebAuthn/FIDO2) para acceso sin contraseña.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Passkeys registradas</p>
+              <p className="text-sm text-muted-foreground">
+                {passkeys.length} passkey{passkeys.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={addPasskey}
+              disabled={addingPasskey}
+            >
+              <Plus className="mr-2 size-4" />
+              {/* eslint-disable-next-line react/no-unescaped-entities */}
+              <p className="text-xs mt-1">Usa "Añadir passkey" para registrar una nueva llave de acceso.</p>
+            </Button>
+          </div>
+
+          {loadingPasskeys ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="size-6 animate-spin text-primary" />
+              <span className="ml-2 text-sm text-muted-foreground">Cargando passkeys...</span>
+            </div>
+          ) : passkeys.length === 0 ? (
+            <div className="text-center py-4 text-sm text-muted-foreground">
+              <p>No hay passkeys registradas.</p>
+              {/* eslint-disable-next-line react/no-unescaped-entities */}
+              <p className="text-xs mt-1">Usa "Añadir passkey" para registrar una nueva llave de acceso.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {passkeys.map((pk) => (
+                <div
+                  key={pk.id}
+                  className="flex items-center justify-between rounded-md border bg-muted/40 p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <Fingerprint className="size-5 text-primary" />
+                    <div>
+                      <p className="font-medium">
+                        {pk.name || `Passkey ${pk.id.slice(0, 8)}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        {pk.credentialID.slice(0, 16)}... · {pk.deviceType} · {new Date(pk.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deletePasskey(pk.id)}
+                    disabled={deletingPasskeyId === pk.id}
+                    aria-label="Eliminar passkey"
+                  >
+                    {deletingPasskeyId === pk.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-4 text-destructive" />
+                    )}
+                  </Button>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

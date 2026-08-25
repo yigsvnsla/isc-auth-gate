@@ -3,13 +3,27 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { FC } from "react";
 import useSWRMutation from "swr/mutation";
+import { useSearchParams } from "next/navigation";
 
 export const MicrosoftLoginButton: FC = () => {
-  const { trigger, isMutating } = useSWRMutation("/sign-up/social", () =>
-    authClient.signIn.social({
-      provider: "microsoft",
-      callbackURL: "/dashboard",
-    }),
+  const searchParams = useSearchParams();
+
+  // ponytail: en flujo OAuth2 server, la vuelta tras login debe regresar al authorize endpoint con query original
+  const redirectTo = searchParams.get("redirectTo");
+  const hasOAuthQuery = Boolean(searchParams.get("client_id"));
+  const callbackURL = redirectTo
+    ? redirectTo
+    : hasOAuthQuery
+      ? `/api/auth/oauth2/authorize?${searchParams.toString()}`
+      : "/dashboard";
+
+  const { trigger, isMutating } = useSWRMutation(
+    `/sign-up/social?${callbackURL}`,
+    () =>
+      authClient.signIn.social({
+        provider: "microsoft",
+        callbackURL,
+      }),
   );
 
   async function onSubmit() {

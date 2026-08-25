@@ -54,6 +54,8 @@ export function LoginForm({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const callbackURL = searchParams.get("redirectTo") || "/dashboard";
+
   async function onSubmit(values: z.infer<typeof signInFormSchema>) {
     setIsSubmitting(true);
     try {
@@ -61,7 +63,7 @@ export function LoginForm({
       const isEmail = identifier.includes("@");
       const base = {
         password: values.password,
-        callbackURL: "/dashboard",
+        callbackURL,
       };
       const onSuccess = (context: { data?: { twoFactorRedirect?: boolean } }) => {
         if (context.data?.twoFactorRedirect) {
