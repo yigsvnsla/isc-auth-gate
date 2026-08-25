@@ -1,11 +1,14 @@
 import { authClient } from "@/lib/auth/auth-client";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
+import { cn } from "@/lib/utils";
 import { FC } from "react";
 import useSWRMutation from "swr/mutation";
 import { useSearchParams } from "next/navigation";
 
-export const MicrosoftLoginButton: FC = () => {
+export const MicrosoftLoginButton: FC<{ className?: string }> = ({
+  className,
+}) => {
   const searchParams = useSearchParams();
 
   // ponytail: en flujo OAuth2 server, la vuelta tras login debe regresar al authorize endpoint con query original
@@ -36,7 +39,7 @@ export const MicrosoftLoginButton: FC = () => {
 
   return (
     <Button
-      className="cursor-pointer"
+      className={cn("w-full cursor-pointer", className)}
       variant="outline"
       type="button"
       onClick={onSubmit}

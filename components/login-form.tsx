@@ -1,5 +1,5 @@
 "use client";
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import {
   Alert,
   AlertDescription,
@@ -29,10 +29,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 
 const signInFormSchema = z.object({
   username: z.string().min(2, {
-    message: "Correo Electronico es requerido",
+    message: "Ingresa tu correo o usuario",
   }),
   password: z.string().min(2, {
-    message: "Contraseña es requerida",
+    message: "Ingresa tu contraseña",
   }),
 });
 
@@ -47,12 +47,13 @@ export function LoginForm({
   const form = useForm<z.infer<typeof signInFormSchema>>({
     resolver: zodResolver(signInFormSchema),
     defaultValues: {
-      username: "admin-1@example.com",
-      password: "123456789",
+      username: "",
+      password: "",
     },
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const callbackURL = searchParams.get("redirectTo") || "/dashboard";
 
@@ -89,6 +90,17 @@ export function LoginForm({
     }
   }
 
+  const authError = searchParams.get("code")
+    ? {
+        title: `${searchParams.get("status")} - ${
+          searchParams.get("statusText") || "Error de autenticación"
+        }`,
+        description:
+          searchParams.get("message") ||
+          "Ocurrió un error al intentar iniciar sesión.",
+      }
+    : null;
+
   return (
     <form
       {...props}
@@ -100,40 +112,42 @@ export function LoginForm({
         <div className="flex flex-col items-center gap-1 text-center">
           <Image
             src="/images/isc-logo.png"
-            alt="Hero Image"
+            alt="Logotipo de ISC Gate"
             loading="eager"
             preload={true}
             width={200}
             height={200}
             decoding="sync"
+            className="size-16"
           />
-          <h1 className="text-2xl font-bold">Iniciar sesión</h1>
-          <p className="text-muted-foreground text-sm text-balance">
-            Accede a tu cuenta para continuar
+          <h1 className="text-2xl font-bold tracking-tight">Iniciar sesión</h1>
+          <p className="text-balance text-sm text-muted-foreground">
+            Accede con tu cuenta institucional para continuar
           </p>
         </div>
 
-        {searchParams.get("code") && (
-          // no es lo mejor que se me ocurra, pero es para mostrar el error en la pantalla de login
-
-          <Alert variant="destructive" className="max-w-md">
+        {authError && (
+          <Alert variant="destructive" role="alert" aria-live="assertive">
             <AlertCircleIcon />
-            <AlertTitle>
-              {searchParams.get("status")} -{" "}
-              {searchParams.get("statusText") || "Error de autenticación"}
-            </AlertTitle>
-            <AlertDescription>
-              {searchParams.get("message") ||
-                "Ocurrió un error al intentar iniciar sesión."}
-            </AlertDescription>
+            <AlertTitle>{authError.title}</AlertTitle>
+            <AlertDescription>{authError.description}</AlertDescription>
           </Alert>
         )}
+
+        <Field>
+          <MicrosoftLoginButton />
+          <FieldDescription className="text-center">
+            Recomendado para cuentas de Microsoft 365
+          </FieldDescription>
+        </Field>
+
+        <FieldSeparator>o con tu correo y contraseña</FieldSeparator>
 
         <Controller
           name="username"
           control={form.control}
           render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
+            <Field data-invalid>
               <FieldLabel htmlFor={`login-form-${componentId}-email`}>
                 Correo electrónico o usuario
               </FieldLabel>
@@ -143,10 +157,20 @@ export function LoginForm({
                 type="text"
                 id={`login-form-${componentId}-email`}
                 aria-invalid={fieldState.invalid}
+                aria-describedby={
+                  fieldState.invalid
+                    ? `login-form-${componentId}-email-error`
+                    : undefined
+                }
                 placeholder="me@example.com o usuario"
-                autoComplete="off"
+                autoComplete="username"
               />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              {fieldState.invalid && (
+                <FieldError
+                  id={`login-form-${componentId}-email-error`}
+                  errors={[fieldState.error]}
+                />
+              )}
             </Field>
           )}
         />
@@ -162,22 +186,52 @@ export function LoginForm({
                 </FieldLabel>
                 <a
                   href="#"
-                  title="Coming Soon"
-                  className="ml-auto text-muted-foreground text-sm underline-offset-4 hover:underline"
+                  title="Próximamente"
+                  className="ml-auto text-sm text-muted-foreground underline-offset-4 hover:underline"
                 >
-                  ¿Perdiste tu clave?
+                  ¿Olvidaste tu contraseña?
                 </a>
               </div>
-              <Input
-                {...field}
-                required
-                type="password"
-                id={`login-form-${componentId}-password`}
-                aria-invalid={fieldState.invalid}
-                placeholder="••••••••"
-                autoComplete="off"
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              <div className="relative">
+                <Input
+                  {...field}
+                  required
+                  type={showPassword ? "text" : "password"}
+                  id={`login-form-${componentId}-password`}
+                  aria-invalid={fieldState.invalid}
+                  aria-describedby={
+                    fieldState.invalid
+                      ? `login-form-${componentId}-password-error`
+                      : undefined
+                  }
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 size-8 -translate-y-1/2 text-muted-foreground"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={
+                    showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                  }
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? (
+                    <EyeOffIcon className="size-4" />
+                  ) : (
+                    <EyeIcon className="size-4" />
+                  )}
+                </Button>
+              </div>
+              {fieldState.invalid && (
+                <FieldError
+                  id={`login-form-${componentId}-password-error`}
+                  errors={[fieldState.error]}
+                />
+              )}
             </Field>
           )}
         />
@@ -186,16 +240,23 @@ export function LoginForm({
           {isSubmitting ? <Spinner /> : "Ingresar"}
         </Button>
 
-        <FieldSeparator>Continua con</FieldSeparator>
-        <Field>
-          <MicrosoftLoginButton />
-          <FieldDescription className="text-center">
-            ¿No tienes una cuenta?{" "}
-             <a href="#" title="Coming Soon" className="underline underline-offset-4">
-              Registrarse
-            </a>
-          </FieldDescription>
-        </Field>
+        <div className="flex flex-col gap-2 text-center text-sm">
+          <a
+            href="/auth/email-otp"
+            className="text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Acceder con código por correo (sin contraseña)
+          </a>
+          <a
+            href="/auth/magic-link"
+            className="text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Acceder con enlace mágico por correo
+          </a>
+          <p className="mt-2 text-xs text-muted-foreground">
+            ¿Necesitas una cuenta? Solicítala a tu administrador.
+          </p>
+        </div>
       </FieldGroup>
     </form>
   );

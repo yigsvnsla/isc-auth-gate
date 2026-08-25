@@ -51,7 +51,7 @@ export default function PhoneSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Teléfono</h2>
+        <h1 className="text-2xl font-semibold tracking-tight">Teléfono</h1>
         <p className="text-sm text-muted-foreground">
           Vincula y verifica tu número de teléfono.
         </p>

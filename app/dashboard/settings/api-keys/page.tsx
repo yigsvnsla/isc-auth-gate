@@ -152,9 +152,9 @@ export default function ApiKeysSettingsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <KeyRound className="size-5" /> API Keys
-          </h1>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+              <KeyRound className="size-5" /> API Keys
+            </h1>
           <p className="text-muted-foreground text-sm">
             Crea y gestiona claves para autenticar requests de API. La clave
             completa solo se muestra una vez al crearla.
@@ -174,9 +174,12 @@ export default function ApiKeysSettingsPage() {
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Cargando…</p>
           ) : !data || data.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              Aún no tienes API keys.
-            </p>
+            <div className="flex flex-col items-center gap-2 py-8 text-center">
+              <KeyRound className="size-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">
+                Aún no tienes API keys. Crea una para empezar.
+              </p>
+            </div>
           ) : (
             <div className="flex flex-col gap-3">
               {data.map((k) => (

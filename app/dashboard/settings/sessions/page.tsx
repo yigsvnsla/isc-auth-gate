@@ -86,7 +86,7 @@ export default function SessionsSettingsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
             <Monitor className="size-5" /> Sesiones
           </h1>
           <p className="text-muted-foreground text-sm">
@@ -115,7 +115,12 @@ export default function SessionsSettingsPage() {
           {isLoading ? (
             <p className="text-muted-foreground text-sm">Cargando…</p>
           ) : sessions.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Sin sesiones.</p>
+            <div className="flex flex-col items-center gap-2 py-8 text-center">
+              <Monitor className="size-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">
+                No hay sesiones activas.
+              </p>
+            </div>
           ) : (
             <div className="flex flex-col gap-3">
               {sessions.map((s) => {

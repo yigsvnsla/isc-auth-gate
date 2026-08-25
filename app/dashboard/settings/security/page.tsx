@@ -207,7 +207,7 @@ export default function SecuritySettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold">Seguridad</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Seguridad</h1>
         <p className="text-muted-foreground text-sm">
           Autenticación en dos pasos (2FA) para tu cuenta.
         </p>
@@ -413,8 +413,7 @@ export default function SecuritySettingsPage() {
               disabled={addingPasskey}
             >
               <Plus className="mr-2 size-4" />
-              {/* eslint-disable-next-line react/no-unescaped-entities */}
-              <p className="text-xs mt-1">Usa "Añadir passkey" para registrar una nueva llave de acceso.</p>
+              Añadir passkey
             </Button>
           </div>
 

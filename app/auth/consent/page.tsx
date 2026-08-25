@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { GridPattern } from "@/components/ui/grid-pattern";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CommandIcon, ExternalLinkIcon, ShieldCheckIcon } from "lucide-react";
+import { CommandIcon, ExternalLinkIcon, ShieldCheckIcon, BadgeCheckIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -161,6 +161,14 @@ function ConsentContent() {
                         ? "Revisa los permisos solicitados antes de continuar."
                         : "Cargando información de la aplicación...")}
                 </CardDescription>
+                {client && !error && (
+                  <div className="mt-3 flex justify-center">
+                    <Badge variant="secondary" className="gap-1">
+                      <BadgeCheckIcon className="size-3" />
+                      Aplicación registrada en ISC Gate
+                    </Badge>
+                  </div>
+                )}
               </CardHeader>
 
               {!error && (
@@ -234,6 +242,11 @@ function ConsentContent() {
               )}
 
               <CardFooter className="flex flex-col gap-2">
+                {!error && (
+                  <p className="mb-1 text-center text-xs text-muted-foreground">
+                    Tu contraseña nunca se comparte con la aplicación.
+                  </p>
+                )}
                 {error ? (
                   <Button
                     variant="outline"
