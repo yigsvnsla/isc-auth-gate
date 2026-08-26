@@ -1,10 +1,6 @@
 "use client";
 import { AlertCircleIcon, EyeIcon, EyeOffIcon } from "lucide-react";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -19,33 +15,29 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import z from "zod/v3";
+import z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { useId, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { MicrosoftLoginButton } from "./MicrosoftLoginButton";
 import { useSearchParams, useRouter } from "next/navigation";
+import { MicrosoftLoginButton } from "./button-login-microsoft";
 
-const signInFormSchema = z.object({
-  username: z.string().min(2, {
-    message: "Ingresa tu correo o usuario",
-  }),
+const dashboardSignInSchema = z.object({
+  username: z.email(),
   password: z.string().min(2, {
     message: "Ingresa tu contraseña",
   }),
 });
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"form">) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const componentId = useId();
 
-  const form = useForm<z.infer<typeof signInFormSchema>>({
-    resolver: zodResolver(signInFormSchema),
+export function DashboardLoginForm({ className }: React.ComponentProps<"form">) {
+  const id = useId();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const form = useForm<z.infer<typeof dashboardSignInSchema>>({
+    resolver: zodResolver(dashboardSignInSchema),
     defaultValues: {
       username: "",
       password: "",
@@ -57,7 +49,7 @@ export function LoginForm({
 
   const callbackURL = searchParams.get("redirectTo") || "/dashboard";
 
-  async function onSubmit(values: z.infer<typeof signInFormSchema>) {
+  async function onSubmit(values: z.infer<typeof dashboardSignInSchema>) {
     setIsSubmitting(true);
     try {
       const identifier = values.username.trim();
@@ -66,9 +58,11 @@ export function LoginForm({
         password: values.password,
         callbackURL,
       };
-      const onSuccess = (context: { data?: { twoFactorRedirect?: boolean } }) => {
+      const onSuccess = (context: {
+        data?: { twoFactorRedirect?: boolean };
+      }) => {
         if (context.data?.twoFactorRedirect) {
-          router.push("/2fa");
+          router.push("/dashboard/2fa");
         }
       };
       const { error } = isEmail
@@ -103,8 +97,7 @@ export function LoginForm({
 
   return (
     <form
-      {...props}
-      id={`login-form-${componentId}`}
+      id={`dashboard-login-form-${id}`}
       onSubmit={form.handleSubmit(onSubmit)}
       className={cn("flex flex-col gap-6", className)}
     >
@@ -122,7 +115,7 @@ export function LoginForm({
           />
           <h1 className="text-2xl font-bold tracking-tight">Iniciar sesión</h1>
           <p className="text-balance text-sm text-muted-foreground">
-            Accede con tu cuenta institucional para continuar
+            Accede al panel de administración
           </p>
         </div>
 
@@ -141,33 +134,35 @@ export function LoginForm({
           </FieldDescription>
         </Field>
 
-        <FieldSeparator>o con tu correo y contraseña</FieldSeparator>
+        <FieldSeparator className="bg-none ">
+          {/* o con tu correo y contraseña */}
+        </FieldSeparator>
 
         <Controller
           name="username"
           control={form.control}
           render={({ field, fieldState }) => (
-            <Field data-invalid>
-              <FieldLabel htmlFor={`login-form-${componentId}-email`}>
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={`dashboard-login-form-${id}-email`}>
                 Correo electrónico o usuario
               </FieldLabel>
               <Input
                 {...field}
                 required
                 type="text"
-                id={`login-form-${componentId}-email`}
+                id={`dashboard-login-form-${id}-email`}
                 aria-invalid={fieldState.invalid}
                 aria-describedby={
                   fieldState.invalid
-                    ? `login-form-${componentId}-email-error`
+                    ? `dashboard-login-form-${id}-email-error`
                     : undefined
                 }
-                placeholder="me@example.com o usuario"
-                autoComplete="username"
+                placeholder="me@example.com"
+                autoComplete="email"
               />
               {fieldState.invalid && (
                 <FieldError
-                  id={`login-form-${componentId}-email-error`}
+                  id={`dashboard-login-form-${id}-email-error`}
                   errors={[fieldState.error]}
                 />
               )}
@@ -181,7 +176,7 @@ export function LoginForm({
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <div className="flex items-center">
-                <FieldLabel htmlFor={`login-form-${componentId}-password`}>
+                <FieldLabel htmlFor={`dashboard-login-form-${id}-password`}>
                   Contraseña
                 </FieldLabel>
                 <a
@@ -197,11 +192,11 @@ export function LoginForm({
                   {...field}
                   required
                   type={showPassword ? "text" : "password"}
-                  id={`login-form-${componentId}-password`}
+                  id={`dashboard-login-form-${id}-password`}
                   aria-invalid={fieldState.invalid}
                   aria-describedby={
                     fieldState.invalid
-                      ? `login-form-${componentId}-password-error`
+                      ? `dashboard-login-form-${id}-password-error`
                       : undefined
                   }
                   placeholder="••••••••"
@@ -228,7 +223,7 @@ export function LoginForm({
               </div>
               {fieldState.invalid && (
                 <FieldError
-                  id={`login-form-${componentId}-password-error`}
+                  id={`dashboard-login-form-${id}-password-error`}
                   errors={[fieldState.error]}
                 />
               )}
@@ -237,7 +232,7 @@ export function LoginForm({
         />
 
         <Button disabled={isSubmitting} type="submit" className="w-full">
-          {isSubmitting ? <Spinner /> : "Ingresar"}
+          {isSubmitting ? <Spinner /> : "Ingresar al panel"}
         </Button>
 
         <div className="flex flex-col gap-2 text-center text-sm">

@@ -5,12 +5,12 @@ import { redirect } from "next/navigation";
 export async function requirePermission(permissions: Record<string, string[]>) {
   const h = await headers();
   const session = await auth.api.getSession({ headers: h });
-  if (!session) redirect("/auth/sign-in");
+  if (!session) redirect("/dashboard/login");
   try {
     const result = await auth.api.userHasPermission({ headers: h, body: { permissions } });
-    if (result.error || !result.success) redirect("/auth/sign-in");
+    if (result.error || !result.success) redirect("/dashboard/login");
   } catch {
-    redirect("/auth/sign-in");
+    redirect("/dashboard/login");
   }
   return session;
 }

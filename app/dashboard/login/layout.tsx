@@ -1,36 +1,35 @@
 import GridPattern from "@/components/ui/grid-pattern";
 import { cn } from "@/lib/utils";
-import {} from "lucide-react";
 import type { Metadata } from "next";
 import {
   CommandIcon,
   ShieldCheckIcon,
-  KeyRoundIcon,
-  BadgeCheckIcon,
-  LockKeyholeIcon,
+  LayoutDashboardIcon,
+  UsersIcon,
+  SettingsIcon,
 } from "lucide-react";
 import { ReactNode } from "react";
 
-interface SignInLayoutProps {
+interface DashboardLoginLayoutProps {
   children: ReactNode;
 }
 
-const TRUST_FEATURES = [
-  { icon: BadgeCheckIcon, label: "Integrado con Microsoft 365" },
-  { icon: KeyRoundIcon, label: "Inicio de sesión único (SSO)" },
-  { icon: ShieldCheckIcon, label: "Protección con doble factor (2FA)" },
-  { icon: LockKeyholeIcon, label: "Estándares abiertos (OpenID Connect)" },
+const DASHBOARD_FEATURES = [
+  { icon: LayoutDashboardIcon, label: "Panel de administración central" },
+  { icon: UsersIcon, label: "Gestión de usuarios y organizaciones" },
+  { icon: ShieldCheckIcon, label: "Control de acceso y auditoría" },
+  { icon: SettingsIcon, label: "Configuración de OAuth y recursos" },
 ];
 
 export const metadata: Metadata = {
-  title: "Iniciar sesión - ISC Auth",
-  description: "Inicia sesión en tu cuenta de ISC Auth",
+  title: "Panel — Iniciar sesión",
+  description: "Accede al panel de administración de ISC Auth Gate",
 };
 
-export default function LoginLayout({ children }: SignInLayoutProps) {
+export default function DashboardLoginLayout({ children }: DashboardLoginLayoutProps) {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2 ">
-      <aside className="relative hidden overflow-hidden bg-invert text-invert-foreground lg:flex lg:flex-col lg:justify-between p-10 xl:p-14  rounded-r-2xl">
+    <div className="grid min-h-svh lg:grid-cols-2">
+      <aside className="relative hidden overflow-hidden bg-invert text-invert-foreground lg:flex lg:flex-col lg:justify-between p-10 xl:p-14 rounded-r-2xl">
         <GridPattern
           className={cn(
             "mask-[radial-gradient(400px_circle_at_center,white,transparent)]",
@@ -43,22 +42,21 @@ export default function LoginLayout({ children }: SignInLayoutProps) {
           <div className="bg-invert-foreground text-invert flex aspect-square size-8 items-center justify-center rounded-lg">
             <CommandIcon className="size-4" />
           </div>
-          ISC Gate
+          ISC Gate — Panel
         </div>
 
         <div className="relative space-y-6">
           <h2 className="text-3xl font-semibold leading-tight tracking-tight xl:text-4xl">
-            Tu identidad,
+            Administración
             <br />
-            un solo punto de acceso.
+            centralizada.
           </h2>
           <p className="max-w-md text-balance text-invert-foreground/70">
-            ISC Auth Gate centraliza y protege el acceso a tus aplicaciones
-            internas y de terceros mediante Microsoft 365.
+            Gestiona usuarios, organizaciones, clientes OAuth y recursos desde un único panel seguro.
           </p>
 
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {TRUST_FEATURES.map(({ icon: Icon, label }) => (
+            {DASHBOARD_FEATURES.map(({ icon: Icon, label }) => (
               <li
                 key={label}
                 className="flex items-center gap-2 text-sm text-invert-foreground/80"
@@ -73,8 +71,7 @@ export default function LoginLayout({ children }: SignInLayoutProps) {
         </div>
 
         <p className="relative text-xs text-invert-foreground/50">
-          © 2026 ISC. Acceso gestionado, auditado y conforme a estándares
-          abiertos.
+          © 2026 ISC. Acceso restringido a administradores.
         </p>
       </aside>
       {children}

@@ -19,17 +19,17 @@ function getRedirectUrl(res: Response): string | null {
 }
 
 describe("proxy", () => {
-  it("redirects unauthenticated / to sign-in", () => {
+  it("redirects unauthenticated / to dashboard login", () => {
     const res = proxy(makeReq("/"));
     expect(isRedirect(res)).toBe(true);
-    expect(getRedirectUrl(res)).toContain("/auth/sign-in");
+    expect(getRedirectUrl(res)).toContain("/dashboard/login");
   });
 
-  it("redirects unauthenticated /dashboard to sign-in with redirectTo", () => {
+  it("redirects unauthenticated /dashboard to dashboard login with redirectTo", () => {
     const res = proxy(makeReq("/dashboard/settings"));
     expect(isRedirect(res)).toBe(true);
     const loc = getRedirectUrl(res);
-    expect(loc).toContain("/auth/sign-in");
+    expect(loc).toContain("/dashboard/login");
     expect(loc).toContain("redirectTo=%2Fdashboard%2Fsettings");
   });
 

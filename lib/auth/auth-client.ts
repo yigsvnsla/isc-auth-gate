@@ -1,12 +1,35 @@
-import { adminClient, inferAdditionalFields, organizationClient } from "better-auth/client/plugins";
+import {
+  adminClient,
+  inferAdditionalFields,
+  organizationClient,
+} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
-import { oauthProviderClient, oauthDeviceAuthorizationClient } from "@better-auth/oauth-provider/client";
-import { twoFactorClient, usernameClient, phoneNumberClient, emailOTPClient, magicLinkClient, multiSessionClient, lastLoginMethodClient, oneTimeTokenClient, oauthPopupClient } from "better-auth/client/plugins";
+import {
+  oauthProviderClient,
+  oauthDeviceAuthorizationClient,
+} from "@better-auth/oauth-provider/client";
+import {
+  twoFactorClient,
+  usernameClient,
+  phoneNumberClient,
+  emailOTPClient,
+  magicLinkClient,
+  multiSessionClient,
+  lastLoginMethodClient,
+  oneTimeTokenClient,
+  oauthPopupClient,
+} from "better-auth/client/plugins";
 import { apiKeyClient } from "@better-auth/api-key/client";
 import { passkeyClient } from "@better-auth/passkey/client";
 
 import { auth } from "./auth";
-import { accessControl, admin, moderator, user, orgRoles } from "../permissions";
+import {
+  accessControl,
+  admin,
+  moderator,
+  user,
+  orgRoles,
+} from "../permissions";
 
 /**
  * Typed Better Auth client for browser-side calls.
@@ -15,7 +38,6 @@ import { accessControl, admin, moderator, user, orgRoles } from "../permissions"
  * Roles and AC object shared from permissions.ts for type inference.
  */
 export const authClient = createAuthClient({
-
   baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL!,
   plugins: [
     adminClient({
@@ -35,7 +57,8 @@ export const authClient = createAuthClient({
     twoFactorClient({
       onTwoFactorRedirect() {
         if (typeof window !== "undefined") {
-          window.location.href = "/2fa";
+          const isDashboard = window.location.pathname.startsWith("/dashboard");
+          window.location.href = isDashboard ? "/dashboard/2fa" : "/auth/2fa";
         }
       },
     }),
@@ -51,9 +74,3 @@ export const authClient = createAuthClient({
     passkeyClient(),
   ],
 });
-
-
-
-
-
-

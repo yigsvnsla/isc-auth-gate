@@ -60,7 +60,7 @@ export function NavUser({
     const isSignedOut = await signOutTrigger();
 
     if (isSignedOut) {
-      router.replace("/auth/sign-in", {});
+      router.replace("/dashboard/login", {});
       router.refresh();
     }
   }

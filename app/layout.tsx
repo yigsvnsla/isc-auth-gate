@@ -2,10 +2,10 @@ import "./globals.css";
 import Providers from "@/components/providers";
 import { fontSans } from "@/lib/fonts/sans";
 import { fontMono } from "@/lib/fonts/mono";
-import { ReactElement } from "react";
+import { ReactNode } from "react";
 
 interface RootLayoutProps {
-  children: ReactElement;
+  children: ReactNode;
 }
 
 export default async function RootLayout({ children }: RootLayoutProps) {

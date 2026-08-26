@@ -1,6 +1,4 @@
-'use client";';
-
-import * as React from "react";
+'use client';
 
 // import { NavProjects } from "@/components/nav-projects"; // Coming Soon
 // import { NavSecondary } from "@/components/nav-secondary"; // Coming Soon
@@ -20,6 +18,7 @@ import { NavUserContainer } from "./nav-user-container";
 import { NavMainContainer } from "./nav-main-container";
 import { CommandIcon } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -30,7 +29,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               size="lg"
               render={
-                 <Link href="#" title="Coming Soon">
+                <Link href="#" title="Coming Soon">
                   <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                     <CommandIcon className="size-4" />
                   </div>
@@ -45,17 +44,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <React.Suspense fallback={<NavUserSkeleton />}>
+        <Suspense fallback={<NavUserSkeleton />}>
           <NavMainContainer />
-        </React.Suspense>
+        </Suspense>
         {/* 
         <NavProjects projects={data.projects} />
         <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        <React.Suspense fallback={<NavUserSkeleton />}>
+        <Suspense fallback={<NavUserSkeleton />}>
           <NavUserContainer />
-        </React.Suspense>
+        </Suspense>
       </SidebarFooter>
     </Sidebar>
   );

@@ -19,14 +19,25 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = hasSessionCookie(request);
 
-  const requiresSession = pathname === "/" || pathname.startsWith("/dashboard");
+  // rutas públicas dentro de /dashboard (no requieren sesión)
+  const isPublicDashboardRoute =
+    pathname === "/dashboard/login" ||
+    pathname === "/dashboard/2fa" ||
+    pathname.startsWith("/dashboard/login/") ||
+    pathname.startsWith("/dashboard/2fa/");
+
+  const requiresSession =
+    (pathname === "/" || pathname.startsWith("/dashboard")) && !isPublicDashboardRoute;
   if (requiresSession && !hasSession) {
-    const url = new URL("/auth/sign-in", request.url);
+    const url = new URL("/dashboard/login", request.url);
     if (pathname !== "/") url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  // expone pathname a layouts/server components vía header
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
