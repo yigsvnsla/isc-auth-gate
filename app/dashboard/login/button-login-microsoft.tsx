@@ -3,15 +3,14 @@ import { authClient } from "@/lib/auth/auth-client";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
-import { FC } from "react";
+import { FC, useId } from "react";
 import { BetterFetchError } from "better-auth/react";
 import { SignInPopupOptions } from "better-auth/client/plugins";
 import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
+import { BetterAuthError } from "better-auth";
+import { Button as ButtonPrimitive } from "@base-ui/react/button"
 
-interface MicrosoftLoginButtonProps {
-  className?: string;
-}
 
 interface SignInSocialOauthClientArg {
   arg: SignInPopupOptions;
@@ -24,14 +23,16 @@ const key = "/sign-up/social";
 const fetcher = async (_key: string, { arg }: SignInSocialOauthClientArg) => {
   const { data, error } = await authClient.signIn.popup(arg);
   if (error) throw error;
+  if (!data) throw new BetterAuthError("Error en solicitud de proveedor")
   return data;
 };
 
 export const useSignInSocialOauthClientMutation = () => {
-  return useSWRMutation<SignInPopupResponseData, BetterFetchError, string, SignInPopupOptions>(key, fetcher);
+  return useSWRMutation<NonNullable<SignInPopupResponseData>, BetterFetchError, typeof key, SignInPopupOptions>(key, fetcher);
 };
 
-export const MicrosoftLoginButton: FC<MicrosoftLoginButtonProps> = ({ className }) => {
+export const MicrosoftLoginButton: FC<ButtonPrimitive.Props> = ({ className, ...props }) => {
+  const id = useId()
   const router = useRouter();
   const { trigger, isMutating } = useSignInSocialOauthClientMutation();
 
@@ -57,11 +58,13 @@ export const MicrosoftLoginButton: FC<MicrosoftLoginButtonProps> = ({ className 
 
   return (
     <Button
+      id={`btn-login-microsoft-${id}`}
       className={cn("w-full cursor-pointer", className)}
       variant="outline"
       type="button"
       onClick={submitHandler}
       disabled={isMutating}
+      {...props}
     >
       {isMutating ? (
         <Spinner />

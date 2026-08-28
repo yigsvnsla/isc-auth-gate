@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,13 +42,10 @@ import {
   BanIcon,
   MailWarningIcon,
   KeyRoundIcon,
-  ActivityIcon,
   AppWindowIcon,
   ClockIcon,
   MoreHorizontalIcon,
   KeySquareIcon,
-  CheckCircle2Icon,
-  AlertCircleIcon,
   CircleUserIcon,
 } from "lucide-react";
 
@@ -102,7 +99,8 @@ function getInitials(name: string) {
 
 export default function DashboardPage() {
   const [clients, setClients] = useState<OAuthClientRef[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<string>("__global__");
+  const [selectedClientId, setSelectedClientId] =
+    useState<string>("__global__");
   const [summary, setSummary] = useState<SerializedKpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -262,7 +260,9 @@ export default function DashboardPage() {
             <TabsContent value="overview">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Usuarios Recientes</CardTitle>
+                  <CardTitle className="text-base">
+                    Usuarios Recientes
+                  </CardTitle>
                   <CardDescription>
                     Últimos registros en el sistema
                   </CardDescription>
@@ -307,7 +307,9 @@ export default function DashboardPage() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{user.role ?? "user"}</Badge>
+                            <Badge variant="outline">
+                              {user.role ?? "user"}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             {user.twoFactorEnabled ? (

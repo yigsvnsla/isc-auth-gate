@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isPublicDashboardRoute } from "@/lib/dashboard-routes";
 
 const SESSION_COOKIE_NAMES = [
   "__Secure-better-auth.session_token",
@@ -20,14 +21,11 @@ export function proxy(request: NextRequest) {
   const hasSession = hasSessionCookie(request);
 
   // rutas públicas dentro de /dashboard (no requieren sesión)
-  const isPublicDashboardRoute =
-    pathname === "/dashboard/login" ||
-    pathname === "/dashboard/2fa" ||
-    pathname.startsWith("/dashboard/login/") ||
-    pathname.startsWith("/dashboard/2fa/");
+  const isPublicRoute = isPublicDashboardRoute(pathname);
 
   const requiresSession =
-    (pathname === "/" || pathname.startsWith("/dashboard")) && !isPublicDashboardRoute;
+    (pathname === "/" || pathname.startsWith("/dashboard")) && !isPublicRoute;
+
   if (requiresSession && !hasSession) {
     const url = new URL("/dashboard/login", request.url);
     if (pathname !== "/") url.searchParams.set("redirectTo", pathname);

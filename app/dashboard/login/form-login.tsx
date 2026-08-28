@@ -1,11 +1,4 @@
 "use client";
-import { AlertCircleIcon, EyeIcon, EyeOffIcon } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { authClient } from "@/lib/auth/auth-client";
 import {
   Field,
   FieldDescription,
@@ -14,91 +7,116 @@ import {
   FieldLabel,
   FieldSeparator,
 } from "@/components/ui/field";
+import { AlertCircleIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { authClient } from "@/lib/auth/auth-client";
 import { Input } from "@/components/ui/input";
-import z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { useId, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MicrosoftLoginButton } from "./button-login-microsoft";
+import { BetterFetchError } from "better-auth/react";
+import { BetterAuthError } from "better-auth";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
+import z from "zod";
+import Image from "next/image";
+import Link from "next/link";
+import useSWRMutation from "swr/mutation";
+import type { SuccessContext } from "@better-fetch/fetch";
+
+
+// El twoFactorClient inyecta estos campos a runtime
+type TwoFactorAugmented = SignInEmailResponse & {
+  twoFactorRedirect?: boolean;
+  twoFactorMethods?: string[];
+};
 
 const dashboardSignInSchema = z.object({
   username: z.email(),
   password: z.string().min(2, {
     message: "Ingresa tu contraseña",
   }),
+
+  remember:z.boolean()
 });
 
+export type SingInFormSchema = z.infer<typeof dashboardSignInSchema>
+
+export type SignInEmail = Parameters<typeof authClient.signIn.email>[0];
+
+export type SignInEmailResponse = Awaited<ReturnType<typeof authClient.signIn.email<never>>>;
+
+export interface SignInEmailArg {
+  arg: SignInEmail;
+}
+
+export const key = "/sign-in/email"
+
+export const fetcher = async (_key: string, { arg }: SignInEmailArg) => {
+  const { data, error } = await authClient.signIn.email(arg);
+  if (error) throw error;
+  if (!data) throw new BetterAuthError("Error en solicitud de proveedor")
+  return data;
+};
+
+export const useSignInEmailMutation = () => {
+  return useSWRMutation<NonNullable<SignInEmailResponse>, BetterFetchError, typeof key, SignInEmail>(key, fetcher);
+};  
 
 export function DashboardLoginForm({ className }: React.ComponentProps<"form">) {
   const id = useId();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const { trigger, isMutating } = useSignInEmailMutation();
 
-  const form = useForm<z.infer<typeof dashboardSignInSchema>>({
+  const form = useForm<SingInFormSchema>({
     resolver: zodResolver(dashboardSignInSchema),
     defaultValues: {
-      username: "",
-      password: "",
+      username: "user@example.com",
+      password: "12345678",
+      remember: false
     },
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const callbackURL = searchParams.get("redirectTo") || "/dashboard";
-
-  async function onSubmit(values: z.infer<typeof dashboardSignInSchema>) {
-    setIsSubmitting(true);
-    try {
-      const identifier = values.username.trim();
-      const isEmail = identifier.includes("@");
-      const base = {
-        password: values.password,
-        callbackURL,
-      };
-      const onSuccess = (context: {
-        data?: { twoFactorRedirect?: boolean };
-      }) => {
-        if (context.data?.twoFactorRedirect) {
-          router.push("/dashboard/2fa");
+  async function submitHandler(value: SingInFormSchema) {
+    toast.promise(
+      trigger({
+        email:value.username,
+        password:value.password,
+        rememberMe: value.remember,
+        fetchOptions:{
+          onSuccess: async (ctx: SuccessContext<TwoFactorAugmented>) => {
+            if (ctx.data.twoFactorRedirect) { 
+              const {data, error} = await authClient.twoFactor.sendOtp();
+              if (error) throw error;
+              if (!data) throw new BetterAuthError("Error en solicitud de proveedor")
+              router.push("/dashboard/2fa");
+            }
+          }
         }
-      };
-      const { error } = isEmail
-        ? await authClient.signIn.email(
-            { ...base, email: identifier },
-            { onSuccess: onSuccess as never },
-          )
-        : await authClient.signIn.username(
-            { ...base, username: identifier },
-            { onSuccess: onSuccess as never },
-          );
-      if (error) {
-        toast.error(error.message || "Error al iniciar sesión");
-      }
-    } catch {
-      toast.error("Error al iniciar sesión");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+      }),
+      {
+        loading: "Iniciando sesión...",
+        success: () => {
+          // 3. Ejecutar la redirección programática al resolverse el popup
 
-  const authError = searchParams.get("code")
-    ? {
-        title: `${searchParams.get("status")} - ${
-          searchParams.get("statusText") || "Error de autenticación"
-        }`,
-        description:
-          searchParams.get("message") ||
-          "Ocurrió un error al intentar iniciar sesión.",
-      }
-    : null;
+          return "¡Sesión iniciada correctamente!";
+        },
+        error: (err) => `Error al iniciar sesión: ${err.message || err}`,
+      },
+    );
+  }
 
   return (
     <form
       id={`dashboard-login-form-${id}`}
-      onSubmit={form.handleSubmit(onSubmit)}
+      onSubmit={form.handleSubmit(submitHandler)}
       className={cn("flex flex-col gap-6", className)}
     >
       <FieldGroup>
@@ -119,23 +137,15 @@ export function DashboardLoginForm({ className }: React.ComponentProps<"form">) 
           </p>
         </div>
 
-        {authError && (
-          <Alert variant="destructive" role="alert" aria-live="assertive">
-            <AlertCircleIcon />
-            <AlertTitle>{authError.title}</AlertTitle>
-            <AlertDescription>{authError.description}</AlertDescription>
-          </Alert>
-        )}
-
         <Field>
-          <MicrosoftLoginButton />
+          <MicrosoftLoginButton disabled={isMutating} />
           <FieldDescription className="text-center">
             Recomendado para cuentas de Microsoft 365
           </FieldDescription>
         </Field>
 
         <FieldSeparator className="bg-none ">
-          {/* o con tu correo y contraseña */}
+          o con tu correo y contraseña
         </FieldSeparator>
 
         <Controller
@@ -144,7 +154,7 @@ export function DashboardLoginForm({ className }: React.ComponentProps<"form">) 
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={`dashboard-login-form-${id}-email`}>
-                Correo electrónico o usuario
+                Correo electrónico
               </FieldLabel>
               <Input
                 {...field}
@@ -174,80 +184,70 @@ export function DashboardLoginForm({ className }: React.ComponentProps<"form">) 
           name="password"
           control={form.control}
           render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <div className="flex items-center">
+            <Field className="max-w-sm" data-invalid={fieldState.invalid}>
+              <div className="flex flex-row justify-between">
                 <FieldLabel htmlFor={`dashboard-login-form-${id}-password`}>
                   Contraseña
                 </FieldLabel>
-                <a
+                <Link
                   href="#"
                   title="Próximamente"
                   className="ml-auto text-sm text-muted-foreground underline-offset-4 hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
-                </a>
+                </Link>
               </div>
-              <div className="relative">
-                <Input
+              <InputGroup>
+                <InputGroupInput
                   {...field}
                   required
                   type={showPassword ? "text" : "password"}
                   id={`dashboard-login-form-${id}-password`}
                   aria-invalid={fieldState.invalid}
-                  aria-describedby={
-                    fieldState.invalid
-                      ? `dashboard-login-form-${id}-password-error`
-                      : undefined
-                  }
+                  aria-describedby={fieldState.invalid ? `dashboard-login-form-${id}-password-error`: undefined}
                   placeholder="••••••••"
                   autoComplete="current-password"
                   className="pr-10"
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 size-8 -translate-y-1/2 text-muted-foreground"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={
-                    showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-                  }
-                  aria-pressed={showPassword}
-                >
-                  {showPassword ? (
-                    <EyeOffIcon className="size-4" />
-                  ) : (
-                    <EyeIcon className="size-4" />
-                  )}
-                </Button>
-              </div>
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    size="icon-xs"
+                    title="view password"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((v) => !v)}
+                  >
+                    {showPassword ? <EyeOffIcon /> :<EyeIcon />}
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
               {fieldState.invalid && (
                 <FieldError
-                  id={`dashboard-login-form-${id}-password-error`}
-                  errors={[fieldState.error]}
-                />
-              )}
+                   id={`dashboard-login-form-${id}-password-error`}
+                   errors={[fieldState.error]}
+                 />
+               )}
             </Field>
           )}
         />
 
-        <Button disabled={isSubmitting} type="submit" className="w-full">
-          {isSubmitting ? <Spinner /> : "Ingresar al panel"}
+        <Button disabled={isMutating} type="submit" className="w-full">
+          {isMutating ? <Spinner /> : "Ingresar al panel"}
         </Button>
 
         <div className="flex flex-col gap-2 text-center text-sm">
-          <a
+          <Link
             href="/auth/email-otp"
             className="text-muted-foreground underline-offset-4 hover:underline"
           >
             Acceder con código por correo (sin contraseña)
-          </a>
-          <a
+          </Link>
+          <Link
             href="/auth/magic-link"
             className="text-muted-foreground underline-offset-4 hover:underline"
           >
             Acceder con enlace mágico por correo
-          </a>
+          </Link>
           <p className="mt-2 text-xs text-muted-foreground">
             ¿Necesitas una cuenta? Solicítala a tu administrador.
           </p>

@@ -1,21 +1,18 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { testAuth } from "@/lib/auth.test";
 import { cleanupTestDb, testDb } from "@/tests/database";
-import { eq } from "drizzle-orm";
+import { TestHelpers } from "better-auth/plugins";
 
 describe("Session Management", () => {
-  let ctx: Awaited<typeof testAuth.$context>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let testHelpers: any;
+  let testHelpers: TestHelpers;
 
   beforeEach(async () => {
-    ctx = await testAuth.$context;
-    testHelpers = ctx.test;
-    await cleanupTestDb();
+    testHelpers = (await testAuth.$context).test;
+    // await cleanupTestDb();
   });
 
   afterEach(async () => {
-    await cleanupTestDb();
+    // await cleanupTestDb();
   });
 
   describe("createUser with password", () => {

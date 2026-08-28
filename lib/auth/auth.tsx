@@ -40,7 +40,10 @@ import {
   moderator,
   orgRoles,
 } from "../permissions";
-import { oauthProvider, oauthDeviceAuthorization } from "@better-auth/oauth-provider";
+import {
+  oauthProvider,
+  oauthDeviceAuthorization,
+} from "@better-auth/oauth-provider";
 // import { microsoft } from "@/plugins/providers/microsoft"; // Coming Soon
 import { env } from "@/env";
 import { email } from "../email";
@@ -51,6 +54,8 @@ import {
   EmailValidationError,
   EmailAdapterError,
 } from "@opencoredev/email-sdk";
+
+import { i18n, locales } from "@better-auth/i18n";
 // ponytail: AC reuse from static RBAC so dynamic org roles share the same
 // statements (auth, project, defaultStatements) defined in permissions.ts
 
@@ -91,7 +96,11 @@ export const auth = betterAuth({
   // securityLevel: nivel de seguridad de la cuenta; mfaEnforcedAt: cuándo se forzó MFA.
   user: {
     additionalFields: {
-      securityLevel: { type: "string", defaultValue: "standard", required: false },
+      securityLevel: {
+        type: "string",
+        defaultValue: "standard",
+        required: false,
+      },
       mfaEnforcedAt: { type: "date", required: false },
     },
   },
@@ -301,7 +310,13 @@ export const auth = betterAuth({
       },
       // Invitaciones por email (reusa infra SMTP). El enlace apunta al
       // panel de invitaciones de la organización.
-      sendInvitationEmail: async ({ email: inviteeEmail, organization, inviter, role, id }) => {
+      sendInvitationEmail: async ({
+        email: inviteeEmail,
+        organization,
+        inviter,
+        role,
+        id,
+      }) => {
         const acceptUrl = `${env.BETTER_AUTH_URL}/dashboard/organizations/invitations?id=${id}`;
         await email.send({
           from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
@@ -357,12 +372,21 @@ export const auth = betterAuth({
     // temporales las maneja Better Auth. El único hook custom es sendOTP,
     // que usa la infra de email ya existente (no es lógica 2FA).
     twoFactor({
+      allowPasswordless: false,
+      accountLockout: {
+        enabled: false,
+      },
       issuer: env.BETTER_AUTH_SERVER_NAME,
       totpOptions: {
         digits: 6,
         period: 30,
+        allowPasswordless: false,
       },
       otpOptions: {
+        digits: 6,
+        period: 5,
+        allowedAttempts: 5,
+        storeOTP: "encrypted",
         sendOTP: async ({ user, otp }) => {
           await email.send({
             from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
@@ -371,15 +395,13 @@ export const auth = betterAuth({
             text: `Tu código de verificación es: ${otp}`,
           });
         },
-        period: 5,
-        allowedAttempts: 5,
-        storeOTP: "encrypted",
       },
       backupCodeOptions: {
         amount: 10,
         length: 10,
         storeBackupCodes: "encrypted",
       },
+
       trustDeviceMaxAge: 30 * 24 * 60 * 60,
     }),
     // API Key management (native plugin). enableSessionForAPIKeys permite que
@@ -391,6 +413,7 @@ export const auth = betterAuth({
     }),
     // Username: login por nombre de usuario (además de email). Columna única.
     username({
+      
       minUsernameLength: 3,
       maxUsernameLength: 30,
     }),
@@ -508,7 +531,10 @@ export const auth = betterAuth({
           // context = email pasado desde el client (query param en generate-register-options)
           const email = context as string;
           if (!email || !email.includes("@")) {
-            throw APIError.from("BAD_REQUEST", { code: "EMAIL_REQUIRED", message: "Email requerido para passkey-first" });
+            throw APIError.from("BAD_REQUEST", {
+              code: "EMAIL_REQUIRED",
+              message: "Email requerido para passkey-first",
+            });
           }
 
           // Buscar usuario existente
@@ -518,7 +544,11 @@ export const auth = betterAuth({
           })) as { id: string; name: string | null; email: string } | null;
 
           if (existing) {
-            return { id: existing.id, name: existing.name || email, displayName: existing.email };
+            return {
+              id: existing.id,
+              name: existing.name || email,
+              displayName: existing.email,
+            };
           }
 
           // Crear usuario nuevo sin password (passkey-first = email verificado implícito)
@@ -536,6 +566,7 @@ export const auth = betterAuth({
         },
       },
     }),
+    i18n({ translations: locales }),
     nextCookies(),
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
   ],

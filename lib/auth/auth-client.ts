@@ -55,12 +55,12 @@ export const authClient = createAuthClient({
     oauthDeviceAuthorizationClient(),
     oauthPopupClient(),
     twoFactorClient({
-      onTwoFactorRedirect() {
-        if (typeof window !== "undefined") {
-          const isDashboard = window.location.pathname.startsWith("/dashboard");
-          window.location.href = isDashboard ? "/dashboard/2fa" : "/auth/2fa";
-        }
-      },
+      // onTwoFactorRedirect() {
+      //   if (typeof window !== "undefined") {
+      //     const isDashboard = window.location.pathname.startsWith("/dashboard");
+      //     window.location.href = isDashboard ? "/dashboard/2fa" : "/auth/2fa";
+      //   }
+      // },
     }),
     inferAdditionalFields<typeof auth>(),
     apiKeyClient(),

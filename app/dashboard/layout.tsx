@@ -1,47 +1,54 @@
-
 import { AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { redirect } from "next/navigation";
 import { PropsWithChildren } from "react";
 import { auth } from "@/lib/auth/auth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { cookies, headers } from "next/headers";
+import { cookies as NextCookies, headers as NextHeaders } from "next/headers";
 import { DashboardBreadcrumb } from "./dashboard-breadcrumb";
+import { isPublicDashboardRoute } from "@/lib/dashboard-routes";
 
+/**
+ * Layout principal del panel de administración (Server Component).
+ * Proporciona autenticación en el servidor, control de acceso basado en permisos (RBAC)
+ * y la estructura visual base con Sidebar y Header.
+ *
+ * @param children Componentes o páginas hijas a renderizar dentro del contenedor principal.
+ */
 export default async function DashboardLayout({ children }: PropsWithChildren) {
-  const _headers = await headers();
-  const pathname = _headers.get("x-pathname") ?? "";
+  const cookies = await NextCookies();
+  const headers = await NextHeaders();
 
-  // rutas públicas del dashboard: no exigir sesión ni permisos
-  const isPublicDashboardRoute =
-    pathname === "/dashboard/login" ||
-    pathname === "/dashboard/2fa" ||
-    pathname.startsWith("/dashboard/login/") ||
-    pathname.startsWith("/dashboard/2fa/");
+  // 1. Omitir validación en rutas explícitamente públicas (ej. /dashboard/login)
+  const isPublicRoute = isPublicDashboardRoute(`${headers.get("x-pathname")}`);
 
-  if (isPublicDashboardRoute) {
+  if (isPublicRoute) {
     return <>{children}</>;
   }
 
-  const session = await auth.api.getSession({ headers: _headers });
+  // 2. Verificación de sesión activa
+  const session = await auth.api.getSession({ headers });
+
   if (!session) redirect("/dashboard/login");
 
-  let hasAccess;
-  try {
-    hasAccess = await auth.api.userHasPermission({
-      headers: _headers,
-      body: { permissions: { auth: ["access"] } },
-    });
-  } catch {
-    redirect("/dashboard/login");
-  }
-  if (hasAccess.error || !hasAccess.success) redirect("/dashboard/login");
+  // 3. Verificación de permisos de usuario (RBAC)
+  const { success, error } = await auth.api.userHasPermission({
+    headers,
+    body: { permissions: { auth: ["access"] } },
+  });
 
-  const cookieStore = await cookies();
-  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
+  if (error || !success) redirect("/dashboard/login");
+
+  // 4. Inferencia del estado de la barra lateral desde cookies de servidor
+  const isOpen = Boolean(cookies.get("sidebar_state")?.value === "true");
+
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
+    <SidebarProvider defaultOpen={isOpen}>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
