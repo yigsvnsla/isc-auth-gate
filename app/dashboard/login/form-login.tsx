@@ -113,7 +113,13 @@ export function DashboardLoginForm({ className }: React.ComponentProps<"form">) 
               });
 
               router.push(`/dashboard/2fa?${params.toString()}`);
+              return; // no caer al branch sin-2FA (pisaba el push a OTP)
             }
+
+            // Sign-in sin 2FA: el servidor decide (dashboard o acceso denegado).
+            // refresh() invalida el Router Cache para evitar renders obsoletos.
+            router.replace("/dashboard");
+            router.refresh();
           }
         }
       }),

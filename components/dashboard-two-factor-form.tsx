@@ -101,6 +101,7 @@ export function DashboardTwoFactorForm() {
         loading: "Enviando código...",
         success: () => {
           router.push("/dashboard");
+          router.refresh();
           return "¡Código enviado correctamente!";
         },
         error: (err) =>

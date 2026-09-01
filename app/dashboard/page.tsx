@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -98,11 +99,13 @@ function getInitials(name: string) {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [clients, setClients] = useState<OAuthClientRef[]>([]);
   const [selectedClientId, setSelectedClientId] =
     useState<string>("__global__");
   const [summary, setSummary] = useState<SerializedKpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/oauth-clients")
@@ -117,11 +120,28 @@ export default function DashboardPage() {
         ? `?clientId=${encodeURIComponent(selectedClientId)}`
         : "";
     fetch(`/api/admin/kpi${qs}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setSummary(d))
-      .catch(() => setSummary(null))
+      .then((r) => {
+        // Sesión sin permisos (401/403): el layout puede haber sido servido
+        // desde el Router Cache del cliente; forzar re-evaluación server-side.
+        if (r.status === 401 || r.status === 403) {
+          router.replace("/dashboard/login");
+          return null;
+        }
+        if (!r.ok) {
+          setError("No se pudieron cargar las métricas del panel.");
+          return null;
+        }
+        return r.json();
+      })
+      .then((d) => {
+        if (d) {
+          setSummary(d);
+          setError(null);
+        }
+      })
+      .catch(() => setError("No se pudieron cargar las métricas del panel."))
       .finally(() => setLoading(false));
-  }, [selectedClientId]);
+  }, [selectedClientId, router]);
 
   const verifiedPercentage = useMemo(() => {
     if (!summary || summary.users.total === 0) return 0;
@@ -174,7 +194,19 @@ export default function DashboardPage() {
         <Separator />
       </div>
 
-      {loading || !summary ? (
+      {error ? (
+        <Card className="mx-auto max-w-md">
+          <CardHeader>
+            <CardTitle className="text-base">Error al cargar</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Reintentar
+            </Button>
+          </CardContent>
+        </Card>
+      ) : loading || !summary ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-28 w-full rounded-xl" />

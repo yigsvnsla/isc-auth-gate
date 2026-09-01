@@ -12,6 +12,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cookies as NextCookies, headers as NextHeaders } from "next/headers";
 import { DashboardBreadcrumb } from "./dashboard-breadcrumb";
 import { isPublicDashboardRoute } from "@/lib/dashboard-routes";
+import { DashboardAccessDenied } from "@/components/dashboard-access-denied";
 
 /**
  * Layout principal del panel de administración (Server Component).
@@ -42,7 +43,7 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
     body: { permissions: { auth: ["access"] } },
   });
 
-  if (error || !success) redirect("/dashboard/unauthorized");
+  if (error || !success) return <DashboardAccessDenied />;
 
   // 4. Inferencia del estado de la barra lateral desde cookies de servidor
   const isOpen = Boolean(cookies.get("sidebar_state")?.value === "true");
