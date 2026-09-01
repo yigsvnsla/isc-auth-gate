@@ -7,8 +7,16 @@ import {
   FieldLabel,
   FieldSeparator,
 } from "@/components/ui/field";
-import { AlertCircleIcon, EyeIcon, EyeOffIcon } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { 
+  // AlertCircleIcon,
+  EyeIcon,
+  EyeOffIcon
+} from "lucide-react";
+import { 
+  // Alert,
+  // AlertDescription,
+  // AlertTitle
+} from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +26,10 @@ import { Controller, useForm } from "react-hook-form";
 import { useId, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { useSearchParams, useRouter } from "next/navigation";
+import { 
+  // useSearchParams,
+  useRouter
+} from "next/navigation";
 import { MicrosoftLoginButton } from "./button-login-microsoft";
 import { BetterFetchError } from "better-auth/react";
 import { BetterAuthError } from "better-auth";
@@ -28,7 +39,6 @@ import Image from "next/image";
 import Link from "next/link";
 import useSWRMutation from "swr/mutation";
 import type { SuccessContext } from "@better-fetch/fetch";
-
 
 // El twoFactorClient inyecta estos campos a runtime
 type TwoFactorAugmented = SignInEmailResponse & {
@@ -92,11 +102,17 @@ export function DashboardLoginForm({ className }: React.ComponentProps<"form">) 
         rememberMe: value.remember,
         fetchOptions:{
           onSuccess: async (ctx: SuccessContext<TwoFactorAugmented>) => {
-            if (ctx.data.twoFactorRedirect) { 
-              const {data, error} = await authClient.twoFactor.sendOtp();
+            if (ctx.data.twoFactorRedirect && ctx.data.twoFactorMethods) { 
+              const {data, error} = await authClient.twoFactor.sendOtp({ trustDevice:false });
               if (error) throw error;
               if (!data) throw new BetterAuthError("Error en solicitud de proveedor")
-              router.push("/dashboard/2fa");
+
+              const params = new URLSearchParams({
+                method: ctx.data.twoFactorMethods[0],
+                email: value.username,
+              });
+
+              router.push(`/dashboard/2fa?${params.toString()}`);
             }
           }
         }
@@ -104,8 +120,6 @@ export function DashboardLoginForm({ className }: React.ComponentProps<"form">) 
       {
         loading: "Iniciando sesión...",
         success: () => {
-          // 3. Ejecutar la redirección programática al resolverse el popup
-
           return "¡Sesión iniciada correctamente!";
         },
         error: (err) => `Error al iniciar sesión: ${err.message || err}`,

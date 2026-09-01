@@ -1,66 +1,136 @@
 "use client";
-
+import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth/auth-client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ShieldCheckIcon } from "lucide-react";
+import { RefreshCwIcon, ShieldCheckIcon } from "lucide-react";
+import { Field, FieldContent, FieldDescription, FieldLabel } from "./ui/field";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "./ui/input-otp";
+import Link from "next/link";
+import { BetterAuthError } from "better-auth";
+import { cn } from "@/lib/utils";
+import { Switch } from "./ui/switch";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "./ui/empty";
 
-type Method = "totp" | "otp" | "backup";
+type TwoFactorMethod = "totp" | "otp" | "backup";
 
 export function DashboardTwoFactorForm() {
   const router = useRouter();
-  const [method, setMethod] = useState<Method>("totp");
+  const params = useSearchParams();
   const [code, setCode] = useState("");
-  const [trustDevice, setTrustDevice] = useState(true);
-  const [otpSent, setOtpSent] = useState(false);
-  const [pending, setPending] = useState(false);
+  const [trustDevice, setTrustDevice] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
-  const verify = async () => {
-    if (!code) {
-      toast.error("Ingresa el código");
-      return;
-    }
-    setPending(true);
-    try {
-      const opts = { code, trustDevice } as const;
-      if (method === "totp") {
-        await authClient.twoFactor.verifyTotp(opts);
-      } else if (method === "otp") {
-        await authClient.twoFactor.verifyOtp(opts);
-      } else {
-        await authClient.twoFactor.verifyBackupCode(opts);
-      }
-      toast.success("Verificado");
-      router.push("/dashboard");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Código inválido o expirado",
-      );
-      setCode("");
-    } finally {
-      setPending(false);
-    }
+  const methodTwoFactor = params.get("method") as TwoFactorMethod;
+  const email = params.get("email");
+
+  if (!methodTwoFactor || !email) {
+    return (
+      <Empty className="py-16">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <ShieldCheckIcon />
+          </EmptyMedia>
+          <EmptyTitle>Método de verificación inválido</EmptyTitle>
+          <EmptyDescription>
+            El método de autenticación de dos factores solicitado no es válido o
+            ya no está disponible. Regresa al inicio de sesión e inténtalo
+            nuevamente.
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button
+            nativeButton={false}
+            render={<Link href="/dashboard">Volver al inicio de sesión</Link>}
+            variant="outline"
+            size="sm"
+          />
+        </EmptyContent>
+      </Empty>
+    );
+  }
+
+  const sendHandler = (method: TwoFactorMethod) => {
+    const methods = {
+      totp: (opts: { code: string; trustDevice: boolean }) =>
+        authClient.twoFactor.verifyTotp(opts),
+
+      otp: (opts: { code: string; trustDevice: boolean }) =>
+        authClient.twoFactor.verifyOtp(opts),
+
+      backup: (opts: { code: string; trustDevice: boolean }) =>
+        authClient.twoFactor.verifyBackupCode({
+          ...opts,
+          disableSession: true,
+        }),
+    };
+
+    const fetcher = async () => {
+      setIsPending(true);
+      const { data, error } = await methods[method]({ code, trustDevice });
+      setIsPending(false);
+      if (error) throw error;
+      if (!data) throw new BetterAuthError("Error en solicitud de proveedor");
+      return data;
+    };
+
+    return () => {
+      toast.promise(fetcher, {
+        loading: "Enviando código...",
+        success: () => {
+          router.push("/dashboard");
+          return "¡Código enviado correctamente!";
+        },
+        error: (err) =>
+          err instanceof BetterAuthError
+            ? err.message
+            : "No se pudo enviar el código",
+      });
+    };
   };
 
-  const sendOtp = async () => {
-    try {
-      await authClient.twoFactor.sendOtp();
-      setOtpSent(true);
-      toast.success("Código enviado a tu correo");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "No se pudo enviar el código");
-    }
+  const resendHandler = async () => {
+    const fetcher = async () => {
+      setIsPending(true);
+      const { data, error } = await authClient.twoFactor.sendOtp({
+        trustDevice: false,
+      });
+      setIsPending(false);
+      if (error) throw error;
+      if (!data) throw new BetterAuthError("Error en solicitud de proveedor");
+      return data;
+    };
+
+    toast.promise(fetcher, {
+      loading: "Reenviando código...",
+      success: () => "¡Código reenviado correctamente!",
+      error: (err) =>
+        err instanceof BetterAuthError
+          ? err.message
+          : "No se pudo reenviar el código",
+    });
   };
 
   return (
@@ -70,63 +140,99 @@ export function DashboardTwoFactorForm() {
           <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
             <ShieldCheckIcon className="size-5" />
           </div>
-          <CardTitle>Verificación en dos pasos — Panel</CardTitle>
+          <CardTitle>Verificación en dos pasos</CardTitle>
           <CardDescription>
-            Confirma tu identidad para acceder al dashboard.
+            Enter the verification code we sent to your email address: &nbsp;
+            <span className="font-medium">{email}</span>
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="dashboard-2fa-method">Método</Label>
-            <select
-              id="dashboard-2fa-method"
-              value={method}
-              onChange={(e) => {
-                setMethod(e.target.value as Method);
-                setOtpSent(false);
-                setCode("");
-              }}
-              className="border-input bg-background h-9 rounded-md border px-3 text-sm"
-            >
-              <option value="totp">App autenticadora (TOTP)</option>
-              <option value="otp">Código por correo (OTP)</option>
-              <option value="backup">Código de respaldo</option>
-            </select>
-          </div>
 
-          {method === "otp" && !otpSent && (
-            <Button variant="outline" onClick={sendOtp} type="button">
-              Enviar código a mi correo
-            </Button>
-          )}
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="dashboard-2fa-code">
-              {method === "backup" ? "Código de respaldo" : "Código"}
-            </Label>
-            <Input
-              id="dashboard-2fa-code"
+        <CardContent>
+          <Field>
+            <div className="flex items-center justify-between">
+              <FieldLabel htmlFor="otp-verification">
+                Verification code
+              </FieldLabel>
+              <Button
+                onClick={resendHandler}
+                aria-disabled={isPending}
+                disabled={isPending}
+                variant="outline"
+                size="xs"
+              >
+                <RefreshCwIcon
+                  className={cn({
+                    "animate-spin": isPending,
+                  })}
+                />
+                Resend Code
+              </Button>
+            </div>
+            <InputOTP
+              required
+              maxLength={6}
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="123456"
-              autoComplete="one-time-code"
-              inputMode="text"
-            />
-          </div>
+              onChange={setCode}
+              id="otp-verification"
+              pattern={REGEXP_ONLY_DIGITS}
+              containerClassName="justify-center"
+              disabled={isPending}
+              aria-invalid={code.length !== 6}
+            >
+              <InputOTPGroup className="*:data-[slot=input-otp-slot]:h-12 *:data-[slot=input-otp-slot]:w-11 *:data-[slot=input-otp-slot]:text-xl">
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+              </InputOTPGroup>
+              <InputOTPSeparator className="mx-2" />
+              <InputOTPGroup className="*:data-[slot=input-otp-slot]:h-12 *:data-[slot=input-otp-slot]:w-11 *:data-[slot=input-otp-slot]:text-xl">
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
 
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
+            <FieldDescription className="flex">
+              <Link className="mx-auto" href="#">
+                I no longer have access to this email address.
+              </Link>
+            </FieldDescription>
+          </Field>
+
+          <Field orientation="horizontal" className="w-fit mt-4 ml-auto">
+            <FieldContent>
+              <FieldLabel htmlFor="2fa">Set Trust Device</FieldLabel>
+            </FieldContent>
+            <Switch
               checked={trustDevice}
-              onChange={(e) => setTrustDevice(e.target.checked)}
+              onCheckedChange={setTrustDevice}
+              id="2fa"
             />
-            Confiar en este dispositivo 30 días
-          </label>
-
-          <Button onClick={verify} disabled={pending}>
-            {pending ? "Verificando..." : "Verificar"}
-          </Button>
+          </Field>
         </CardContent>
+
+        <CardFooter>
+          <Field>
+            <Button
+              onClick={sendHandler(methodTwoFactor)}
+              aria-disabled={isPending}
+              disabled={isPending}
+              type="submit"
+              className="w-full"
+            >
+              Verify
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              Having trouble signing in?{" "}
+              <Link
+                href="#"
+                className="underline underline-offset-4 transition-colors hover:text-primary"
+              >
+                Contact support
+              </Link>
+            </div>
+          </Field>
+        </CardFooter>
       </Card>
     </div>
   );

@@ -9,6 +9,7 @@
 export const PUBLIC_DASHBOARD_ROUTES = [
   "/dashboard/login",
   "/dashboard/2fa",
+  "/dashboard/unauthorized",
 ] as const;
 
 export function isPublicDashboardRoute(pathname: string = ""): boolean {

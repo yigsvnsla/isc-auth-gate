@@ -42,7 +42,7 @@ export default async function DashboardLayout({ children }: PropsWithChildren) {
     body: { permissions: { auth: ["access"] } },
   });
 
-  if (error || !success) redirect("/dashboard/login");
+  if (error || !success) redirect("/dashboard/unauthorized");
 
   // 4. Inferencia del estado de la barra lateral desde cookies de servidor
   const isOpen = Boolean(cookies.get("sidebar_state")?.value === "true");
