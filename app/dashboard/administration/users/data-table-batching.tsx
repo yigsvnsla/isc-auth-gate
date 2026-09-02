@@ -13,7 +13,7 @@ export const UserListDataTableBatching: FC = () => {
   const hasSelection = !(usersList.length > 0);
 
   return (
-    <div className="mb-2 flex items-center justify-between rounded-md border bg-muted/50 px-3 py-2">
+    <div className="flex items-center justify-between rounded-md border bg-muted/50 px-3 py-2">
       <span
         className={cn(hasSelection && "text-accent-foreground/50", "text-sm font-medium")}
       >
@@ -53,7 +53,7 @@ export const UserListDataTableBatching: FC = () => {
             className="gap-1.5 text-destructive hover:text-destructive"
           >
             <Trash2Icon className="size-4" />
-            Eliminar
+            <span className="text-destructive">Eliminar</span>
           </Button>
         </AlertDialogRemoveUsers>
       </div>

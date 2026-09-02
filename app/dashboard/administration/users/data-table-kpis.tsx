@@ -12,88 +12,66 @@ import { FC } from "react";
 export const UserListDataTableKpis: FC = () => {
   const { data, isLoading } = useAdminListUser({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 1,
     searchField: "",
     searchValue: "",
   });
 
   return (
-    <div className="grid gap-4 md:grid-cols-4">
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
-              <UsersIcon className="size-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Total Users
-              </p>
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <p className="text-2xl font-bold">{data.total}</p>
-              )}
-            </div>
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <Card className="py-4">
+        <CardContent className="flex items-center gap-3 px-4">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <UsersIcon className="size-4.5 text-primary" />
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            <span className="text-emerald-500">---</span> this month
-          </p>
+          <div className="grid gap-0.5">
+            <p className="text-xs font-medium text-muted-foreground">
+              Total Users
+            </p>
+            {isLoading ? (
+              <Skeleton className="h-6 w-12" />
+            ) : (
+              <p className="text-xl font-bold tabular-nums">{data.total}</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/10">
-              <CircleCheckIcon className="size-5 text-emerald-500" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Active
-              </p>
-              <p className="text-2xl font-bold">---</p>
-            </div>
+      <Card className="py-4">
+        <CardContent className="flex items-center gap-3 px-4">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+            <CircleCheckIcon className="size-4.5 text-emerald-500" />
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">---% of total</p>
+          <div className="grid gap-0.5">
+            <p className="text-xs font-medium text-muted-foreground">Active</p>
+            <p className="text-xl font-bold tabular-nums">---</p>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-amber-500/10">
-              <MailWarningIcon className="size-5 text-amber-500" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Pending Verification
-              </p>
-              <p className="text-2xl font-bold">---</p>
-            </div>
+      <Card className="py-4">
+        <CardContent className="flex items-center gap-3 px-4">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+            <MailWarningIcon className="size-4.5 text-amber-500" />
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Awaiting email confirmation
-          </p>
+          <div className="grid gap-0.5">
+            <p className="text-xs font-medium text-muted-foreground">
+              Pending Verification
+            </p>
+            <p className="text-xl font-bold tabular-nums">---</p>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-rose-500/10">
-              <BanIcon className="size-5 text-rose-500" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Banned
-              </p>
-              <p className="text-2xl font-bold">---</p>
-            </div>
+      <Card className="py-4">
+        <CardContent className="flex items-center gap-3 px-4">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-rose-500/10">
+            <BanIcon className="size-4.5 text-rose-500" />
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Account suspended
-          </p>
+          <div className="grid gap-0.5">
+            <p className="text-xs font-medium text-muted-foreground">Banned</p>
+            <p className="text-xl font-bold tabular-nums">---</p>
+          </div>
         </CardContent>
       </Card>
     </div>

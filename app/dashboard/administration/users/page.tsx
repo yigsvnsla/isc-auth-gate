@@ -1,7 +1,5 @@
 "use client";
 
-import { Separator } from "@/components/ui/separator";
-
 import { Button } from "@/components/ui/button";
 import { RefreshCwIcon, PlusIcon } from "lucide-react";
 import { UserListDataTableKpis } from "./data-table-kpis";
@@ -26,9 +24,9 @@ export default function Page() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
               User Management
@@ -55,7 +53,6 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <Separator />
       <UserListDataTableKpis />
       <UserListDataTableHeader />
       <UserListDataTableBatching />

@@ -1,22 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useState } from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import {
   Field,
-  FieldLabel,
+  FieldContent,
   FieldDescription,
   FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,15 +26,16 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Controller } from "react-hook-form";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import {
-  ArrowLeftIcon,
-  UserPlusIcon,
-  LoaderCircleIcon,
-  MailIcon,
-} from "lucide-react";
-import Link from "next/link";
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { Spinner } from "@/components/ui/spinner";
+import { ArrowLeftIcon, UserPlusIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { useAdminCreateUser } from "@/hooks/use-admin-create-user";
 
@@ -74,7 +73,11 @@ export default function CreateUserPage() {
   const router = useRouter();
   const { trigger, isMutating } = useAdminCreateUser();
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const form = useForm({
+    mode: "onTouched",
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -106,8 +109,8 @@ export default function CreateUserPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header con botón de regreso */}
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      {/* Header */}
       <div className="flex items-center gap-4">
         <Button
           variant="outline"
@@ -127,182 +130,52 @@ export default function CreateUserPage() {
         </div>
       </div>
 
-      {/* Formulario - Horizontal Enterprise Layout */}
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="mx-auto w-full max-w-6xl"
+        className="flex flex-col gap-6"
       >
-        <Card className="relative overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/80 via-primary to-primary/80" />
-
-          <CardHeader>
-            <CardTitle className="text-xl">Información del Usuario</CardTitle>
-            <CardDescription>
-              Completa los datos para crear un nuevo usuario en el sistema.
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            {/* Two-column horizontal layout */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* Left Column */}
-              <div className="grid gap-6">
-                <Controller
-                  name="name"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field
-                      orientation="vertical"
-                      data-invalid={fieldState.invalid}
-                    >
-                      <FieldLabel htmlFor={field.name}>Nombre</FieldLabel>
-                      <FieldDescription>
-                        Nombre completo del usuario
-                      </FieldDescription>
-                      <Input
-                        {...field}
-                        id={field.name}
-                        placeholder="Juan Pérez"
-                        aria-invalid={fieldState.invalid}
-                        className="h-9"
-                      />
-                      {fieldState.error && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
-
-                <Controller
-                  name="email"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field
-                      orientation="vertical"
-                      data-invalid={fieldState.invalid}
-                    >
-                      <FieldLabel htmlFor={field.name}>Email</FieldLabel>
-                      <FieldDescription>
-                        Correo electrónico de acceso
-                      </FieldDescription>
-                      <Input
-                        {...field}
-                        id={field.name}
-                        type="email"
-                        placeholder="juan@ejemplo.com"
-                        aria-invalid={fieldState.invalid}
-                        className="h-9"
-                      />
-                      {fieldState.error && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
-              </div>
-
-              {/* Right Column */}
-              <div className="grid gap-6">
-                <Controller
-                  name="password"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field
-                      orientation="vertical"
-                      data-invalid={fieldState.invalid}
-                    >
-                      <FieldLabel htmlFor={field.name}>Contraseña</FieldLabel>
-                      <FieldDescription>
-                        Mínimo 8 caracteres, una mayúscula y un número
-                      </FieldDescription>
-                      <Input
-                        {...field}
-                        id={field.name}
-                        type="password"
-                        placeholder="••••••••"
-                        aria-invalid={fieldState.invalid}
-                        className="h-9"
-                      />
-                      {fieldState.error && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
-
-                <Controller
-                  name="confirmPassword"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field
-                      orientation="vertical"
-                      data-invalid={fieldState.invalid}
-                    >
-                      <FieldLabel htmlFor={field.name}>
-                        Confirmar Contraseña
-                      </FieldLabel>
-                      <Input
-                        {...field}
-                        id={field.name}
-                        type="password"
-                        placeholder="••••••••"
-                        aria-invalid={fieldState.invalid}
-                        className="h-9"
-                      />
-                      {fieldState.error && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
-              </div>
-            </div>
-
-            {/* Rol - Full Width */}
-            <div className="mt-6">
+        {/* Identidad */}
+        <FieldSet>
+          <FieldLegend>Identidad</FieldLegend>
+          <FieldDescription>
+            Datos personales del usuario para identificarse en el sistema.
+          </FieldDescription>
+          <FieldGroup>
+            <div className="grid gap-4 sm:grid-cols-2">
               <Controller
-                name="role"
+                name="name"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field
-                    orientation="vertical"
-                    data-invalid={fieldState.invalid}
-                  >
-                    <FieldLabel htmlFor="role">Rol</FieldLabel>
-                    <FieldDescription>
-                      Nivel de acceso del usuario
-                    </FieldDescription>
-                    <Select
-                      name={field.name}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger
-                        id="role"
-                        aria-invalid={fieldState.invalid}
-                        className="h-9 min-w-40 capitalize"
-                      >
-                        <SelectValue placeholder="Seleccionar rol" />
-                      </SelectTrigger>
-                      <SelectContent alignItemWithTrigger>
-                        <SelectGroup>
-                          {roles.map((role) => (
-                            <SelectItem
-                              key={role.value}
-                              value={role.value}
-                              className="capitalize"
-                            >
-                              <div className="grid gap-0.5">
-                                <span>{role.label}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {role.description}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Nombre</FieldLabel>
+                    <Input
+                      {...field}
+                      id={field.name}
+                      placeholder="Juan Pérez"
+                      autoComplete="name"
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.error && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                    <Input
+                      {...field}
+                      id={field.name}
+                      type="email"
+                      placeholder="juan@ejemplo.com"
+                      autoComplete="email"
+                      aria-invalid={fieldState.invalid}
+                    />
                     {fieldState.error && (
                       <FieldError errors={[fieldState.error]} />
                     )}
@@ -310,78 +183,207 @@ export default function CreateUserPage() {
                 )}
               />
             </div>
+          </FieldGroup>
+        </FieldSet>
 
-            {/* Opciones adicionales - Horizontal Enterprise Style */}
-            <div className="mt-6 grid gap-4">
-              <FieldLabel>Opciones</FieldLabel>
+        <Separator />
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Controller
-                  name="sendVerificationEmail"
-                  control={form.control}
-                  render={({ field }) => (
-                    <div className="flex items-start gap-3">
-                      <div className="flex size-8 items-center justify-center rounded-md bg-muted shrink-0">
-                        <MailIcon className="size-4 text-muted-foreground" />
-                      </div>
-                      <div className="grid gap-1 flex-1 min-w-0">
-                        <FieldLabel
-                          htmlFor={field.name}
-                          className="font-normal"
+        {/* Credenciales */}
+        <FieldSet>
+          <FieldLegend>Credenciales</FieldLegend>
+          <FieldDescription>
+            Define la contraseña de acceso del usuario.
+          </FieldDescription>
+          <FieldGroup>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Contraseña</FieldLabel>
+                    <InputGroup>
+                      <InputGroupInput
+                        {...field}
+                        id={field.name}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => setShowPassword((v) => !v)}
+                          aria-label={
+                            showPassword
+                              ? "Ocultar contraseña"
+                              : "Mostrar contraseña"
+                          }
                         >
-                          Enviar email de verificación
-                        </FieldLabel>
-                        <FieldDescription className="text-xs">
-                          El usuario recibirá un correo para verificar su cuenta
-                        </FieldDescription>
-                        <div className="pt-1">
-                          <Checkbox
-                            id={field.name}
-                            checked={field.value}
-                            onCheckedChange={(checked) =>
-                              field.onChange(checked)
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                />
+                          {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                        </InputGroupButton>
+                      </InputGroupAddon>
+                    </InputGroup>
+                    <FieldDescription>
+                      Mínimo 8 caracteres, una mayúscula y un número
+                    </FieldDescription>
+                    {fieldState.error && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
 
-                {/* TODO: Implementar cuando SMTP esté configurado */}
-              </div>
+              <Controller
+                name="confirmPassword"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>
+                      Confirmar Contraseña
+                    </FieldLabel>
+                    <InputGroup>
+                      <InputGroupInput
+                        {...field}
+                        id={field.name}
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => setShowConfirmPassword((v) => !v)}
+                          aria-label={
+                            showConfirmPassword
+                              ? "Ocultar contraseña"
+                              : "Mostrar contraseña"
+                          }
+                        >
+                          {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                        </InputGroupButton>
+                      </InputGroupAddon>
+                    </InputGroup>
+                    {fieldState.error && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
             </div>
-          </CardContent>
+          </FieldGroup>
+        </FieldSet>
 
-          <CardFooter className="flex justify-between border-t border-foreground/10 pt-6">
-            <Button
-              variant="outline"
-              nativeButton={false}
-              render={
-                <Link href="/dashboard/administration/users">Cancelar</Link>
-              }
-            ></Button>
-            <Button
-              type="submit"
-              disabled={isMutating || !form.formState.isValid}
-            >
-              {isMutating ? (
-                <>
-                  <LoaderCircleIcon
-                    data-icon="inline-start"
-                    className="size-4 animate-spin"
-                  />
-                  Creando...
-                </>
-              ) : (
-                <>
-                  <UserPlusIcon data-icon="inline-start" />
-                  Crear Usuario
-                </>
+        <Separator />
+
+        {/* Acceso y opciones */}
+        <FieldSet>
+          <FieldLegend>Acceso y opciones</FieldLegend>
+          <FieldDescription>
+            Nivel de permisos y configuración inicial de la cuenta.
+          </FieldDescription>
+          <FieldGroup className="grid gap-4 sm:grid-cols-2">
+            <Controller
+              name="role"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="role">Rol</FieldLabel>
+                  <Select
+                    name={field.name}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger
+                      id="role"
+                      aria-invalid={fieldState.invalid}
+                      className="w-full capitalize sm:max-w-sm"
+                    >
+                      <SelectValue placeholder="Seleccionar rol" />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger>
+                      <SelectGroup>
+                        {roles.map((role) => (
+                          <SelectItem
+                            key={role.value}
+                            value={role.value}
+                            className="capitalize"
+                          >
+                            <div className="grid gap-0.5">
+                              <span>{role.label}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {role.description}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                  <FieldDescription>
+                    Mínimo 8 caracteres, una mayúscula y un número
+                  </FieldDescription>
+                </Field>
               )}
-            </Button>
-          </CardFooter>
-        </Card>
+            />
+
+            <Controller
+              name="sendVerificationEmail"
+              control={form.control}
+              render={({ field }) => (
+                <Field orientation="horizontal">
+                  <FieldContent>
+                    <FieldLabel htmlFor={field.name}>
+                      Enviar email de verificación
+                    </FieldLabel>
+                    <FieldDescription>
+                      El usuario recibirá un correo para verificar su cuenta
+                    </FieldDescription>
+                  </FieldContent>
+                  <Switch
+                    id={field.name}
+                    checked={field.value}
+                    onCheckedChange={(checked) => field.onChange(checked)}
+                  />
+                </Field>
+              )}
+            />
+          </FieldGroup>
+        </FieldSet>
+
+        {/* Acciones */}
+        <div className="flex flex-col-reverse gap-2 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={
+              <Link href="/dashboard/administration/users">Cancelar</Link>
+            }
+          />
+          <Button
+            type="submit"
+            disabled={isMutating || !form.formState.isValid}
+          >
+            {isMutating ? (
+              <>
+                <Spinner data-icon="inline-start" />
+                Creando...
+              </>
+            ) : (
+              <>
+                <UserPlusIcon data-icon="inline-start" />
+                Crear Usuario
+              </>
+            )}
+          </Button>
+        </div>
       </form>
     </div>
   );

@@ -13,7 +13,6 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Field,
-  FieldContent,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -78,13 +77,13 @@ export const UserListDataTableHeader: FC = () => {
   return (
     <form onSubmit={form.handleSubmit(console.log)}>
       <FieldSet>
-        <FieldGroup className="flex flex-row gap-4 items-start w-full">
+        <FieldGroup className="flex flex-col gap-4 sm:flex-row sm:items-start">
           <Controller
             name="searchValue"
             control={form.control}
             render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid} className="w-full ">
-                <FieldLabel htmlFor={field.name}>Search Users</FieldLabel>
+              <Field data-invalid={fieldState.invalid} className="flex-1">
+                <FieldLabel htmlFor={field.name}>Buscar usuarios</FieldLabel>
                 <InputGroup>
                   <InputGroupAddon align="inline-start">
                     <SearchIcon className="size-4 text-muted-foreground" />
@@ -93,7 +92,7 @@ export const UserListDataTableHeader: FC = () => {
                   <InputGroupInput
                     {...field}
                     id={field.name}
-                    placeholder="Type to search (min. 3 chars)..."
+                    placeholder="Escribe para buscar (mín. 3 caracteres)..."
                     autoComplete="off"
                     aria-invalid={fieldState.invalid}
                     disabled={
@@ -103,7 +102,6 @@ export const UserListDataTableHeader: FC = () => {
                     }
                   />
 
-                  {/* 3. El Spinner solo se muestra cuando realmente está cargando */}
                   <InputGroupAddon align="inline-end">
                     {isLoading ||
                       (isValidating &&
@@ -124,18 +122,10 @@ export const UserListDataTableHeader: FC = () => {
             name="searchField"
             control={form.control}
             render={({ field, fieldState }) => (
-              <Field
-                data-invalid={fieldState.invalid}
-                className="w-full max-w-48"
-              >
-                <FieldContent>
-                  <FieldLabel htmlFor="form-rhf-select-language">
-                    Search Field
-                  </FieldLabel>
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </FieldContent>
+              <Field data-invalid={fieldState.invalid} className="sm:w-48">
+                <FieldLabel htmlFor="form-rhf-select-field">
+                  Campo de búsqueda
+                </FieldLabel>
                 <Select
                   name={field.name}
                   value={field.value}
@@ -149,12 +139,11 @@ export const UserListDataTableHeader: FC = () => {
                       (isValidating &&
                         !form.getFieldState("searchValue").isDirty)
                     }
-                    className="min-w-30 capitalize"
+                    className="w-full capitalize sm:w-48"
                   >
-                    <SelectValue placeholder="Select" />
+                    <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
                   <SelectContent alignItemWithTrigger>
-                    {/* // TODO: pasar esto a u ncatalogo o lista constante  */}
                     {["auto", "name", "email"].map((field) => (
                       <SelectItem
                         className="capitalize"
@@ -166,6 +155,9 @@ export const UserListDataTableHeader: FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
