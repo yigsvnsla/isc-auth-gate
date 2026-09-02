@@ -24,7 +24,9 @@ import {
   RefreshCcwIcon,
   Building2Icon,
   PlusIcon,
+  SearchIcon,
 } from "lucide-react";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -41,7 +43,11 @@ import {
   EmptyDescription,
   EmptyContent,
 } from "@/components/ui/empty";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 export const OrganizationsDataTable: FC = () => {
   const [pagination, setPagination] = useState({
@@ -51,7 +57,7 @@ export const OrganizationsDataTable: FC = () => {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
-  const { data, isLoading } = useOrganizations();
+  const { data, isLoading, mutate } = useOrganizations();
   const rawData = (data ?? []) as unknown as OrganizationRow[];
 
   const filteredData = useMemo(() => {
@@ -169,27 +175,22 @@ export const OrganizationsDataTable: FC = () => {
   return (
     <>
       {/* FILTERS */}
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <Input
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <InputGroup className="flex-1">
+          <InputGroupAddon align="inline-start">
+            <SearchIcon className="size-4 text-muted-foreground" />
+          </InputGroupAddon>
+          <InputGroupInput
             placeholder="Search organizations by name or slug..."
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
-            className="pl-8"
           />
-          <svg
-            className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            fill="none"
-            height="1em"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <circle cx="11" cy="11" r="8" strokeWidth="2" />
-            <path d="m21 21-4.35-4.35" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </div>
-        <Select value={roleFilter} onValueChange={handleRoleFilter}>
-          <SelectTrigger className="w-[160px]">
+        </InputGroup>
+        <Select
+          value={roleFilter}
+          onValueChange={handleRoleFilter}
+        >
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="Role" />
           </SelectTrigger>
           <SelectContent>
@@ -239,14 +240,20 @@ export const OrganizationsDataTable: FC = () => {
                       </EmptyDescription>
                     </EmptyHeader>
                     <EmptyContent className="grid sm:grid-cols-2 ">
-                      <Button variant="outline">
+                      <Button variant="outline" onClick={() => mutate()}>
                         <RefreshCcwIcon data-icon="inline-start" />
                         Refresh
                       </Button>
-                      <Button variant="secondary">
-                        <PlusIcon data-icon="inline-start" />
-                        Create Organization
-                      </Button>
+                      <Button
+                        variant="secondary"
+                        nativeButton={false}
+                        render={
+                          <Link href="/dashboard/administration/organizations/create">
+                            <PlusIcon data-icon="inline-start" />
+                            Create Organization
+                          </Link>
+                        }
+                      />
                     </EmptyContent>
                   </Empty>
                 </TableCell>

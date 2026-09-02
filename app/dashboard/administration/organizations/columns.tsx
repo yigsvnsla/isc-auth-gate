@@ -5,11 +5,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  MoreHorizontalIcon,
-  ShieldIcon,
-  UsersIcon,
-} from "lucide-react";
+import { MoreHorizontalIcon, ShieldIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { shortName } from "@/lib/utils";
@@ -20,23 +16,44 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SearchIcon } from "lucide-react";
+import { SearchIcon, UserPlusIcon } from "lucide-react";
+import { InviteMemberDialog } from "./invite-member-dialog";
 
-const ActionsCell = ({ orgId, orgName }: { orgId: string; orgName: string }) => {
+const ActionsCell = ({
+  orgId,
+  orgName,
+}: {
+  orgId: string;
+  orgName: string;
+}) => {
   const pathname = usePathname();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-8" />}>
-        <MoreHorizontalIcon className="size-4" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuItem render={<Link href={`${pathname}/${orgId}`} />}>
-          <SearchIcon data-icon="inline-start" className="size-4" />
-          View Details
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex items-center justify-end">
+      <InviteMemberDialog organizationId={orgId} organizationName={orgName}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          aria-label={`Invitar a ${orgName}`}
+        >
+          <UserPlusIcon className="size-4" />
+        </Button>
+      </InviteMemberDialog>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={<Button variant="ghost" size="icon" className="size-8" />}
+        >
+          <MoreHorizontalIcon className="size-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem render={<Link href={`${pathname}/${orgId}`} />}>
+            <SearchIcon data-icon="inline-start" className="size-4" />
+            View Details
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 };
 
@@ -65,9 +82,7 @@ export const columns: ColumnDef<OrganizationRow>[] = [
           </Avatar>
           <div className="grid gap-0.5">
             <span className="text-sm font-medium leading-none">{name}</span>
-            <span className="text-xs text-muted-foreground">
-              /{slug}
-            </span>
+            <span className="text-xs text-muted-foreground">/{slug}</span>
           </div>
         </div>
       );
@@ -79,9 +94,21 @@ export const columns: ColumnDef<OrganizationRow>[] = [
     cell({ row }) {
       const role = row.original.role;
       const roleConfig = {
-        owner: { icon: ShieldIcon, variant: "default" as const, className: "bg-primary/10 text-primary border-primary/20" },
-        admin: { icon: ShieldIcon, variant: "secondary" as const, className: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
-        member: { icon: UsersIcon, variant: "outline" as const, className: "text-muted-foreground" },
+        owner: {
+          icon: ShieldIcon,
+          variant: "default" as const,
+          className: "bg-primary/10 text-primary border-primary/20",
+        },
+        admin: {
+          icon: ShieldIcon,
+          variant: "secondary" as const,
+          className: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+        },
+        member: {
+          icon: UsersIcon,
+          variant: "outline" as const,
+          className: "text-muted-foreground",
+        },
       };
       const config = roleConfig[role] || roleConfig.member;
       const Icon = config.icon;

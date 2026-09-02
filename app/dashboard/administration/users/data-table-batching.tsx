@@ -15,7 +15,10 @@ export const UserListDataTableBatching: FC = () => {
   return (
     <div className="flex items-center justify-between rounded-md border bg-muted/50 px-3 py-2">
       <span
-        className={cn(hasSelection && "text-accent-foreground/50", "text-sm font-medium")}
+        className={cn(
+          hasSelection && "text-accent-foreground/50",
+          "text-sm font-medium",
+        )}
       >
         <CheckCircleIcon className="mr-2 inline-block size-4" />
         {usersList.length} usuario(s) seleccionado(s)
@@ -29,7 +32,7 @@ export const UserListDataTableBatching: FC = () => {
             disabled={hasSelection}
           >
             <BanIcon className="size-4" />
-            Bloquear
+            <span className="hidden lg:block">Bloquear</span>
           </Button>
         </AlertDialogBanUsers>
 
@@ -41,7 +44,7 @@ export const UserListDataTableBatching: FC = () => {
             disabled={hasSelection}
           >
             <CheckCircleIcon className="size-4" />
-            Activar
+            <span className="hidden lg:block">Activar</span>
           </Button>
         </AlertDialogUnBanUsers>
 
@@ -53,7 +56,7 @@ export const UserListDataTableBatching: FC = () => {
             className="gap-1.5 text-destructive hover:text-destructive"
           >
             <Trash2Icon className="size-4" />
-            <span className="text-destructive">Eliminar</span>
+            <span className="text-destructive hidden lg:block">Eliminar</span>
           </Button>
         </AlertDialogRemoveUsers>
       </div>

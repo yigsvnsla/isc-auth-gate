@@ -15,6 +15,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 import Link from "next/link";
@@ -34,6 +35,12 @@ export function NavMain({
     }[];
   }[];
 }) {
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const closeMobileSidebar = () => {
+    if (isMobile) setOpenMobile(false);
+  };
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -42,7 +49,7 @@ export function NavMain({
           <SidebarMenuButton
             className="capitalize"
             render={
-              <Link href="/dashboard">
+              <Link href="/dashboard" onClick={closeMobileSidebar}>
                 <HomeIcon />
                 <span>Home</span>
               </Link>
@@ -75,7 +82,10 @@ export function NavMain({
                       <SidebarMenuSubButton
                         className="capitalize"
                         render={
-                          <Link href={subItem.url}>
+                          <Link
+                            href={subItem.url}
+                            onClick={closeMobileSidebar}
+                          >
                             {subItem.icon && <subItem.icon />}
                             {subItem.title}
                           </Link>

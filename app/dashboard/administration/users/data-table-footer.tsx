@@ -25,7 +25,7 @@ export const UserListDataTableFooter: FC = () => {
   const canNextPage = params.pageIndex < totalPages - 1 && data.users.length === params.pageSize;
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between px-2 ">
-      <div className="text-muted-foreground flex-1 text-sm">
+      <div className="text-muted-foreground flex-1 text-sm hidden sm:flex">
         {data.total} total usuario(s)
       </div>
       <div className="flex items-center space-x-6 lg:space-x-8">
