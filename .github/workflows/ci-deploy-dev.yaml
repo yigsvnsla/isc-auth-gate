@@ -115,7 +115,10 @@ jobs:
         run: |
           bunx @dokploy/cli application save-docker-provider \
             --applicationId ${{ secrets.DOKPLOY_APP_ID_DEV }} \
-            --dockerImage ghcr.io/${{ github.repository }}:dev
+            --dockerImage ghcr.io/${{ github.repository }}:dev \
+            --username "" \
+            --password "" \
+            --registryUrl "ghcr.io"
 
       - name: Deploy to Dokploy
         run: bunx @dokploy/cli application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID_DEV }}
