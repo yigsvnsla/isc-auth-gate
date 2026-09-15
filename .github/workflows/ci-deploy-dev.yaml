@@ -38,6 +38,7 @@ jobs:
       BETTER_AUTH_DATABASE_PASS: test
       BETTER_AUTH_TEST_ALLOW_TRUNCATE: "true"
       BETTER_AUTH_URL: http://placeholder.test/
+      BETTER_AUTH_SERVER_NAME: ci-placeholder
       BETTER_AUTH_SERVER_SECRET: ci-placeholder-secret
       BETTER_AUTH_MICROSOFT_CLIENT_ID: ci-placeholder
       BETTER_AUTH_MICROSOFT_CLIENT_SECRET: ci-placeholder
