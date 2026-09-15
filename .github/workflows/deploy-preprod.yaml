@@ -115,12 +115,12 @@ jobs:
 
       - name: Update image tag
         run: |
-          bun x dokploy application save-docker-provider \
+          bunx @dokploy/cli application save-docker-provider \
             --applicationId ${{ secrets.DOKPLOY_APP_ID_PRE }} \
             --dockerImage ghcr.io/${{ github.repository }}:${{ inputs.image_tag }}
 
       - name: Deploy to Dokploy
-        run: bun x dokploy application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID_PRE }}
+        run: bunx @dokploy/cli application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID_PRE }}
 
       - name: Health check
         run: |
