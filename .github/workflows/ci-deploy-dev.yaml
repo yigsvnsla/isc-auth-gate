@@ -37,6 +37,16 @@ jobs:
       BETTER_AUTH_DATABASE_USER: test
       BETTER_AUTH_DATABASE_PASS: test
       BETTER_AUTH_TEST_ALLOW_TRUNCATE: "true"
+      BETTER_AUTH_URL: http://placeholder.test/
+      BETTER_AUTH_SERVER_SECRET: ci-placeholder-secret
+      BETTER_AUTH_MICROSOFT_CLIENT_ID: ci-placeholder
+      BETTER_AUTH_MICROSOFT_CLIENT_SECRET: ci-placeholder
+      BETTER_AUTH_SMTP_TRANSPORTER_HOST: localhost
+      BETTER_AUTH_SMTP_TRANSPORTER_PORT: 1025
+      BETTER_AUTH_SMTP_TRANSPORTER_SECURE: "false"
+      BETTER_AUTH_SMTP_TRANSPORTER_USER: ci@example.test
+      BETTER_AUTH_SMTP_TRANSPORTER_PASS: ci-placeholder
+      BETTER_AUTH_SMTP_TRANSPORTER_FROM: CI <ci@example.test>
     steps:
       - uses: actions/checkout@v4
 
