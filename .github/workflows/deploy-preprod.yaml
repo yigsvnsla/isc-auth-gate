@@ -34,7 +34,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       maildev:
-        image: axllent/mailpit:v1
+        image: axllent/mailpit:latest
         ports:
           - 1025:1080
           - 1080:1080
