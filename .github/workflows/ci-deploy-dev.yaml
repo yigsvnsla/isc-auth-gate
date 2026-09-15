@@ -33,7 +33,7 @@ jobs:
       maildev:
         image: axllent/mailpit:latest
         ports:
-          - 1025:1080
+          - 1025:1025
           - 1080:1080
     env:
       BETTER_AUTH_DATABASE_HOST: localhost
