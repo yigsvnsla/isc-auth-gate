@@ -50,9 +50,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV BETTER_AUTH_DATABASE_DEBUG=false
 
-RUN addgroup --system --gid 1001 app && \
-    adduser --system --uid 1001 --ingroup app app
-
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/drizzle.config.ts /app/tsconfig.json ./
 COPY --from=builder /app/database ./database
@@ -65,6 +62,5 @@ COPY --from=deps /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
 COPY --from=deps /app/node_modules/pg ./node_modules/pg
 COPY --from=deps /app/node_modules/zod ./node_modules/zod
 
-USER app
 EXPOSE 3000
 CMD ["bun", "server.js"]
