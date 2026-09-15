@@ -8,6 +8,10 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useAtom } from "jotai";
+import { selectListOrgsAtom } from "@/atoms/select-list-orgs-atom";
+import { OrganizationsDataTableBatching } from "./data-table-batching";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -56,6 +60,7 @@ export const OrganizationsDataTable: FC = () => {
   });
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [rowSelection, setRowSelection] = useAtom(selectListOrgsAtom);
 
   const { data, isLoading, mutate } = useOrganizations();
   const rawData = (data ?? []) as unknown as OrganizationRow[];
@@ -68,7 +73,7 @@ export const OrganizationsDataTable: FC = () => {
       filtered = filtered.filter(
         (org) =>
           org.name.toLowerCase().includes(searchLower) ||
-          org.slug.toLowerCase().includes(searchLower)
+          org.slug.toLowerCase().includes(searchLower),
       );
     }
 
@@ -91,7 +96,7 @@ export const OrganizationsDataTable: FC = () => {
 
   const paginatedData = filteredData.slice(
     pagination.pageIndex * pagination.pageSize,
-    (pagination.pageIndex + 1) * pagination.pageSize
+    (pagination.pageIndex + 1) * pagination.pageSize,
   );
 
   const totalRows = filteredData.length;
@@ -104,10 +109,14 @@ export const OrganizationsDataTable: FC = () => {
     data: paginatedData,
     manualPagination: true,
     rowCount: filteredData.length,
+    enableRowSelection: true,
+    getRowId: (row) => row.id,
     getCoreRowModel: getCoreRowModel(),
     onPaginationChange: setPagination,
+    onRowSelectionChange: setRowSelection,
     state: {
       pagination,
+      rowSelection,
     },
   });
 
@@ -115,11 +124,9 @@ export const OrganizationsDataTable: FC = () => {
     return (
       <>
         {/* FILTERS */}
-        <div className="flex gap-4">
-          <div className="relative flex-1">
-            <div className="h-10 w-full animate-pulse rounded-md border bg-muted" />
-          </div>
-          <div className="h-10 w-40 animate-pulse rounded-md border bg-muted" />
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="h-15 flex-1 animate-pulse rounded-md border bg-muted" />
+          <div className="h-15 sm:w-48 animate-pulse rounded-md border bg-muted" />
         </div>
 
         <div className="overflow-hidden rounded-md border">
@@ -175,32 +182,41 @@ export const OrganizationsDataTable: FC = () => {
   return (
     <>
       {/* FILTERS */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <InputGroup className="flex-1">
-          <InputGroupAddon align="inline-start">
-            <SearchIcon className="size-4 text-muted-foreground" />
-          </InputGroupAddon>
-          <InputGroupInput
-            placeholder="Search organizations by name or slug..."
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-        </InputGroup>
-        <Select
-          value={roleFilter}
-          onValueChange={handleRoleFilter}
-        >
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder="Role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="owner">Owner</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="member">Member</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <FieldSet>
+        <FieldGroup className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          <Field className="flex-1">
+            <FieldLabel htmlFor="org-search">Buscar organizaciones</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon align="inline-start">
+                <SearchIcon className="size-4 text-muted-foreground" />
+              </InputGroupAddon>
+              <InputGroupInput
+                id="org-search"
+                placeholder="Buscar por nombre o slug..."
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </InputGroup>
+          </Field>
+          <Field className="sm:w-48">
+            <FieldLabel htmlFor="org-role-filter">Filtrar por rol</FieldLabel>
+            <Select value={roleFilter} onValueChange={handleRoleFilter}>
+              <SelectTrigger id="org-role-filter" className="w-full sm:w-48">
+                <SelectValue placeholder="Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="owner">Owner</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="member">Member</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        </FieldGroup>
+      </FieldSet>
+
+      {/* BATCHING */}
+      <OrganizationsDataTableBatching />
 
       {/* TABLE */}
       <div className="overflow-hidden rounded-md border">
@@ -236,7 +252,8 @@ export const OrganizationsDataTable: FC = () => {
                         no organizations yet
                       </EmptyTitle>
                       <EmptyDescription className="max-w-xs text-pretty">
-                        You don&apos;t have any organizations. Create one to get started.
+                        You don&apos;t have any organizations. Create one to get
+                        started.
                       </EmptyDescription>
                     </EmptyHeader>
                     <EmptyContent className="grid sm:grid-cols-2 ">
@@ -270,15 +287,22 @@ export const OrganizationsDataTable: FC = () => {
                         no results found
                       </EmptyTitle>
                       <EmptyDescription className="max-w-xs text-pretty">
-                        No organizations match your search criteria. Try adjusting your filters.
+                        No organizations match your search criteria. Try
+                        adjusting your filters.
                       </EmptyDescription>
                     </EmptyHeader>
                     <EmptyContent className="grid sm:grid-cols-2 ">
-                      <Button variant="outline" onClick={() => handleSearch("")}>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleSearch("")}
+                      >
                         <RefreshCcwIcon data-icon="inline-start" />
                         Clear Search
                       </Button>
-                      <Button variant="secondary" onClick={() => handleRoleFilter("all")}>
+                      <Button
+                        variant="secondary"
+                        onClick={() => handleRoleFilter("all")}
+                      >
                         Clear Filters
                       </Button>
                     </EmptyContent>
@@ -310,7 +334,9 @@ export const OrganizationsDataTable: FC = () => {
       <div className="flex flex-col sm:flex-row items-center justify-between px-2 ">
         <div className="text-muted-foreground flex-1 text-sm">
           {isFiltering ? (
-            <>showing {totalRows} of {rawData.length} organization(s)</>
+            <>
+              showing {totalRows} of {rawData.length} organization(s)
+            </>
           ) : (
             <>{rawData.length} organization(s)</>
           )}

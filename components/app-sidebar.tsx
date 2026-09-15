@@ -1,8 +1,5 @@
-'use client';
+"use client";
 
-// import { NavProjects } from "@/components/nav-projects"; // Coming Soon
-// import { NavSecondary } from "@/components/nav-secondary"; // Coming Soon
-// import { NavUser } from "@/components/nav-user"; // Coming Soon
 import {
   Sidebar,
   SidebarContent,

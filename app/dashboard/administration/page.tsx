@@ -7,13 +7,7 @@ import {
   CardDescription,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  UsersIcon,
-  Building2Icon,
-  SettingsIcon,
-  ShieldIcon,
-  GlobeIcon,
-} from "lucide-react";
+import { UsersIcon, Building2Icon, GlobeIcon } from "lucide-react";
 
 const adminSections = [
   {
@@ -25,17 +19,10 @@ const adminSections = [
   },
   {
     title: "Organizations",
-    description: "Manage organizations and team members",
+    description: "Manage organizations, members, and their roles",
     href: "/dashboard/administration/organizations",
     icon: Building2Icon,
     color: "bg-purple-500",
-  },
-  {
-    title: "Roles & Permissions",
-    description: "Configure roles and access control",
-    href: "/dashboard/administration/roles",
-    icon: ShieldIcon,
-    color: "bg-emerald-500",
   },
   {
     title: "OAuth Apps",
@@ -43,14 +30,6 @@ const adminSections = [
     href: "/dashboard/administration/oauth",
     icon: GlobeIcon,
     color: "bg-indigo-500",
-  },
-  {
-    title: "Settings",
-    description: "System configuration and preferences",
-    href: "/dashboard/administration/settings",
-    icon: SettingsIcon,
-    color: "bg-slate-500",
-    disabled: true,
   },
 ];
 
@@ -81,17 +60,6 @@ export default function AdministrationPage() {
               </div>
             </>
           );
-
-          if (section.disabled) {
-            return (
-              <Card
-                key={section.title}
-                className="cursor-not-allowed opacity-60"
-              >
-                <CardContent className="pt-6">{cardContent}</CardContent>
-              </Card>
-            );
-          }
 
           return (
             <Link key={section.title} href={section.href}>

@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuthClientsPage } from "./page-clients";
 import { AuthConsentsPage } from "./page-consents";
 import { AuthResourcesPage } from "./page-resources";
+import { AuthAllClientsPage } from "./page-all-clients";
+import { useUserSession } from "@/hooks/use-user-session";
 
 // interface OAuthClient {
 //   client_id: string;
@@ -384,7 +386,19 @@ const tabs = [
   },
 ];
 
+const adminTabs = [
+  ...tabs,
+  {
+    title: "all apps",
+    content: <AuthAllClientsPage />,
+  },
+];
+
 export default function OAuthAdminPage() {
+  const { data: session } = useUserSession();
+  const isAdmin = session?.user?.role === "admin";
+  const visibleTabs = isAdmin ? adminTabs : tabs;
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader />
@@ -393,7 +407,7 @@ export default function OAuthAdminPage() {
 
       <Tabs defaultValue="clients">
         <TabsList>
-          {tabs.map(({ title }, index) => {
+          {visibleTabs.map(({ title }, index) => {
             return (
               <TabsTrigger key={`${index}-${title}`} value={title}>
                 {title}
@@ -402,7 +416,7 @@ export default function OAuthAdminPage() {
           })}
         </TabsList>
 
-        {tabs.map(({ title, content }, index) => {
+        {visibleTabs.map(({ title, content }, index) => {
           return (
             <TabsContent key={`${index}-${title}`} value={title}>
               {content}
@@ -410,7 +424,6 @@ export default function OAuthAdminPage() {
           );
         })}
       </Tabs>
-
     </div>
   );
 }

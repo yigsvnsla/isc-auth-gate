@@ -1,9 +1,9 @@
 import { betterAuth } from "better-auth";
 import { APIError } from "@better-auth/core/error";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/database";
-import { users } from "@/database/schema";
+import { users, members } from "@/database/schema";
 import {
   admin as adminPlugin,
   openAPI,
@@ -349,7 +349,35 @@ export const auth = betterAuth({
       resources: env.BETTER_AUTH_OAUTH_RESOURCES,
       // ponytail: CRUD admin de clients/resources solo para admins. Sin estos
       // gates el plugin permite gestionarlos a cualquier sesión autenticada.
-      clientPrivileges: async ({ user }) => user?.role === "admin",
+      // Org-scoping: referenceId = activeOrganizationId (null = app de
+      // plataforma). Owner/admin de la org activa también gestionan.
+      clientReference: async ({ session }) => {
+        const activeOrg = (
+          session?.session as { activeOrganizationId?: string | null }
+        )?.activeOrganizationId;
+        return activeOrg ?? undefined;
+      },
+      clientPrivileges: async ({ session, user }) => {
+        if (user?.role === "admin") return true;
+        const sessionRecord = session as
+          | { activeOrganizationId?: string | null; userId?: string }
+          | undefined;
+        const activeOrg = sessionRecord?.activeOrganizationId;
+        const userId = sessionRecord?.userId;
+        if (!activeOrg || !userId) return false;
+        const [memberRow] = await db
+          .select({ id: members.id })
+          .from(members)
+          .where(
+            and(
+              eq(members.organizationId, activeOrg),
+              eq(members.userId, userId),
+              inArray(members.role, ["owner", "admin"]),
+            ),
+          )
+          .limit(1);
+        return Boolean(memberRow);
+      },
       resourcePrivileges: async ({ user }) => user?.role === "admin",
       // ponytail: límites por-endpoint para integraciones 3rd party.
       // Token endpoint más holgado (1 req/s promedio por IP).
@@ -413,7 +441,6 @@ export const auth = betterAuth({
     }),
     // Username: login por nombre de usuario (además de email). Columna única.
     username({
-      
       minUsernameLength: 3,
       maxUsernameLength: 30,
     }),

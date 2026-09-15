@@ -42,7 +42,7 @@ import { useAdminCreateUser } from "@/hooks/use-admin-create-user";
 const formSchema = z
   .object({
     name: z.string().min(2, "Mínimo 2 caracteres").max(100),
-    email: z.string().email("Email inválido"),
+    email: z.email("Email inválido"),
     password: z
       .string()
       .min(8, "Mínimo 8 caracteres")

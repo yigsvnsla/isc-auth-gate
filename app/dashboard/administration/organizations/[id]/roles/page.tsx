@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, use } from "react";
 import { accessControl } from "@/lib/permissions";
 import {
-  useOrganizations,
   useListRoles,
   useCreateRole,
   useUpdateRole,
@@ -11,13 +10,6 @@ import {
   type OrganizationRole,
 } from "@/hooks/use-admin-roles";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -55,7 +47,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Field,
@@ -71,7 +62,9 @@ import {
   PencilIcon,
   Trash2Icon,
   Building2Icon,
+  ArrowLeftIcon,
 } from "lucide-react";
+import Link from "next/link";
 
 // ponytail: statements del accessControl, tipado como Record para iteración simple
 const statements = accessControl.statements as unknown as Record<
@@ -129,47 +122,6 @@ function formatDate(dateStr: string | undefined): string {
   });
 }
 
-function OrgSelector({
-  orgId,
-  onOrgChange,
-}: {
-  orgId: string | undefined;
-  onOrgChange: (id: string) => void;
-}) {
-  const { data, isLoading } = useOrganizations();
-  const orgs = data ?? [];
-
-  return (
-    <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-muted-foreground">
-        Active Organization
-      </label>
-      <Select value={orgId ?? null} onValueChange={(v) => onOrgChange(v as string)}>
-        <SelectTrigger className="w-full" aria-label="Select organization">
-          <SelectValue placeholder="Select an organization" />
-        </SelectTrigger>
-        <SelectContent>
-          {isLoading ? (
-            <SelectItem value="loading" disabled>
-              Loading...
-            </SelectItem>
-          ) : orgs.length === 0 ? (
-            <SelectItem value="empty" disabled>
-              No organizations found
-            </SelectItem>
-          ) : (
-            orgs.map((org) => (
-              <SelectItem key={org.id} value={org.id}>
-                {org.name}
-              </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
 function PermissionEditor({
   permissions,
   onChange,
@@ -182,9 +134,7 @@ function PermissionEditor({
     const has = current.includes(action);
     const next = {
       ...permissions,
-      [stmt]: has
-        ? current.filter((a) => a !== action)
-        : [...current, action],
+      [stmt]: has ? current.filter((a) => a !== action) : [...current, action],
     };
     if (next[stmt].length === 0) delete next[stmt];
     onChange(next);
@@ -278,9 +228,7 @@ function RoleDialog({
       }
       onOpenChange(false);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to save role",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to save role");
     }
   };
 
@@ -311,7 +259,8 @@ function RoleDialog({
               disabled={mode === "edit"}
             />
             <FieldDescription>
-              URL-friendly identifier. Use lowercase letters, numbers, and hyphens.
+              URL-friendly identifier. Use lowercase letters, numbers, and
+              hyphens.
             </FieldDescription>
           </Field>
         </FieldGroup>
@@ -335,7 +284,11 @@ function RoleDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isPending}>
-            {isPending ? "Saving..." : mode === "create" ? "Create Role" : "Save Changes"}
+            {isPending
+              ? "Saving..."
+              : mode === "create"
+                ? "Create Role"
+                : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -366,9 +319,7 @@ function DeleteRoleDialog({
       toast.success(`Role "${role.role}" deleted`);
       onOpenChange(false);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete role",
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to delete role");
     }
   };
 
@@ -376,7 +327,9 @@ function DeleteRoleDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete role &ldquo;{role?.role}&rdquo;?</AlertDialogTitle>
+          <AlertDialogTitle>
+            Delete role &ldquo;{role?.role}&rdquo;?
+          </AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. Members assigned to this role will
             lose their permissions. Predefined roles (owner, admin, member)
@@ -467,15 +420,17 @@ function RolesTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {Object.entries(role.permission).map(([stmt, actions]) => (
-                        <Badge
-                          key={stmt}
-                          variant="outline"
-                          className="text-[10px]"
-                        >
-                          {stmt}:{actions.length}
-                        </Badge>
-                      ))}
+                      {Object.entries(role.permission).map(
+                        ([stmt, actions]) => (
+                          <Badge
+                            key={stmt}
+                            variant="outline"
+                            className="text-[10px]"
+                          >
+                            {stmt}:{actions.length}
+                          </Badge>
+                        ),
+                      )}
                       {permissionCount(role.permission) === 0 && (
                         <span className="text-xs text-muted-foreground">
                           No permissions
@@ -574,8 +529,12 @@ function PermissionsMatrixTab() {
   );
 }
 
-export default function RolesPermissionsPage() {
-  const [orgId, setOrgId] = useState<string | undefined>(undefined);
+interface OrgRolesPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default function OrgRolesPage({ params }: OrgRolesPageProps) {
+  const { id: orgId } = use(params);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
   const [editingRole, setEditingRole] = useState<OrganizationRole | null>(null);
@@ -584,10 +543,6 @@ export default function RolesPermissionsPage() {
   );
 
   const { data: roles, isLoading, mutate } = useListRoles(orgId);
-
-  const handleRefresh = useCallback(() => {
-    mutate();
-  }, [mutate]);
 
   const handleNewRole = () => {
     setDialogMode("create");
@@ -615,98 +570,76 @@ export default function RolesPermissionsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            nativeButton={false}
+            render={
+              <Link href={`/dashboard/administration/organizations/${orgId}`} />
+            }
+          >
+            <ArrowLeftIcon data-icon="inline-start" />
+          </Button>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
               Roles &amp; Permissions
             </h1>
             <p className="text-sm text-muted-foreground">
-              Manage custom roles and access control for organizations
+              Custom roles and access control for this organization
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={!orgId}
-            >
-              <RefreshCwIcon data-icon="inline-start" />
-              Refresh
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleNewRole}
-              disabled={!orgId}
-            >
-              <PlusIcon data-icon="inline-start" />
-              New Role
-            </Button>
-          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => mutate()}>
+            <RefreshCwIcon data-icon="inline-start" />
+            Refresh
+          </Button>
+          <Button size="sm" onClick={handleNewRole}>
+            <PlusIcon data-icon="inline-start" />
+            New Role
+          </Button>
         </div>
       </div>
 
-      <Separator />
+      <Tabs defaultValue="roles">
+        <TabsList>
+          <TabsTrigger value="roles">
+            <ShieldIcon data-icon="inline-start" />
+            Roles
+          </TabsTrigger>
+          <TabsTrigger value="matrix">
+            <Building2Icon data-icon="inline-start" />
+            Permissions Matrix
+          </TabsTrigger>
+        </TabsList>
 
-      <OrgSelector orgId={orgId} onOrgChange={setOrgId} />
+        <TabsContent value="roles">
+          <RolesTable
+            roles={roles ?? []}
+            isLoading={isLoading}
+            onEdit={handleEditRole}
+            onDelete={handleDeleteRole}
+          />
+        </TabsContent>
 
-      {orgId ? (
-        <Tabs defaultValue="roles">
-          <TabsList>
-            <TabsTrigger value="roles">
-              <ShieldIcon data-icon="inline-start" />
-              Roles
-            </TabsTrigger>
-            <TabsTrigger value="matrix">
-              <Building2Icon data-icon="inline-start" />
-              Permissions Matrix
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="roles">
-            <RolesTable
-              roles={roles ?? []}
-              isLoading={isLoading}
-              onEdit={handleEditRole}
-              onDelete={handleDeleteRole}
-            />
-          </TabsContent>
-
-          <TabsContent value="matrix">
-            <PermissionsMatrixTab />
-          </TabsContent>
-        </Tabs>
-      ) : (
-        <Card>
-          <CardContent className="py-12">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <Building2Icon className="size-10 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">
-                  Select an organization to manage its roles
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Roles are scoped to each organization. Choose one above to get
-                  started.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="matrix">
+          <PermissionsMatrixTab />
+        </TabsContent>
+      </Tabs>
 
       <RoleDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         mode={dialogMode}
         initialData={dialogInitialData}
-        organizationId={orgId ?? ""}
+        organizationId={orgId}
       />
 
       <DeleteRoleDialog
         role={deleteTarget}
-        organizationId={orgId ?? ""}
+        organizationId={orgId}
         open={deleteTarget !== null}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);

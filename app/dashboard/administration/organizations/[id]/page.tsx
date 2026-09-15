@@ -29,6 +29,7 @@ import {
   XIcon,
   UserPlusIcon,
   Trash2Icon,
+  GlobeIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -511,7 +512,7 @@ function OrganizationDetailContent({ orgId }: { orgId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/dashboard/administration/organizations"
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -519,6 +520,36 @@ function OrganizationDetailContent({ orgId }: { orgId: string }) {
           <ArrowLeftIcon data-icon="inline-start" className="size-4" />
           Back to Organizations
         </Link>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={
+              <Link
+                href={`/dashboard/administration/organizations/${orgId}/roles`}
+              />
+            }
+          >
+            <ShieldIcon data-icon="inline-start" />
+            Manage Roles
+          </Button>
+          {canManage && (
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={
+                <Link
+                  href={`/dashboard/administration/organizations/${orgId}/apps`}
+                />
+              }
+            >
+              <GlobeIcon data-icon="inline-start" />
+              OAuth Apps
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
