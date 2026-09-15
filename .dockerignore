@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.example
+.maildev
+.containers
+scripts
+tsconfig.tsbuildinfo
+package-lock.json
+docs/node_modules
+*.md
+!README.md

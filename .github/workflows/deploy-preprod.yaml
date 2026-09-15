@@ -1,0 +1,111 @@
+name: Deploy Preprod
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag de imagen a desplegar (default: pre). Para rollback usar un commit SHA."
+        required: false
+        default: "pre"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-preprod
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: isc-auth-test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      BETTER_AUTH_DATABASE_HOST: localhost
+      BETTER_AUTH_DATABASE_NAME: isc-auth-test
+      BETTER_AUTH_DATABASE_PORT: 5432
+      BETTER_AUTH_DATABASE_USER: test
+      BETTER_AUTH_DATABASE_PASS: test
+      BETTER_AUTH_TEST_ALLOW_TRUNCATE: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun run test
+
+  build-push:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ inputs.image_tag }}
+          build-args: |
+            BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL_PRE }}
+            NEXT_PUBLIC_BETTER_AUTH_URL=${{ secrets.NEXT_PUBLIC_BETTER_AUTH_URL_PRE }}
+
+  deploy-pre:
+    needs: build-push
+    runs-on: ubuntu-latest
+    env:
+      DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+      DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+    steps:
+      - name: Update image tag
+        run: |
+          bun x dokploy application save-docker-provider \
+            --applicationId ${{ secrets.DOKPLOY_APP_ID_PRE }} \
+            --dockerImage ghcr.io/${{ github.repository }}:${{ inputs.image_tag }}
+
+      - name: Deploy to Dokploy
+        run: bun x dokploy application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID_PRE }}
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.DOMAIN_PRE }}/api/health" || true)
+            if [ "$code" = "200" ]; then
+              echo "Healthy after attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $code — retry in 10s"
+            sleep 10
+          done
+          echo "Health check failed"
+          exit 1

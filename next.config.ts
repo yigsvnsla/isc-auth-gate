@@ -1,11 +1,17 @@
 import type { NextConfig } from "next";
 
-
 const nextConfig: NextConfig = {
-  /* config options here */
-
-  allowedDevOrigins: ['192.168.100.98'],
+  output: "standalone",
+  allowedDevOrigins: ["192.168.100.98"],
   reactCompiler: true,
+  rewrites: async () => {
+    return [
+      {
+        source: "/healthz",
+        destination: "/api/health",
+      },
+    ];
+  },
 };
 
 export default nextConfig;
