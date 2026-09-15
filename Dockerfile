@@ -45,7 +45,7 @@ RUN bun run build && \
     cp -r public .next/standalone/ && \
     cp -r .next/static .next/standalone/.next/
 
-FROM oven/bun:1-slim AS runner
+FROM oven/bun:1 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV BETTER_AUTH_DATABASE_DEBUG=false
