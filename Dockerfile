@@ -38,7 +38,7 @@ ENV BETTER_AUTH_SMTP_TRANSPORTER_HOST=build-placeholder
 ENV BETTER_AUTH_SMTP_TRANSPORTER_PORT=587
 ENV BETTER_AUTH_SMTP_TRANSPORTER_USER=build-placeholder
 ENV BETTER_AUTH_SMTP_TRANSPORTER_PASS=build-placeholder
-ENV BETTER_AUTH_SMTP_TRANSPORTER_FROM=Auth Gate <build-placeholder>
+ENV BETTER_AUTH_SMTP_TRANSPORTER_FROM="Auth Gate <build-placeholder>"
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
