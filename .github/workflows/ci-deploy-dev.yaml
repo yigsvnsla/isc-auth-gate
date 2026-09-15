@@ -62,6 +62,9 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Push schema to test DB
+        run: bun run database:push
+
       - name: Test
         run: bun run test
 
