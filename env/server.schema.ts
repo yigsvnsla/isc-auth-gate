@@ -5,7 +5,7 @@ export const serverEnv = z.object({
   BETTER_AUTH_SERVER_NAME: z.string(),
   BETTER_AUTH_SERVER_HOST: z.string().default("localhost"),
   BETTER_AUTH_SERVER_PORT: z.coerce.number().default(4000),
-  BETTER_AUTH_SERVER_DEBUG: z.coerce.boolean().default(false),
+  BETTER_AUTH_SERVER_DEBUG: z.stringbool().default(false),
   BETTER_AUTH_SERVER_SECRET: z.string(),
   BETTER_AUTH_SERVER_TRUSTED_ORIGINS: z.preprocess(
     // Si viene como string, lo dividimos por coma y quitamos espacios en blanco
@@ -60,7 +60,7 @@ export const serverEnv = z.object({
   // captchafox). Desactivado por defecto hasta configurar un proveedor.
   // Nota: trycap.dev (Cap) NO es un proveedor nativo; usar un proveedor
   // soportado y activar con BETTER_AUTH_CAPTCHA_ENABLED=true.
-  BETTER_AUTH_CAPTCHA_ENABLED: z.coerce.boolean().default(false),
+  BETTER_AUTH_CAPTCHA_ENABLED: z.stringbool().default(false),
   BETTER_AUTH_CAPTCHA_PROVIDER: z
     .enum(["turnstile", "recaptcha", "hcaptcha", "captchafox"])
     .default("turnstile"),
