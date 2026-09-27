@@ -5,8 +5,12 @@ import { auth } from "@/lib/auth/auth";
 import { headers as NextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { needsSetup } from "@/lib/setup";
 
 export default async function LoginPage() {
+  // ponytail: primer arranque sin admin → /setup.
+  if (await needsSetup()) redirect("/setup");
+
   try {
     const headers = await NextHeaders();
     const session = await auth.api.getSession({ headers });

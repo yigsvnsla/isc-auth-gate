@@ -8,7 +8,7 @@ import {
 } from "bun:test";
 import { testAuth } from "@/lib/auth.test";
 import { cleanupTestDb, testDb } from "@/tests/database";
-import { oauthClients } from "@/database/schema";
+import { oauthClients } from "@/database/schema-sqlite";
 import { createHash } from "crypto";
 import { DEVICE_CODE_GRANT_TYPE } from "@better-auth/oauth-provider";
 

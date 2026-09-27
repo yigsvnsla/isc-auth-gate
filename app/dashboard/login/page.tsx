@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { auth } from "@/lib/auth/auth";
 import { headers as NextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
+import { needsSetup } from "@/lib/setup";
 
 /**
  * Página principal de autenticación/login para el panel de control (Server Component).
@@ -14,6 +15,9 @@ import { redirect } from "next/navigation";
  * el formulario `DashboardLoginForm`.
  */
 export default async function DashboardLoginPage() {
+  // ponytail: primer arranque sin admin → /setup (única manera de entrar).
+  if (await needsSetup()) redirect("/setup");
+
   const headers = await NextHeaders();
 
   // 1. Verificación de sesión activa en el servidor (SSR)

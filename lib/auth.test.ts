@@ -55,7 +55,7 @@ export const testAuth = betterAuth({
     },
   },
   database: drizzleAdapter(testDb, {
-    provider: "pg",
+    provider: "sqlite",
     usePlural: true,
   }),
   // Additional fields: campos custom en user/session (DB only, no en JWT).

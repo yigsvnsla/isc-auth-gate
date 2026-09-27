@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { testAuth } from "@/lib/auth.test";
 import { cleanupTestDb } from "@/tests/database";
 import { testDb } from "@/tests/database";
-import { users } from "@/database/schema";
+import { users } from "@/database/schema-sqlite";
 import { eq } from "drizzle-orm";
 import { accessControl, admin, user } from "@/lib/permissions";
 

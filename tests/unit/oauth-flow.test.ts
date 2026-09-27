@@ -8,7 +8,7 @@ import {
 } from "bun:test";
 import { testAuth } from "@/lib/auth.test";
 import { cleanupTestDb, testDb } from "@/tests/database";
-import { oauthClients } from "@/database/schema";
+import { oauthClients } from "@/database/schema-sqlite";
 import { createHash, randomBytes } from "crypto";
 
 const baseUrl = "http://localhost:3000/api/auth";

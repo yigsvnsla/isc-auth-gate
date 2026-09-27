@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { testAuth } from "@/lib/auth.test";
 import { cleanupTestDb, testDb } from "@/tests/database";
-import { users } from "@/database/schema";
+import { users } from "@/database/schema-sqlite";
 import { eq } from "drizzle-orm";
 
 // Last login method nativo: registra el método de acceso en el usuario.

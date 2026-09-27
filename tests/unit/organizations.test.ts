@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { testAuth } from "@/lib/auth.test";
 import { cleanupTestDb, testDb } from "@/tests/database";
 import { eq, and } from "drizzle-orm";
-import { organizations, members } from "@/database/schema";
+import { organizations, members } from "@/database/schema-sqlite";
 
 describe("Organization Management", () => {
   let ctx: Awaited<typeof testAuth.$context>;

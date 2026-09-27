@@ -66,4 +66,7 @@ COPY --from=deps /app/node_modules/pg ./node_modules/pg
 COPY --from=deps /app/node_modules/zod ./node_modules/zod
 
 EXPOSE 3000
-CMD ["bun", "server.js"]
+# Entrypoint: espera DB → migraciones (drizzle-kit up) → server.
+COPY entrypoint.sh ./entrypoint.sh
+RUN chmod +x entrypoint.sh
+CMD ["./entrypoint.sh"]
