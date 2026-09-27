@@ -22,8 +22,14 @@ export async function needsSetup(): Promise<boolean> {
     // DB caída: no forzar /setup, dejar que el flujo normal muestre el error.
     // Sin este log el síntoma es invisible: un formulario de login en una
     // instancia que aún no tiene admin.
+    // ponytail: DrizzleQueryError.message solo dice "Failed query: …"; el
+    // código de Postgres (42P01, 42501, timeout…) vive en .cause.
+    const causa =
+      error instanceof Error && error.cause instanceof Error
+        ? ` | causa: ${error.cause.message}`
+        : "";
     console.warn(
-      "[setup] needsSetup() no pudo consultar la DB:",
+      `[setup] needsSetup() no pudo consultar la DB:${causa}`,
       error instanceof Error ? error.message : error,
     );
     return false;
@@ -35,7 +41,11 @@ export async function checkDatabase(): Promise<boolean> {
   try {
     await db.execute(sql`select 1`);
     return true;
-  } catch {
+  } catch (error) {
+    console.warn(
+      "[setup] checkDatabase() falló:",
+      error instanceof Error ? error.message : error,
+    );
     return false;
   }
 }
