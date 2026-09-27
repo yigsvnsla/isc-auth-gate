@@ -8,31 +8,40 @@
 # ---------------------------------------------------------------------------
 set -e
 
-echo "==> Esperando base de datos..."
+echo "==> Esperando base de datos en ${BETTER_AUTH_DATABASE_HOST}:${BETTER_AUTH_DATABASE_PORT}..."
 i=0
+last_error="sin detalle"
 # Event-driven + timeout por intento: Bun.connect solo rechaza la promise si el
 # puerto rechaza la conexión; si el host no resuelve (DNS) únicamente emite
 # 'error' y la promise queda colgada para siempre.
-until bun -e "
-const t = setTimeout(() => process.exit(1), 3000);
+# ponytail: el motivo del fallo se imprime en cada intento — tragarlo deja un
+# 502 sin explicación cuando la DB es inalcanzable desde el contenedor.
+until last_error=$(bun -e "
+const host = process.env.BETTER_AUTH_DATABASE_HOST;
+const port = Number(process.env.BETTER_AUTH_DATABASE_PORT);
+if (!host) { console.error('BETTER_AUTH_DATABASE_HOST no está definida'); process.exit(1); }
+const t = setTimeout(() => { console.error('timeout: ' + host + ':' + port + ' no aceptó en 3s'); process.exit(1); }, 3000);
 Bun.connect({
-  hostname: process.env.BETTER_AUTH_DATABASE_HOST,
-  port: Number(process.env.BETTER_AUTH_DATABASE_PORT),
+  hostname: host,
+  port,
   socket: {
     data() {},
     open(sock) { sock.end(); clearTimeout(t); process.exit(0); },
     close() {},
-    error() { clearTimeout(t); process.exit(1); },
+    error(err) { clearTimeout(t); console.error((err && (err.code || err.message)) || 'error de red'); process.exit(1); },
   },
-});
-" 2>/dev/null; do
+}).catch((err) => { clearTimeout(t); console.error((err && (err.code || err.message)) || String(err)); process.exit(1); });
+" 2>&1); do
   i=$((i + 1))
-  if [ "$i" -ge 30 ]; then
-    echo "DB no responde tras 300s" >&2
+  echo "==> Intento $i/20: DB inalcanzable ($last_error)" >&2
+  if [ "$i" -ge 20 ]; then
+    echo "DB no responde tras $i intentos: ${BETTER_AUTH_DATABASE_HOST}:${BETTER_AUTH_DATABASE_PORT} ($last_error)" >&2
     exit 1
   fi
-  sleep 10
+  sleep 5
 done
+
+echo "==> DB alcanzable."
 
 echo "==> Aplicando migraciones..."
 # ponytail: bin.cjs directo en vez de `bun run database:up` — el runner stage
