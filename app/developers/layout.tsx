@@ -1,4 +1,3 @@
-import { env } from "@/env";
 import { CommandIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -10,6 +9,10 @@ export const metadata: Metadata = {
     "Documentación de integración para aplicaciones de terceros con ISC Auth OAuth 2.1 / OIDC",
 };
 
+// Las guías incluyen URLs configuradas en runtime; no deben prerenderizarse
+// con las variables (o secretos) disponibles durante `next build`.
+export const dynamic = "force-dynamic";
+
 const navItems = [
   { href: "/developers", label: "Overview", exact: true },
   { href: "/developers/quickstart", label: "Quickstart" },
@@ -19,8 +22,6 @@ const navItems = [
   { href: "/developers/m2m", label: "Machine to Machine" },
   { href: "/developers/resource-server", label: "Resource Server" },
 ];
-
-export const baseUrl = env.BETTER_AUTH_URL.replace(/\/+$/, "");
 
 export default function DevelopersLayout({
   children,

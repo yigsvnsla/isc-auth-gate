@@ -7,9 +7,11 @@ import {
 import {
   TriangleAlertIcon,
 } from "lucide-react";
-import { baseUrl } from "../layout";
+import { getPublicAuthConfig } from "@/lib/runtime-config";
 
-export default function QuickstartPage() {
+export default async function QuickstartPage() {
+  const { baseUrl } = await getPublicAuthConfig();
+
   return (
     <div className="flex flex-col gap-8">
       <div>

@@ -1,10 +1,12 @@
 import { CodeBlock } from "@/components/reui/code-block";
-import { baseUrl } from "../../layout";
+import { getPublicAuthConfig } from "@/lib/runtime-config";
 
-const issuer = `${baseUrl}/api/auth`;
 const deviceGrant = "urn:ietf:params:oauth:grant-type:device_code";
 
-export default function DeviceFlowPage() {
+export default async function DeviceFlowPage() {
+  const { baseUrl } = await getPublicAuthConfig();
+  const issuer = `${baseUrl}/api/auth`;
+
   return (
     <div className="flex flex-col gap-8">
       <div>

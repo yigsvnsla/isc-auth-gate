@@ -5,11 +5,12 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { TriangleAlertIcon } from "lucide-react";
-import { baseUrl } from "../layout";
+import { getPublicAuthConfig } from "@/lib/runtime-config";
 
-const issuer = `${baseUrl}/api/auth`;
+export default async function M2MPage() {
+  const { baseUrl } = await getPublicAuthConfig();
+  const issuer = `${baseUrl}/api/auth`;
 
-export default function M2MPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>

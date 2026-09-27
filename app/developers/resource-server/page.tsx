@@ -1,9 +1,10 @@
 import { CodeBlock } from "@/components/reui/code-block";
-import { baseUrl } from "../layout";
+import { getPublicAuthConfig } from "@/lib/runtime-config";
 
-const issuer = `${baseUrl}/api/auth`;
+export default async function ResourceServerPage() {
+  const { baseUrl } = await getPublicAuthConfig();
+  const issuer = `${baseUrl}/api/auth`;
 
-export default function ResourceServerPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>

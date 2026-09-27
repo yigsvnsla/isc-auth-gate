@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { ArrowRightIcon, GlobeIcon, KeyRoundIcon, ShieldIcon } from "lucide-react";
 import Link from "next/link";
-import { baseUrl } from "./layout";
+import { getPublicAuthConfig } from "@/lib/runtime-config";
 
 const guides = [
   {
@@ -48,7 +48,9 @@ const guides = [
   },
 ];
 
-export default function DevelopersOverview() {
+export default async function DevelopersOverview() {
+  const { baseUrl } = await getPublicAuthConfig();
+
   return (
     <div className="flex flex-col gap-8">
       <div>
