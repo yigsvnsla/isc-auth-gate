@@ -16,10 +16,7 @@ import * as schemaSqlite from "@/database/schema-sqlite";
 const sqlite = new Database(":memory:");
 sqlite.exec("PRAGMA foreign_keys = ON;");
 
-export const testDb = drizzle(sqlite, {
-  schema: schemaSqlite,
-  logger: { logQuery: (q) => console.error("SQL:", q) },
-});
+export const testDb = drizzle(sqlite, { schema: schemaSqlite });
 
 let initialized: Promise<void> | null = null;
 

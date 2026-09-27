@@ -2,7 +2,10 @@ import { betterAuth } from "better-auth";
 import { APIError } from "@better-auth/core/error";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { testDb } from "@/tests/database";
+// (antes importaba también `auth` de producción sin usarlo: arrastraba el pool
+// de PostgreSQL real al grafo de los tests)
 import { env } from "@/env";
+import { microsoftConfigured } from "@/lib/providers";
 import {
   admin as adminPlugin,
   openAPI,
@@ -157,22 +160,26 @@ export const testAuth = betterAuth({
     }),
     multiSession({ maximumSessions: 5 }),
     lastLoginMethod({ storeInDatabase: true }),
-    // Microsoft Entra ID: OAuth2/OIDC nativo para Azure AD (via genericOAuth).
-    // ponytail: providerId "microsoft" fuerza callback /api/auth/callback/microsoft (ya registrado en Azure)
-    genericOAuth({
-      config: [
-        {
-          ...microsoftEntraId({
-            clientId: env.BETTER_AUTH_MICROSOFT_CLIENT_ID,
-            clientSecret: env.BETTER_AUTH_MICROSOFT_CLIENT_SECRET,
-            tenantId: env.BETTER_AUTH_MICROSOFT_TENANT_ID ?? "common",
+    // Microsoft Entra ID: mismo condicional que lib/auth/auth.tsx (provider
+    // opcional). Los tests de OAuth usan su propio client, no este plugin.
+    ...(microsoftConfigured
+      ? [
+          genericOAuth({
+            config: [
+              {
+                ...microsoftEntraId({
+                  clientId: env.BETTER_AUTH_MICROSOFT_CLIENT_ID!,
+                  clientSecret: env.BETTER_AUTH_MICROSOFT_CLIENT_SECRET!,
+                  tenantId: env.BETTER_AUTH_MICROSOFT_TENANT_ID!,
+                }),
+                providerId: "microsoft",
+                accountIssuer: `https://login.microsoftonline.com/${env.BETTER_AUTH_MICROSOFT_TENANT_ID}/v2.0`,
+                requireIdTokenVerification: false,
+              },
+            ],
           }),
-          providerId: "microsoft",
-          accountIssuer: `https://login.microsoftonline.com/${env.BETTER_AUTH_MICROSOFT_TENANT_ID ?? "common"}/v2.0`,
-          requireIdTokenVerification: false,
-        },
-      ],
-    }),
+        ]
+      : []),
     bearer(),
     // OAuth Popup: UX popup para "Conectar con Microsoft/Google" sin redirect full-page.
     oauthPopup(),

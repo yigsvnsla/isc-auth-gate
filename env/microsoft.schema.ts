@@ -1,5 +1,8 @@
 import z from "zod";
 
+// Proveedor opcional: todo puede faltar. `lib/providers.ts` decide si se
+// habilita (los 3 campos concretos) y `lib/auth/auth.tsx` registra el plugin
+// solo entonces. Añadir GitHub/Google aquí cuando toque.
 export const microsoftProviderEnv = z.object({
   BETTER_AUTH_MICROSOFT_PROMPT: z
     .enum([
@@ -11,10 +14,10 @@ export const microsoftProviderEnv = z.object({
     ])
     .optional()
     .default("login"),
-  BETTER_AUTH_MICROSOFT_CLIENT_ID: z.string().min(1),
+  BETTER_AUTH_MICROSOFT_CLIENT_ID: z.string().min(1).optional(),
   BETTER_AUTH_MICROSOFT_TENANT_ID: z.string().optional(),
   BETTER_AUTH_MICROSOFT_AUTHORITY: z.string().optional(),
-  BETTER_AUTH_MICROSOFT_CLIENT_SECRET: z.string().min(1),
+  BETTER_AUTH_MICROSOFT_CLIENT_SECRET: z.string().min(1).optional(),
   BETTER_AUTH_MICROSOFT_PROFILE_PHOTO_SIZE: z
     .preprocess(
       // El preprocess convierte el string a un número antes de que Zod valide

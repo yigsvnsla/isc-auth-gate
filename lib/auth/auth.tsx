@@ -46,6 +46,10 @@ import {
 } from "@better-auth/oauth-provider";
 // import { microsoft } from "@/plugins/providers/microsoft"; // Coming Soon
 import { env } from "@/env";
+import {
+  logProviderWarnings,
+  microsoftConfigured,
+} from "@/lib/providers";
 import { email } from "../email";
 import { WelcomeEmail } from "@/lib/email/templates/welcome-email";
 import { createRateLimitStorage } from "@/lib/rate-limit-storage";
@@ -75,6 +79,8 @@ import { i18n, locales } from "@better-auth/i18n";
  *
  * @see https://www.better-auth.com/docs
  */
+logProviderWarnings();
+
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL.replace(/\/+$/, ""),
   basePath: "/api/auth",
@@ -214,6 +220,11 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     autoSignIn: false,
+    // ponytail: auth gateway, no una red social. Nadie se registra solo por
+    // email: entra por Microsoft (`/sign-up/social`), por invitación de la
+    // organización (crea el usuario internamente, no pasa por aquí) o por el
+    // panel de admin. El primer admin lo crea `/setup` con inserts directos.
+    disableSignUp: true,
 
     sendResetPassword: async ({ user, url }) => {
       try {
@@ -495,20 +506,27 @@ export const auth = betterAuth({
     // Microsoft Entra ID: OAuth2/OIDC nativo para Azure AD (via genericOAuth).
     // ponytail: providerId "microsoft" fuerza callback /api/auth/callback/microsoft (ya registrado en Azure).
     // accountIssuer + requireIdTokenVerification: false aseguran init robusto sin depender de discovery.
-    genericOAuth({
-      config: [
-        {
-          ...microsoftEntraId({
-            clientId: env.BETTER_AUTH_MICROSOFT_CLIENT_ID,
-            clientSecret: env.BETTER_AUTH_MICROSOFT_CLIENT_SECRET,
-            tenantId: env.BETTER_AUTH_MICROSOFT_TENANT_ID ?? "common",
+    // Opcional: sin clientId+clientSecret+tenantId el plugin NO se registra (ver
+    // lib/providers.ts) — registrarlo sin tenant concreto tumba toda página de
+    // de auth con "requires a concrete Microsoft Entra tenant GUID".
+    ...(microsoftConfigured
+      ? [
+          genericOAuth({
+            config: [
+              {
+                ...microsoftEntraId({
+                  clientId: env.BETTER_AUTH_MICROSOFT_CLIENT_ID!,
+                  clientSecret: env.BETTER_AUTH_MICROSOFT_CLIENT_SECRET!,
+                  tenantId: env.BETTER_AUTH_MICROSOFT_TENANT_ID!,
+                }),
+                providerId: "microsoft",
+                accountIssuer: `https://login.microsoftonline.com/${env.BETTER_AUTH_MICROSOFT_TENANT_ID}/v2.0`,
+                requireIdTokenVerification: false,
+              },
+            ],
           }),
-          providerId: "microsoft",
-          accountIssuer: `https://login.microsoftonline.com/${env.BETTER_AUTH_MICROSOFT_TENANT_ID ?? "common"}/v2.0`,
-          requireIdTokenVerification: false,
-        },
-      ],
-    }),
+        ]
+      : []),
     // Bearer: autentica requests vía `Authorization: Bearer <token>`.
     bearer(),
     // HaveIBeenPwned: bloquea contraseñas filtradas (HIBP Pwned Passwords).

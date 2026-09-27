@@ -18,8 +18,14 @@ export async function needsSetup(): Promise<boolean> {
       .where(eq(users.role, "admin"))
       .limit(1);
     return !admin;
-  } catch {
+  } catch (error) {
     // DB caída: no forzar /setup, dejar que el flujo normal muestre el error.
+    // Sin este log el síntoma es invisible: un formulario de login en una
+    // instancia que aún no tiene admin.
+    console.warn(
+      "[setup] needsSetup() no pudo consultar la DB:",
+      error instanceof Error ? error.message : error,
+    );
     return false;
   }
 }

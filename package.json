@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "auth:generate": "bun x auth@latest generate --config ./lib/auth.ts --output ./database/schema.ts --yes",
-    "database:up": "bun x drizzle-kit up",
+    "database:up": "bun x drizzle-kit migrate",
     "database:push": "bun x drizzle-kit push",
     "database:check": "bun x drizzle-kit check",
     "database:generate": "bun x drizzle-kit generate",

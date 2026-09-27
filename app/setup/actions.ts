@@ -3,6 +3,7 @@
 import z from "zod";
 import { hashPassword } from "better-auth/crypto";
 import { createLocalAccountIssuer } from "@better-auth/core/db";
+import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/database";
 import {
@@ -39,11 +40,25 @@ function slugify(name: string): string {
 
 export type SetupResult = { error?: string };
 
+/** Señal interna: el gate se cerró mientras esta transacción esperaba el lock. */
+class SetupAlreadyDone extends Error {}
+
+/**
+ * Crea el primer admin + organización en UNA transacción.
+ *
+ * - `pg_advisory_xact_lock` serializa intentos concurrentes (dos operadores, o
+ *   dos réplicas en el mismo primer arranque): el segundo espera al primero y
+ *   al tomar el lock ya ve el admin, así que aborta limpio.
+ * - Todo dentro de la transacción: si un insert falla (email duplicado, slug de
+ *   organización ya tomado) no queda un admin sin account ni una organización
+ *   huérfana, que era el fallo de datos del check-then-insert anterior.
+ */
 export async function completeSetup(
   _prev: SetupResult,
   formData: FormData,
 ): Promise<SetupResult> {
-  // Gate: si ya hay admin, no recrear (idempotencia + seguridad).
+  // Gate rápido (fuera de la transacción) para no abrir una tx en peticiones
+  // que ya no van a hacer nada.
   if (!(await needsSetup())) {
     return { error: "El setup ya fue completado." };
   }
@@ -62,52 +77,73 @@ export async function completeSetup(
   const userId = crypto.randomUUID();
   const orgId = crypto.randomUUID();
   const accountId = crypto.randomUUID();
-
-  // ponytail: check-then-insert sin transacción/exclusión — la ventana de
-  // carrera es real pero irrelevante (setup ocurre una vez, en frío, un solo
-  // operador). Si algún día hay multi-instancia en primer boot, mover a
-  // una transacción con lock advisory.
-  if (!(await needsSetup())) {
-    return { error: "El setup ya fue completado." };
-  }
+  const passwordHash = await hashPassword(password);
+  const now = new Date();
 
   try {
-    await db.insert(users).values({
-      id: userId,
-      name,
-      email,
-      emailVerified: true,
-      role: "admin",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    await db.transaction(async (tx) => {
+      // ponytail: lock global de setup. Es una fila de pg_locks, gratis, y
+      // expulsa cualquier carrera entre réplicas sin tabla extra ni advisory
+      // key por deploy. El número es arbitrario pero fijo.
+      await tx.execute(sql`select pg_advisory_xact_lock(1_000_001)`);
 
-    await db.insert(accounts).values({
-      id: accountId,
-      issuer: createLocalAccountIssuer("credential"),
-      accountId: userId,
-      providerId: "credential",
-      userId,
-      password: await hashPassword(password),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+      const [admin] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.role, "admin"))
+        .limit(1);
+      if (admin) throw new SetupAlreadyDone();
 
-    await db.insert(organizations).values({
-      id: orgId,
-      name: organizationName,
-      slug: slugify(organizationName),
-      createdAt: new Date(),
-    });
+      await tx.insert(users).values({
+        id: userId,
+        name,
+        email,
+        emailVerified: true,
+        role: "admin",
+        createdAt: now,
+        updatedAt: now,
+      });
 
-    await db.insert(members).values({
-      id: crypto.randomUUID(),
-      organizationId: orgId,
-      userId,
-      role: "owner",
-      createdAt: new Date(),
+      await tx.insert(accounts).values({
+        id: accountId,
+        issuer: createLocalAccountIssuer("credential"),
+        accountId: userId,
+        providerId: "credential",
+        userId,
+        password: passwordHash,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await tx.insert(organizations).values({
+        id: orgId,
+        name: organizationName,
+        slug: slugify(organizationName),
+        createdAt: now,
+      });
+
+      await tx.insert(members).values({
+        id: crypto.randomUUID(),
+        organizationId: orgId,
+        userId,
+        role: "owner",
+        createdAt: now,
+      });
     });
   } catch (error) {
+    if (error instanceof SetupAlreadyDone) {
+      return { error: "El setup ya fue completado." };
+    }
+    // 23505 = unique_violation. El más probable: otro setup ganó la carrera con
+    // el mismo email, o el slug de la organización ya existe.
+    const pgCode = (error as { cause?: { code?: string } }).cause?.code;
+    if (pgCode === "23505") {
+      console.error("Setup: violación de unicidad:", error);
+      return {
+        error:
+          "Ese correo o esa organización ya existen. Prueba con otros datos.",
+      };
+    }
     console.error("Setup falló:", error);
     return { error: "Error al crear la cuenta inicial. Revisa los logs." };
   }

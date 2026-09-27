@@ -59,14 +59,13 @@ COPY --from=builder /app/database ./database
 COPY --from=builder /app/env ./env
 COPY --from=builder /app/package.json ./package.json
 
-# drizzle-kit para migraciones (bun run database:up en deploy)
-COPY --from=deps /app/node_modules/drizzle-kit ./node_modules/drizzle-kit
-COPY --from=deps /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
-COPY --from=deps /app/node_modules/pg ./node_modules/pg
-COPY --from=deps /app/node_modules/zod ./node_modules/zod
+# node_modules completo (misma capa que builder, sin rebuild) porque drizzle-kit
+# resuelve sus deps hoisted en la raíz (brocli, esm-loader, esbuild, tsx...).
+# Copiar paquetes sueltos daba MODULE_NOT_FOUND al migrar.
+COPY --from=deps /app/node_modules ./node_modules
 
 EXPOSE 3000
-# Entrypoint: espera DB → migraciones (drizzle-kit up) → server.
+# Entrypoint: espera DB → migraciones (drizzle-kit migrate) → server.
 COPY entrypoint.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh
 CMD ["./entrypoint.sh"]

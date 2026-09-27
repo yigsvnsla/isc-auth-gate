@@ -7,17 +7,24 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { needsSetup } from "@/lib/setup";
 
+// ponytail: sin esto Next prerenderiza en build (○ en la tabla de rutas) y la
+// consulta de needsSetup() corre contra el placeholder de build.
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
   // ponytail: primer arranque sin admin → /setup.
   if (await needsSetup()) redirect("/setup");
 
+  let hasSession = false;
   try {
     const headers = await NextHeaders();
-    const session = await auth.api.getSession({ headers });
-    if (session) redirect("/dashboard");
+    hasSession = Boolean(await auth.api.getSession({ headers }));
   } catch {
     // DB unreachable — show login page anyway
   }
+  // Fuera del try: redirect() lanza, y dentro lo tragaba el catch dejando el
+  // formulario de login a un usuario que ya tiene sesión.
+  if (hasSession) redirect("/dashboard");
 
   return (
     <main className="flex flex-col gap-4 p-6 md:p-10 rounded-l-2xl ">
