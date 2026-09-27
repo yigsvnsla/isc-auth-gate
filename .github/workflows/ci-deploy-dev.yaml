@@ -90,12 +90,14 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: .containers/Containerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:dev
             ghcr.io/${{ github.repository }}:${{ github.sha }}
+          # Sólo NEXT_PUBLIC_*: Next la compila en el bundle del cliente. Las
+          # vars de servidor entran en runtime desde Dokploy.
           build-args: |
-            BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL_DEV }}
             NEXT_PUBLIC_BETTER_AUTH_URL=${{ secrets.NEXT_PUBLIC_BETTER_AUTH_URL_DEV }}
 
   deploy-dev:

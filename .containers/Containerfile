@@ -22,16 +22,69 @@ ENV HUSKY=0
 ENV DO_NOT_TRACK=1
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# ÚNICA build-arg que queda. Next la compila dentro del bundle del cliente, así
+# que no hay forma de moverla a runtime: `lib/auth/auth-client.ts:41` la lee
+# como baseURL del cliente en el browser. Sin este ARG, el bundle del cliente
+# compila con baseURL undefined y el login desde el navegador falla.
+ARG NEXT_PUBLIC_BETTER_AUTH_URL
+ENV NEXT_PUBLIC_BETTER_AUTH_URL=${NEXT_PUBLIC_BETTER_AUTH_URL}
+
+# Sin placeholders de env de servidor aquí, a propósito. `lib/auth/auth.tsx`,
+# `lib/providers.ts`, `lib/smtp.ts` y `database/index.ts` leen env en el scope
+# del módulo, y Next ejecuta esos módulos al recolectar datos de página durante
+# el build. `env/index.ts` devuelve un stub cuando no hay NINGUNA variable de la
+# app presente, así que el build compila sin que la imagen contenga un secreto.
+# Si alguien pega una variable mal formada, o deja el env vacío, el
+# `entrypoint.ts` aborta el arranque en vez de servir ese stub.
+#
+# ponytail: BETTER_AUTH_URL ya no se pasa como build-arg (era otro placeholder).
+# Las vars de servidor llegan en runtime desde Dokploy.
+
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
-# RUN bun run build && \
-#     cp -r public .next/standalone/ && \
-#     cp -r .next/static .next/standalone/.next/
 
 # [opcional] tests y build
 # RUN bun test
-RUN bun run build
+# Next.js standalone no incluye los assets estáticos: hay que copiarlos a mano
+# junto al server.js o el cliente recibe 404 en cada JS/CSS chunk.
+RUN bun run build && \
+    mkdir -p .next/standalone/public .next/standalone/.next/static && \
+    cp -r public/. .next/standalone/public/ && \
+    cp -r .next/static/. .next/standalone/.next/static/
+
+# imagen final: el output standalone (incluye public/ y .next/static porque se
+# copiaron arriba dentro de .next/standalone) + las deps de producción.
+# NO se copia el node_modules de dev: arrastra eslint, typescript, tailwind y
+#@maildev sin uso en runtime.
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV DO_NOT_TRACK=1
+# Next standalone bindea a process.env.HOSTNAME, que el runtime de contenedores
+# define como el ID/hostname del contenedor: el puerto publicado queda
+# inalcanzable. Forzamos todas las interfaces.
+ENV HOSTNAME=0.0.0.0
+
+COPY --from=prerelease /usr/src/app/.next/standalone ./
+COPY --from=prerelease /usr/src/app/public ./public
+COPY --from=prerelease /usr/src/app/.next/static ./.next/static
+# deps de producción: el standalone trae su node_modules podado (lo justo para
+# server.js) pero no incluye drizzle-kit, que el entrypoint necesita para
+# migrar. Por eso está en `dependencies` y no en `devDependencies`.
+COPY --from=install /temp/prod/node_modules ./node_modules
+# drizzle.config.ts resuelve el alias @/env vía tsconfig.json e importa
+# database/schema.ts: sin estos tres, `migrate` no arranca.
+COPY --from=prerelease /usr/src/app/drizzle.config.ts /usr/src/app/tsconfig.json ./
+COPY --from=prerelease /usr/src/app/database ./database
+COPY --from=prerelease /usr/src/app/env ./env
+COPY --from=prerelease /usr/src/app/entrypoint.ts ./
+RUN chown -R bun:bun /app
 
 USER bun
 EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", "run", "server.js" ]
+# /healthz es un rewrite de next.config.ts hacia /api/health
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD bun -e "process.exit((await fetch('http://127.0.0.1:3000/healthz')).ok ? 0 : 1)"
+ENTRYPOINT [ "bun", "entrypoint.ts" ]

@@ -1,15 +1,18 @@
+# Spega con .dockerignore — mantener byte a byte. Con ambos archivos presentes
+# Podman aplica este e ignora .dockerignore; Docker sólo lee .dockerignore.
+# Si divergen, el build local y el de CI construyen distinto.
 node_modules
-Dockerfile*
-docker-compose*
-.dockerignore
+.next
 .git
-.gitignore
-README.md
-LICENSE
-.vscode
-Makefile
-helm-charts
 .env
-.editorconfig
-.idea
-coverage*
+.env.*
+!.env.example
+.maildev
+.containers
+scripts
+tsconfig.tsbuildinfo
+package-lock.json
+docs/node_modules
+*.md
+!README.md
+Dockerfile

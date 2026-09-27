@@ -4,6 +4,4 @@
     "verbose": true,
     "mcp": true,
     "mailDirectory": "./.maildev"
-
-    
 }

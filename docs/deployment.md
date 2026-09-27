@@ -41,31 +41,38 @@ bun x dokploy application one --applicationId <id>
 Tests en CI corren contra un postgres efímero (service container) con
 `BETTER_AUTH_TEST_ALLOW_TRUNCATE=true` — nunca contra la db dev.
 
-## Imagen Docker
+## Imagen
 
-`Dockerfile` en la raíz del repo, multi-stage:
+`.containers/Containerfile` en el repo, multi-stage. Es el único archivo de
+build: ambos workflows lo referencian con `file: .containers/Containerfile`.
 
-1. **deps** — `bun install --frozen-lockfile` (oven/bun:1).
-2. **builder** — `bun run build` con Next.js `output: "standalone"`. Copia
+1. **install** — `bun install --frozen-lockfile` completo, y aparte
+   `--production` en `/temp/prod`.
+2. **prerelease** — `bun run build` con Next.js `output: "standalone"`, y copia
    `public` y `.next/static` dentro de `.next/standalone/`.
-3. **runner** — `oven/bun:1-slim`, copia solo `.next/standalone` + lo necesario
-   para migraciones de Drizzle (`drizzle.config.ts`, `database/`, `env/`,
-   `tsconfig.json`, `drizzle-kit`, `drizzle-orm`, `pg`, `zod`).
-   Arranca con `bun server.js`.
+3. **runner** — copia solo `.next/standalone` + `node_modules` de producción +
+   lo necesario para migrar (`drizzle.config.ts`, `database/`, `env/`,
+   `tsconfig.json`, `entrypoint.ts`). Arranca con `bun entrypoint.ts`, que
+   valida el env, espera la DB, migra y recién entonces levanta el server.
 
-## Build args (obligatorio por ambiente)
+## Build args
 
-`next build` compila las variables `NEXT_PUBLIC_*` dentro del bundle. Deben
-pasarse como **build args** en Dokploy, no solo como env runtime:
+Sólo una, y es obligatoria:
 
 ```env
 NEXT_PUBLIC_BETTER_AUTH_URL=https://<dominio-ambiente>
-BETTER_AUTH_URL=https://<dominio-ambiente>
 ```
 
-Las demás env del build son placeholders (el Dockerfile usa
-`build-placeholder` automáticamente) porque `env/index.ts` valida con Zod al
-importar durante el build. Las env reales van en runtime.
+`next build` la compila dentro del bundle del **cliente**
+(`lib/auth/auth-client.ts` la usa como `baseURL`), así que no hay forma de
+moverla a runtime. Sin ella el bundle compila con `baseURL: undefined` y el
+login desde el navegador falla aunque el servidor esté sano.
+
+**No se pasan más build args.** Las vars de servidor no las necesita el build:
+`env/index.ts` devuelve un stub cuando no hay ninguna variable de la app
+presente, porque `lib/auth/auth.tsx` y compañía leen env en el scope del módulo
+y Next ejecuta esos módulos al recolectar datos de página. Un contenedor
+arrancado sin env completo lo detecta `entrypoint.ts` y aborta.
 
 ## Environment (runtime) — Dokploy UI
 
@@ -94,24 +101,16 @@ Compose con volumen persistente). Nunca compartir DB entre ambientes —
 ## Proceso de despliegue (Dokploy)
 
 1. Project nuevo → Application apuntando a `yigsvnsla/isc-auth-gate`
-   (branch `main`), provider **Dockerfile**.
+   (branch `main`), provider **Dockerfile** (ruta
+   `.containers/Containerfile`, que es lo que declaran los workflows).
 2. Configurar **Build Args** y **Environment** (tablas anteriores).
-3. Primera vez + cambios de schema: correr migración dentro del container
-   (Dokploy → Terminal):
-
-   ```bash
-   bun run database:up    # aplica migraciones de database/migrations
-   ```
-
-   Alternativa dev rápido sin archivo de migración:
-
-   ```bash
-   bun run database:push
-   ```
-
-4. Deploy. Dominio en Traefik (Let's Encrypt) → container :3000.
-5. Healthcheck: `GET /api/health` → `{"status":"ok"}` (usar como healthcheck
-   path en Dokploy).
+3. Deploy. Las migraciones las aplica solo el `entrypoint.ts` en cada arranque
+   (idempotente, usa la journal de drizzle) — no hace falta correrlas a mano.
+   Correrlas a mano sólo para un baseline:
+4. Dominio en Traefik (Let's Encrypt) → container :3000.
+5. Healthcheck: `GET /healthz` (rewrite de `next.config.ts` hacia
+   `/api/health`) → `{"status":"ok"}`. Es la ruta que usa el `HEALTHCHECK` del
+   Containerfile; en Dokploy se puede usar la misma.
 
 ## Microsoft Entra ID (por ambiente)
 

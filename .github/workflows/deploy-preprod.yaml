@@ -93,11 +93,13 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: .containers/Containerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:${{ inputs.image_tag }}
+          # Sólo NEXT_PUBLIC_*: Next la compila en el bundle del cliente. Las
+          # vars de servidor entran en runtime desde Dokploy.
           build-args: |
-            BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL_PRE }}
             NEXT_PUBLIC_BETTER_AUTH_URL=${{ secrets.NEXT_PUBLIC_BETTER_AUTH_URL_PRE }}
 
   deploy-pre:
@@ -128,7 +130,7 @@ jobs:
       - name: Health check
         run: |
           for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.DOMAIN_PRE }}/api/health" || true)
+            code=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.DOMAIN_PRE }}/healthz" || true)
             if [ "$code" = "200" ]; then
               echo "Healthy after attempt $i"
               exit 0

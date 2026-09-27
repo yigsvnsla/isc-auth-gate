@@ -1,0 +1,18 @@
+# Spega con .containerignore — mantener byte a byte. La CI usa
+# docker/build-push-action (Docker), que sólo lee este archivo; Podman prefiere
+# .containerignore. Sin este, el contexto arrastra node_modules y .git.
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.example
+.maildev
+.containers
+scripts
+tsconfig.tsbuildinfo
+package-lock.json
+docs/node_modules
+*.md
+!README.md
+Dockerfile
