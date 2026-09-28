@@ -156,7 +156,9 @@ jobs:
           HEALTH_URL: ${{ secrets.DOMAIN_DEV }}/api/health
           EXPECTED_VERSION: ${{ github.sha }}
         run: |
-          for i in $(seq 1 30); do
+          # 45 × 10s ≈ 7,5 min: el primer deploy tardó ~4 min (intento 24/30)
+          # entre espera de DB, migraciones y arranque; 30 dejaba poco margen.
+          for i in $(seq 1 45); do
             version=$(curl -fsS "$HEALTH_URL" | jq -r .version || true)
             if [ "$version" = "$EXPECTED_VERSION" ]; then
               echo "Healthy ($version) after attempt $i"
