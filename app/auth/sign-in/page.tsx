@@ -9,7 +9,6 @@ import { needsSetup } from "@/lib/setup";
 
 // ponytail: sin esto Next prerenderiza en build (○ en la tabla de rutas) y la
 // consulta de needsSetup() corre contra el placeholder de build.
-export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
   // ponytail: primer arranque sin admin → /setup.

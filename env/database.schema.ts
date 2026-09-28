@@ -1,6 +1,5 @@
 import z from "zod";
 
-export type DatabaseEnv = z.infer<typeof databaseEnv>;
 
 export const databaseEnv = z.object({
   BETTER_AUTH_DATABASE_HOST: z.string().min(1),
@@ -15,3 +14,5 @@ export const databaseEnv = z.object({
   // un error en vez de vaciar datos en silencio.
   BETTER_AUTH_TEST_ALLOW_TRUNCATE: z.stringbool().default(false),
 });
+
+export type DatabaseEnv = z.infer<typeof databaseEnv>;

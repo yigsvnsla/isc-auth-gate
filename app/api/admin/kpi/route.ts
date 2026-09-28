@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth/auth";
 import { getKpiSummary } from "@/lib/kpi/queries";
 
-export const dynamic = "force-dynamic";
 
 const CACHE_TTL_MS = 60_000;
 const cache = new Map<string, { ts: number; data: unknown }>();

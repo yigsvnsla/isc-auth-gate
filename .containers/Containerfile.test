@@ -1,0 +1,87 @@
+# ---------------------------------------------------------------------------
+# Base
+# ---------------------------------------------------------------------------
+
+FROM oven/bun:1 AS base
+
+WORKDIR /usr/src/app
+
+
+# ---------------------------------------------------------------------------
+# Dependencies
+# ---------------------------------------------------------------------------
+
+FROM base AS install
+
+RUN mkdir -p /temp/dev
+
+COPY package.json bun.lock /temp/dev/
+
+RUN cd /temp/dev && bun install --frozen-lockfile
+
+
+# ---------------------------------------------------------------------------
+# Build
+# ---------------------------------------------------------------------------
+
+FROM base AS prerelease
+
+COPY --from=install /temp/dev/node_modules ./node_modules
+
+COPY . .
+
+ENV NODE_ENV=production
+
+# RUN bun test
+
+RUN bun run build
+
+
+# ---------------------------------------------------------------------------
+# Production dependencies
+# ---------------------------------------------------------------------------
+
+FROM base AS prod-deps
+
+RUN mkdir -p /temp/prod
+
+COPY package.json bun.lock /temp/prod/
+
+RUN cd /temp/prod && bun install --frozen-lockfile --production
+
+
+# ---------------------------------------------------------------------------
+# Production
+# ---------------------------------------------------------------------------
+
+FROM base AS release
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV DO_NOT_TRACK=1
+
+COPY --from=prod-deps /temp/prod/node_modules ./node_modules
+
+# Next.js standalone
+COPY --from=prerelease /usr/src/app/.next/standalone ./
+
+# Next.js static assets
+COPY --from=prerelease /usr/src/app/.next/static ./.next/static
+
+# Public assets
+COPY --from=prerelease /usr/src/app/public ./public
+
+# Drizzle migrations
+COPY --from=prerelease /usr/src/app/drizzle ./drizzle
+
+# Drizzle configuration
+COPY --from=prerelease /usr/src/app/drizzle.config.ts ./drizzle.config.ts
+
+# Database scripts / client
+COPY --from=prerelease /usr/src/app/database ./database
+
+COPY --from=prerelease /usr/src/app/package.json ./package.json
+
+USER bun
+
+ENTRYPOINT ["bun", "server.js"]

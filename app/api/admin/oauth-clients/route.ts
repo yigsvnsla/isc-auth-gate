@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth/auth";
 import { getOAuthClientsList } from "@/lib/kpi/queries";
 
-export const dynamic = "force-dynamic";
 
 export async function GET() {
   const h = await headers();

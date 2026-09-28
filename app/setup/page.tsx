@@ -6,7 +6,7 @@ import { microsoftConfigured, smtpConfigured } from "@/lib/providers";
 import { checkDatabase, needsSetup } from "@/lib/setup";
 import { SetupForm } from "./setup-form";
 
-export const dynamic = "force-dynamic";
+// export const dynamic = "force-dynamic";
 
 /**
  * Pantalla de setup inicial (primer arranque tras deploy).

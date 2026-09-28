@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 // Las guías incluyen URLs configuradas en runtime; no deben prerenderizarse
 // con las variables (o secretos) disponibles durante `next build`.
-export const dynamic = "force-dynamic";
+// export const dynamic = "force-dynamic";
 
 const navItems = [
   { href: "/developers", label: "Overview", exact: true },
