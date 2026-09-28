@@ -1,14 +1,23 @@
 #!/usr/bin/env bun
 // ---------------------------------------------------------------------------
-// Entrypoint de producción (Dokploy): valida el env, espera la DB, aplica las
-// migraciones pendientes y arranca el servidor. Idempotente — drizzle-kit
-// registra las aplicadas en la journal.
+// Entrypoint de producción (Dokploy): valida el env, espera la DB y aplica las
+// migraciones pendientes. Termina con exit 0 y el Containerfile hace
+// `exec bun server.js`; con exit ≠ 0 Next nunca arranca. Idempotente — la
+// journal `drizzle.__drizzle_migrations` registra las aplicadas.
 //
 // ponytail: espera TCP con Bun.connect en vez de pg_isready (no existe en la
 // imagen oven/bun y postgres-client pesa más que unas líneas).
 // ---------------------------------------------------------------------------
 
+import { sql } from "drizzle-orm";
+import { migrate } from "drizzle-orm/bun-sql/migrator";
+
 import { getEnv } from "@/env";
+
+// Serializa migraciones entre réplicas: la segunda espera el lock y, al
+// obtenerlo, ya no encuentra pendientes. Postgres lo libera al cerrar la
+// sesión, así que un contenedor muerto a mitad no lo deja tomado.
+const MIGRATION_LOCK = "isc-auth-gate:migrations";
 
 type ProbeOptions = {
   host: string;
@@ -111,35 +120,34 @@ async function main() {
   console.log("==> DB alcanzable.");
 
   console.log("==> Aplicando migraciones...");
-  // ponytail: bin.cjs directo en vez de `bun run database:up` — el runner copia
-  // node_modules sin .bin/, y `bun x` iría a la red a buscarlo. El subcomando
-  // es `migrate`; `up` sólo migra el formato de la carpeta out (imprime
-  // "Everything's fine" y no toca la DB).
-  const migrate = Bun.spawn(["bun", "node_modules/drizzle-kit/bin.cjs", "migrate"], {
-    stdio: ["inherit", "inherit", "inherit"],
-  });
-  if ((await migrate.exited) !== 0) {
-    // drizzle-kit falla con exit 1 y sin mensaje útil (sólo el spinner) cuando la
-    // DB tiene tablas pero ningún journal en el esquema `drizzle`: pasa cuando
-    // la base se creó con `database:push`. Remédalo con:
+  // ponytail: drizzle-orm/bun-sql/migrator en vez de drizzle-kit — drizzle-kit
+  // es devDependency y no está en la imagen. Misma journal, mismo resultado.
+  // Import dinámico: postgre.ts valida NODE_ENV al importarse y los tests
+  // (NODE_ENV=test) importan este módulo por waitForDatabase.
+  const { drizzlePostgreClient: db } = await import("@/database/clients/postgre");
+  try {
+    await db.execute(sql`select pg_advisory_lock(hashtext(${MIGRATION_LOCK}))`);
+    await migrate(db, { migrationsFolder: "./database/migrations" });
+  } catch (err) {
+    // Falla sin journal en el esquema `drizzle` cuando la base se creó con
+    // `database:push`. Remédalo con:
     //   bun run database:generate --custom   (migración vacía = baseline)
     //   bun run database:up
     console.error(
       "Migraciones fallaron. Si la DB tiene tablas pero no el esquema 'drizzle', fue creada con database:push y necesita baseline (ver AGENTS.md).",
     );
-    process.exit(1);
+    // DrizzleQueryError sólo trae la query en `message`; la causa real
+    // (auth, SQL inválido, conexión) viene en `cause`.
+    console.error((err as { cause?: unknown }).cause ?? err);
+    throw err;
+  } finally {
+    await db.$client.close();
   }
-
-  console.log("==> Arrancando aplicación...");
-  const server = Bun.spawn(["bun", "server.js"], { stdio: ["inherit", "inherit", "inherit"] });
-  for (const signal of ["SIGTERM", "SIGINT"] as const) {
-    process.on(signal, () => server.kill(signal));
-  }
-  process.exit(await server.exited);
+  console.log("==> Migraciones aplicadas.");
 }
 
 if (import.meta.main) {
-  main().catch((err) => {
+  main().then(() => process.exit(0)).catch((err) => {
     console.error(err instanceof Error ? err.message : String(err));
     process.exit(1);
   });

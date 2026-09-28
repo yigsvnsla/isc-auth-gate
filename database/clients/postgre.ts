@@ -10,6 +10,10 @@ export const drizzlePostgreClient = drizzle({
   schema: {},
   //   logger: env.BETTER_AUTH_DATABASE_DEBUG,
   connection: {
+    // Una sola conexión: los consumidores (entrypoint, database:check) son
+    // procesos de un solo uso, y el advisory lock de migración es por sesión —
+    // lock, migrate y unlock tienen que ir por la misma conexión.
+    max: 1,
     host: config.database.HOST,
     port: config.database.PORT,
     database: config.database.NAME,

@@ -14,8 +14,10 @@ export const databaseEnviromentSchema = z.object({
   PORT: z.coerce.number().positive().min(1000).max(65535),
   USER:  z.optional(z.string()).pipe(z.string()),
   PASS:  z.optional(z.string()).pipe(z.string()),
-  SSL: z.optional(z.stringbool()).pipe(z.boolean()),
-  DEBUG: z.optional(z.stringbool()).pipe(z.boolean()),
+  // Mismos defaults que env/database.schema.ts: sin ellos, un env de Dokploy o
+  // CI que no defina SSL/DEBUG tumba la migración del entrypoint.
+  SSL: z.stringbool().default(false),
+  DEBUG: z.stringbool().default(false),
   // BETTER_AUTH_TEST_ALLOW_TRUNCATE: z.stringbool().default(false),
 });
 

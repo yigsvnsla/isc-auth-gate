@@ -1,28 +1,9 @@
-// import { ApplicationConfigFactory } from "@/env/core/factories";
-// import { environmentSchema } from "@/env/core/schemas";
-import { environmentSchema } from "@/env/core/schemas";
-import { $ } from "bun";
+// Conectividad real contra PostgreSQL (SELECT 1). Exit 0 si conecta, 1 si no.
+//
+// ponytail: `drizzle-kit check` no va aquí — valida la consistencia del
+// historial de migraciones, no la conexión. CI lo corre como paso aparte.
 import { checkConnection } from "./check-connection";
 
+const result = await checkConnection();
 
-// TODO: MEJORAR APARIENCIA DEL SCRIPT DE CHECKEO, HACERLO MAS DIANMICO
-console.log("Running database check...");
-console.log("This script will check the database schema and migrations.");
-
-const environment = environmentSchema.parse(process.env.NODE_ENV);
-
-switch (environment) {
-  case "development":
-    // await $`NODE_ENV=development bun x drizzle-kit check --config=database/configs/drizzle.config.dev.ts`;
-
-    await checkConnection()
-    break;
-
-  case "testing":
-    console.info("DATABASE CHECK TESTING");
-    await $`NODE_ENV=testing bun x drizzle-kit check --config=database/configs/drizzle.config.ts`;
-    break;
-
-  default:
-    break;
-}
+process.exit(result.isSuccess() ? 0 : 1);

@@ -14,10 +14,9 @@ COPY package.json bun.lock /temp/prod/
 RUN cd /temp/prod && bun install --frozen-lockfile --production
 
 # copiar node_modules desde el directorio temporal luego copiar todos los archivos del proyecto (no ignorados) en la imagen
+# Sólo ENVs que `next build` lee: NODE_ENV ya la fija el propio build, y
+# husky/telemetría del SDK de email no corren en esta etapa.
 FROM base AS prerelease
-ENV HUSKY=0
-ENV DO_NOT_TRACK=1
-ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # ÚNICA build-arg que queda. Next la compila dentro del bundle del cliente, así
@@ -26,6 +25,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # compila con baseURL undefined y el login desde el navegador falla.
 ARG NEXT_PUBLIC_BETTER_AUTH_URL
 ENV NEXT_PUBLIC_BETTER_AUTH_URL=${NEXT_PUBLIC_BETTER_AUTH_URL}
+
+# SHA del commit. ARG sin ENV: RUN lo ve, next.config.ts lo compila en
+# /api/health y no queda como variable en la imagen final. El workflow lo
+# compara tras el deploy para no dar por bueno al contenedor anterior.
+ARG APP_VERSION
 
 # Sin placeholders de env de servidor aquí, a propósito. `lib/auth/auth.tsx`,
 # `lib/providers.ts`, `lib/smtp.ts` y `database/index.ts` leen env en el scope
@@ -57,7 +61,7 @@ RUN bun run build && \
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+# apaga la telemetría de @opencoredev/email-sdk al enviar correo
 ENV DO_NOT_TRACK=1
 # Next standalone bindea a process.env.HOSTNAME, que el runtime de contenedores
 # define como el ID/hostname del contenedor: el puerto publicado queda
@@ -68,12 +72,12 @@ COPY --from=prerelease /usr/src/app/.next/standalone ./
 COPY --from=prerelease /usr/src/app/public ./public
 COPY --from=prerelease /usr/src/app/.next/static ./.next/static
 # deps de producción: el standalone trae su node_modules podado (lo justo para
-# server.js) pero no incluye drizzle-kit, que el entrypoint necesita para
-# migrar. Por eso está en `dependencies` y no en `devDependencies`.
+# server.js), sin zod ni el migrador de drizzle-orm que usa entrypoint.ts.
+# drizzle-kit NO hace falta: se migra con drizzle-orm/bun-sql/migrator.
 COPY --from=install /temp/prod/node_modules ./node_modules
-# drizzle.config.ts resuelve el alias @/env vía tsconfig.json e importa
-# database/schema.ts: sin estos tres, `migrate` no arranca.
-COPY --from=prerelease /usr/src/app/drizzle.config.ts /usr/src/app/tsconfig.json ./
+# tsconfig.json resuelve el alias @/ de entrypoint.ts; database/ trae las
+# migraciones (database/migrations) y el cliente Bun SQL.
+COPY --from=prerelease /usr/src/app/tsconfig.json ./
 COPY --from=prerelease /usr/src/app/database ./database
 COPY --from=prerelease /usr/src/app/env ./env
 COPY --from=prerelease /usr/src/app/entrypoint.ts ./
@@ -82,6 +86,10 @@ RUN chown -R bun:bun /app
 USER bun
 EXPOSE 3000/tcp
 # /healthz es un rewrite de next.config.ts hacia /api/health
-HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+# start-period cubre la espera de DB del entrypoint (20 × (3s + 5s) ≈ 160s)
+# más las migraciones: antes de eso un fallo no marca el contenedor unhealthy.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=180s --retries=3 \
   CMD bun -e "process.exit((await fetch('http://127.0.0.1:3000/healthz')).ok ? 0 : 1)"
-ENTRYPOINT [ "bun", "entrypoint.ts" ]
+# Migra y sólo si sale con 0 arranca Next. `exec` deja a server.js como PID 1:
+# recibe SIGTERM directo de Dokploy y su exit code es el del contenedor.
+ENTRYPOINT [ "sh", "-c", "bun entrypoint.ts && exec bun server.js" ]

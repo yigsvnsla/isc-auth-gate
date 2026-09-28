@@ -29,9 +29,13 @@ const postgrePing = async (): Promise<Result<Record<string, unknown>[], Error>> 
         console.error("PostgreSQL message:", error.cause.message);
         return Result.failure(error.cause);
       }
+      // Sin PostgresError: no hubo respuesta del servidor (ECONNREFUSED, DNS,
+      // timeout). La causa real va en `cause`, el mensaje sólo trae la query.
+      console.error("✗ Database connection failed:", error.cause ?? error.message);
       return Result.failure(error);
     }
 
+    console.error("✗ Database connection failed:", error);
     return Result.failure(
       error instanceof Error ? error : new Error(String(error)),
     );
@@ -39,9 +43,8 @@ const postgrePing = async (): Promise<Result<Record<string, unknown>[], Error>> 
 };
 
 export const checkConnection = async () => {
-  // const environment = environmentSchema.parse(process.env.NODE_ENV);
-
-  // switch (environment) {
-
-  postgrePing();
+  const result = await postgrePing();
+  // Cierra el pool: con la conexión abierta el proceso no termina solo.
+  await drizzlePostgreClient.$client.close();
+  return result;
 };

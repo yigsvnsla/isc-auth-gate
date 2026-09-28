@@ -1,23 +1,26 @@
-name: Deploy Preprod
+name: Deploy Prod
 
+# Build propio: NEXT_PUBLIC_BETTER_AUTH_URL se compila en el bundle, así que la
+# imagen de dev no sirve para prod. Cada build queda como :prod-<sha>.
 on:
   workflow_dispatch:
     inputs:
-      image_tag:
-        description: "Tag de imagen a desplegar (default: pre). Para rollback usar un commit SHA."
+      rollback_sha:
+        description: "Vacío = CI + build del commit actual. Un commit SHA completo (40 caracteres) = redesplegar :prod-<sha> sin reconstruir (rollback). No revierte migraciones."
         required: false
-        default: "pre"
+        default: ""
 
 permissions:
   contents: read
   packages: write
 
 concurrency:
-  group: deploy-preprod
+  group: deploy-prod
   cancel-in-progress: false
 
 jobs:
   ci:
+    if: ${{ inputs.rollback_sha == '' }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -70,14 +73,38 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      - name: Push schema to test DB
-        run: bun run database:push
+      # Consistencia del historial (journal + snapshots). No conecta a la DB.
+      - name: Check migrations history
+        run: bun x drizzle-kit check
+
+      # schema.ts cambiado sin `database:generate`: generate crea una migración
+      # nueva y el diff la delata. `timeout`: ante un rename drizzle-kit pide
+      # confirmación interactiva; sin TTY no debe colgar el job.
+      - name: Check schema drift
+        run: |
+          timeout 120 bun x drizzle-kit generate
+          if [ -n "$(git status --porcelain -- database/migrations)" ]; then
+            git status --porcelain -- database/migrations
+            echo "schema.ts tiene cambios sin migración: corre bun run database:generate"
+            exit 1
+          fi
+
+      # PostgreSQL 17 limpio: aplica TODAS las migraciones versionadas. Nunca
+      # `push` aquí — push sincroniza el schema y no prueba las migraciones.
+      - name: Apply migrations
+        run: bun run database:up
+
+      - name: Database health check
+        run: bun run database:check
+        env:
+          NODE_ENV: testing
 
       - name: Test
         run: bun run test
 
   build-push:
     needs: ci
+    if: ${{ inputs.rollback_sha == '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -96,18 +123,24 @@ jobs:
           file: .containers/Containerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ inputs.image_tag }}
+            ghcr.io/${{ github.repository }}:prod
+            ghcr.io/${{ github.repository }}:prod-${{ github.sha }}
           # Sólo NEXT_PUBLIC_*: Next la compila en el bundle del cliente. Las
           # vars de servidor entran en runtime desde Dokploy.
           build-args: |
-            NEXT_PUBLIC_BETTER_AUTH_URL=${{ secrets.NEXT_PUBLIC_BETTER_AUTH_URL_PRE }}
+            NEXT_PUBLIC_BETTER_AUTH_URL=${{ secrets.NEXT_PUBLIC_BETTER_AUTH_URL_PROD }}
+            APP_VERSION=${{ github.sha }}
 
-  deploy-pre:
-    needs: build-push
+  deploy-prod:
+    needs: [ci, build-push]
+    # En rollback ci y build-push quedan `skipped`: se despliega igual, pero
+    # nunca si alguno falló.
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     env:
       DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
       DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+      VERSION: ${{ inputs.rollback_sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
 
@@ -115,28 +148,33 @@ jobs:
         with:
           bun-version: latest
 
+      # Tag inmutable: el rollback apunta a la imagen exacta ya construida.
       - name: Update image tag
         run: |
           bunx @dokploy/cli application save-docker-provider \
-            --applicationId ${{ secrets.DOKPLOY_APP_ID_PRE }} \
-            --dockerImage ghcr.io/${{ github.repository }}:${{ inputs.image_tag }} \
+            --applicationId ${{ secrets.DOKPLOY_APP_ID_PROD }} \
+            --dockerImage "ghcr.io/${{ github.repository }}:prod-$VERSION" \
             --username "" \
             --password "" \
             --registryUrl "ghcr.io"
 
       - name: Deploy to Dokploy
-        run: bunx @dokploy/cli application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID_PRE }}
+        run: bunx @dokploy/cli application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID_PROD }}
 
+      # 200 no basta: si el contenedor nuevo muere migrando, el anterior sigue
+      # respondiendo. Se exige que el que responde sea esta versión.
       - name: Health check
+        env:
+          HEALTH_URL: ${{ secrets.DOMAIN_PROD }}/healthz
         run: |
           for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.DOMAIN_PRE }}/healthz" || true)
-            if [ "$code" = "200" ]; then
-              echo "Healthy after attempt $i"
+            version=$(curl -fsS "$HEALTH_URL" | jq -r .version || true)
+            if [ "$version" = "$VERSION" ]; then
+              echo "Healthy ($version) after attempt $i"
               exit 0
             fi
-            echo "Attempt $i: HTTP $code — retry in 10s"
+            echo "Attempt $i: version '$version' != '$VERSION' — retry in 10s"
             sleep 10
           done
-          echo "Health check failed"
+          echo "Health check failed: revisa los logs del contenedor en Dokploy (¿migración fallida?)"
           exit 1

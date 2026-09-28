@@ -67,8 +67,31 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      - name: Push schema to test DB
-        run: bun run database:push
+      # Consistencia del historial (journal + snapshots). No conecta a la DB.
+      - name: Check migrations history
+        run: bun x drizzle-kit check
+
+      # schema.ts cambiado sin `database:generate`: generate crea una migración
+      # nueva y el diff la delata. `timeout`: ante un rename drizzle-kit pide
+      # confirmación interactiva; sin TTY no debe colgar el job.
+      - name: Check schema drift
+        run: |
+          timeout 120 bun x drizzle-kit generate
+          if [ -n "$(git status --porcelain -- database/migrations)" ]; then
+            git status --porcelain -- database/migrations
+            echo "schema.ts tiene cambios sin migración: corre bun run database:generate"
+            exit 1
+          fi
+
+      # PostgreSQL 17 limpio: aplica TODAS las migraciones versionadas. Nunca
+      # `push` aquí — push sincroniza el schema y no prueba las migraciones.
+      - name: Apply migrations
+        run: bun run database:up
+
+      - name: Database health check
+        run: bun run database:check
+        env:
+          NODE_ENV: testing
 
       - name: Test
         run: bun run test
@@ -99,6 +122,7 @@ jobs:
           # vars de servidor entran en runtime desde Dokploy.
           build-args: |
             NEXT_PUBLIC_BETTER_AUTH_URL=${{ secrets.NEXT_PUBLIC_BETTER_AUTH_URL_DEV }}
+            APP_VERSION=${{ github.sha }}
 
   deploy-dev:
     needs: build-push
@@ -125,16 +149,21 @@ jobs:
       - name: Deploy to Dokploy
         run: bunx @dokploy/cli application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID_DEV }}
 
+      # 200 no basta: si el contenedor nuevo muere migrando, el anterior sigue
+      # respondiendo. Se exige que el que responde sea este commit.
       - name: Health check
+        env:
+          HEALTH_URL: ${{ secrets.DOMAIN_DEV }}/api/health
+          EXPECTED_VERSION: ${{ github.sha }}
         run: |
           for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.DOMAIN_DEV }}/api/health" || true)
-            if [ "$code" = "200" ]; then
-              echo "Healthy after attempt $i"
+            version=$(curl -fsS "$HEALTH_URL" | jq -r .version || true)
+            if [ "$version" = "$EXPECTED_VERSION" ]; then
+              echo "Healthy ($version) after attempt $i"
               exit 0
             fi
-            echo "Attempt $i: HTTP $code — retry in 10s"
+            echo "Attempt $i: version '$version' != '$EXPECTED_VERSION' — retry in 10s"
             sleep 10
           done
-          echo "Health check failed"
+          echo "Health check failed: revisa los logs del contenedor en Dokploy (¿migración fallida?)"
           exit 1
