@@ -6,7 +6,10 @@ import { microsoftConfigured, smtpConfigured } from "@/lib/providers";
 import { checkDatabase, needsSetup } from "@/lib/setup";
 import { SetupForm } from "./setup-form";
 
-// export const dynamic = "force-dynamic";
+// Sin esto Next prerenderiza en build: needsSetup() falla contra el placeholder
+// de build, devuelve false y el redirect a /auth/sign-in queda horneado en el
+// HTML estático → loop con /auth/sign-in, que sí ve la DB real sin admin.
+export const dynamic = "force-dynamic";
 
 /**
  * Pantalla de setup inicial (primer arranque tras deploy).
