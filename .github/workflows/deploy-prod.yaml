@@ -21,86 +21,7 @@ concurrency:
 jobs:
   ci:
     if: ${{ inputs.rollback_sha == '' }}
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: isc-auth-test
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      maildev:
-        image: axllent/mailpit:latest
-        ports:
-          - 1025:1025
-          - 1080:1080
-    env:
-      BETTER_AUTH_DATABASE_HOST: localhost
-      BETTER_AUTH_DATABASE_NAME: isc-auth-test
-      BETTER_AUTH_DATABASE_PORT: 5432
-      BETTER_AUTH_DATABASE_USER: test
-      BETTER_AUTH_DATABASE_PASS: test
-      BETTER_AUTH_TEST_ALLOW_TRUNCATE: "true"
-      BETTER_AUTH_URL: http://placeholder.test/
-      BETTER_AUTH_SERVER_NAME: ci-placeholder
-      BETTER_AUTH_SERVER_SECRET: ci-placeholder-secret
-      BETTER_AUTH_MICROSOFT_TENANT_ID: e97247bf-8fbb-4f1e-8610-2efb7a7342ea
-      BETTER_AUTH_MICROSOFT_CLIENT_ID: ci-placeholder
-      BETTER_AUTH_MICROSOFT_CLIENT_SECRET: ci-placeholder
-      BETTER_AUTH_SMTP_TRANSPORTER_HOST: localhost
-      BETTER_AUTH_SMTP_TRANSPORTER_PORT: 1025
-      BETTER_AUTH_SMTP_TRANSPORTER_SECURE: "false"
-      BETTER_AUTH_SMTP_TRANSPORTER_USER: ci@example.test
-      BETTER_AUTH_SMTP_TRANSPORTER_PASS: ci-placeholder
-      BETTER_AUTH_SMTP_TRANSPORTER_FROM: CI <ci@example.test>
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install
-        run: bun install --frozen-lockfile
-
-      - name: Lint
-        run: bun run lint
-
-      # Consistencia del historial (journal + snapshots). No conecta a la DB.
-      - name: Check migrations history
-        run: bun x drizzle-kit check
-
-      # schema.ts cambiado sin `database:generate`: generate crea una migración
-      # nueva y el diff la delata. `timeout`: ante un rename drizzle-kit pide
-      # confirmación interactiva; sin TTY no debe colgar el job.
-      - name: Check schema drift
-        run: |
-          timeout 120 bun x drizzle-kit generate
-          if [ -n "$(git status --porcelain -- database/migrations)" ]; then
-            git status --porcelain -- database/migrations
-            echo "schema.ts tiene cambios sin migración: corre bun run database:generate"
-            exit 1
-          fi
-
-      # PostgreSQL 17 limpio: aplica TODAS las migraciones versionadas. Nunca
-      # `push` aquí — push sincroniza el schema y no prueba las migraciones.
-      - name: Apply migrations
-        run: bun run database:up
-
-      - name: Database health check
-        run: bun run database:check
-        env:
-          NODE_ENV: testing
-
-      - name: Test
-        run: bun run test
+    uses: ./.github/workflows/ci.yaml
 
   build-push:
     needs: ci
@@ -126,9 +47,10 @@ jobs:
             ghcr.io/${{ github.repository }}:prod
             ghcr.io/${{ github.repository }}:prod-${{ github.sha }}
           # Sólo NEXT_PUBLIC_*: Next la compila en el bundle del cliente. Las
-          # vars de servidor entran en runtime desde Dokploy.
+          # vars de servidor entran en runtime desde Dokploy. Es pública: va
+          # como variable de repo, no como secret.
           build-args: |
-            NEXT_PUBLIC_BETTER_AUTH_URL=${{ secrets.NEXT_PUBLIC_BETTER_AUTH_URL_PROD }}
+            NEXT_PUBLIC_BETTER_AUTH_URL=${{ vars.NEXT_PUBLIC_BETTER_AUTH_URL_PROD }}
             APP_VERSION=${{ github.sha }}
 
   deploy-prod:
@@ -137,6 +59,14 @@ jobs:
     # nunca si alguno falló.
     if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
+    # El environment `production` exige aprobación manual antes de este job y
+    # sólo admite la rama main.
+    environment:
+      name: production
+      url: ${{ vars.DOMAIN_PROD }}
+    # Secrets de environment, no de repo: sólo los ve un job de `main` dentro
+    # de este environment. Un workflow en otra rama no puede leer la API key
+    # de Dokploy (que controla todo el servidor, no sólo esta app).
     env:
       DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
       DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
@@ -152,30 +82,31 @@ jobs:
       - name: Update image tag
         run: |
           bunx @dokploy/cli application save-docker-provider \
-            --applicationId ${{ secrets.DOKPLOY_APP_ID_PROD }} \
+            --applicationId ${{ secrets.DOKPLOY_APP_ID }} \
             --dockerImage "ghcr.io/${{ github.repository }}:prod-$VERSION" \
             --username "" \
             --password "" \
             --registryUrl "ghcr.io"
 
       - name: Deploy to Dokploy
-        run: bunx @dokploy/cli application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID_PROD }}
+        run: bunx @dokploy/cli application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID }}
 
       # 200 no basta: si el contenedor nuevo muere migrando, el anterior sigue
       # respondiendo. Se exige que el que responde sea esta versión.
       - name: Health check
         env:
-          HEALTH_URL: ${{ secrets.DOMAIN_PROD }}/healthz
+          HEALTH_URL: ${{ vars.DOMAIN_PROD }}/healthz
+          EXPECTED_VERSION: ${{ inputs.rollback_sha || github.sha }}
         run: |
           # 45 × 10s ≈ 7,5 min: el primer deploy tardó ~4 min (intento 24/30)
           # entre espera de DB, migraciones y arranque; 30 dejaba poco margen.
           for i in $(seq 1 45); do
             version=$(curl -fsS "$HEALTH_URL" | jq -r .version || true)
-            if [ "$version" = "$VERSION" ]; then
+            if [ "$version" = "$EXPECTED_VERSION" ]; then
               echo "Healthy ($version) after attempt $i"
               exit 0
             fi
-            echo "Attempt $i: version '$version' != '$VERSION' — retry in 10s"
+            echo "Attempt $i: version '$version' != '$EXPECTED_VERSION' — retry in 10s"
             sleep 10
           done
           echo "Health check failed: revisa los logs del contenedor en Dokploy (¿migración fallida?)"

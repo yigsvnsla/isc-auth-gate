@@ -61,6 +61,8 @@ bun test tests/unit/auth-flow.test.ts
 
 ## Conventions
 
+- GitHub Flow: everything enters `main` by squash-merged PR. Branch `<type>/<kebab-description>`, PR title in Conventional Commits; required checks `pr-title`, `branch-name`, `ci / checks`. See CONTRIBUTING.md
+
 - **Env vars**: Validated by Zod in `env/index.ts`, not accessed directly via `process.env`
 - **Auth route**: All Better Auth endpoints at `/api/auth/[...all]` via `toNextJsHandler`
 - **Tests**: Use `better-auth/plugins` `testUtils` plugin, cleanup via `cleanupTestDb()`

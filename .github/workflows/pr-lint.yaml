@@ -1,0 +1,56 @@
+name: PR Lint
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-lint-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Con squash merge el título del PR es el commit que queda en main: se valida
+  # con el mismo commitlint (Conventional Commits) que el hook commit-msg.
+  pr-title:
+    name: pr-title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      # El título va por env, no interpolado en el script: es texto del autor
+      # del PR y podría inyectar comandos.
+      - name: Conventional Commits
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          printf '%s\n' "$TITLE" | bunx commitlint || {
+            echo "::error title=Título de PR inválido::Usa Conventional Commits, p. ej. 'feat: agregar login con passkey' o 'fix(auth): …'. Ver CONTRIBUTING.md"
+            exit 1
+          }
+
+  branch-name:
+    name: branch-name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Formato tipo/descripcion
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          pattern='^(feat|fix|hotfix|chore|docs|refactor|test|ci|perf|build)/[a-z0-9][a-z0-9._-]*$'
+          if [[ "$BRANCH" =~ $pattern ]]; then
+            echo "✓ $BRANCH"
+          else
+            echo "::error title=Nombre de rama inválido::'$BRANCH' no cumple <tipo>/<descripcion-en-kebab-case> (tipos: feat, fix, hotfix, chore, docs, refactor, test, ci, perf, build). Ver CONTRIBUTING.md"
+            exit 1
+          fi

@@ -2,6 +2,8 @@
 
 Authentication gateway built on Next.js 16, Better Auth, Drizzle ORM, and PostgreSQL.
 
+> ¿Vas a contribuir? Lee [CONTRIBUTING.md](CONTRIBUTING.md): ramas, commits, PRs, migraciones y deploy.
+
 ## Stack
 
 | Layer | Choice |

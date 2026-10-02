@@ -1,0 +1,102 @@
+name: CI
+
+# Reutilizable: lo llaman los PRs (pr-ci.yaml), el deploy de dev y el de prod,
+# así los tres validan exactamente lo mismo. Sin secrets: sólo valores de
+# prueba, por eso también corre en PRs desde forks.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: isc-auth-test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      maildev:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 1080:1080
+    env:
+      BETTER_AUTH_DATABASE_HOST: localhost
+      BETTER_AUTH_DATABASE_NAME: isc-auth-test
+      BETTER_AUTH_DATABASE_PORT: 5432
+      BETTER_AUTH_DATABASE_USER: test
+      BETTER_AUTH_DATABASE_PASS: test
+      BETTER_AUTH_TEST_ALLOW_TRUNCATE: "true"
+      BETTER_AUTH_URL: http://placeholder.test/
+      BETTER_AUTH_SERVER_NAME: ci-placeholder
+      BETTER_AUTH_SERVER_SECRET: ci-placeholder-secret
+      BETTER_AUTH_MICROSOFT_TENANT_ID: e97247bf-8fbb-4f1e-8610-2efb7a7342ea
+      BETTER_AUTH_MICROSOFT_CLIENT_ID: ci-placeholder
+      BETTER_AUTH_MICROSOFT_CLIENT_SECRET: ci-placeholder
+      BETTER_AUTH_MICROSOFT_AUTHORITY: https://login.microsoftonline.com/
+      BETTER_AUTH_MICROSOFT_PROFILE_PHOTO_SIZE: 648
+      BETTER_AUTH_SMTP_TRANSPORTER_HOST: localhost
+      BETTER_AUTH_SMTP_TRANSPORTER_PORT: 1025
+      BETTER_AUTH_SMTP_TRANSPORTER_SECURE: "false"
+      BETTER_AUTH_SMTP_TRANSPORTER_USER: ci@example.test
+      BETTER_AUTH_SMTP_TRANSPORTER_PASS: ci-placeholder
+      BETTER_AUTH_SMTP_TRANSPORTER_FROM: CI <ci@example.test>
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      # Consistencia del historial (journal + snapshots). No conecta a la DB.
+      - name: Check migrations history
+        run: bun x drizzle-kit check
+
+      # schema.ts cambiado sin `database:generate`: generate crea una migración
+      # nueva y el diff la delata. `timeout`: ante un rename drizzle-kit pide
+      # confirmación interactiva; sin TTY no debe colgar el job.
+      - name: Check schema drift
+        run: |
+          timeout 120 bun x drizzle-kit generate
+          if [ -n "$(git status --porcelain -- database/migrations)" ]; then
+            git status --porcelain -- database/migrations
+            echo "schema.ts tiene cambios sin migración: corre bun run database:generate"
+            exit 1
+          fi
+
+      # PostgreSQL 17 limpio: aplica TODAS las migraciones versionadas. Nunca
+      # `push` aquí — push sincroniza el schema y no prueba las migraciones.
+      - name: Apply migrations
+        run: bun run database:up
+
+      - name: Database health check
+        run: bun run database:check
+        env:
+          NODE_ENV: testing
+
+      - name: Test
+        run: bun run test
+
+      # Mismo `next build` que corre el Containerfile, sin env: valida que la
+      # imagen compila sin secretos antes de mergear (build-push sólo corre en
+      # main, después del merge).
+      - name: Build
+        run: bun run build

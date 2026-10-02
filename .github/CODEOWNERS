@@ -1,0 +1,15 @@
+# Revisión obligatoria del owner (ruleset de main: "Require review from Code
+# Owners") en lo que puede romper el deploy, la base de datos o los secretos.
+# El resto del código lo puede aprobar cualquier colaborador.
+
+/.github/                @yigsvnsla
+/.containers/            @yigsvnsla
+/entrypoint.ts           @yigsvnsla
+/database/migrations/    @yigsvnsla
+/database/schema.ts      @yigsvnsla
+/drizzle.config.ts       @yigsvnsla
+/env/                    @yigsvnsla
+/lib/auth/server/        @yigsvnsla
+/next.config.ts          @yigsvnsla
+/package.json            @yigsvnsla
+/bun.lock                @yigsvnsla

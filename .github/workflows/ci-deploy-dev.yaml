@@ -14,87 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Mismo CI que el PR: re-valida main ya mergeado antes de construir.
   ci:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: isc-auth-test
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      maildev:
-        image: axllent/mailpit:latest
-        ports:
-          - 1025:1025
-          - 1080:1080
-    env:
-      BETTER_AUTH_DATABASE_HOST: localhost
-      BETTER_AUTH_DATABASE_NAME: isc-auth-test
-      BETTER_AUTH_DATABASE_PORT: 5432
-      BETTER_AUTH_DATABASE_USER: test
-      BETTER_AUTH_DATABASE_PASS: test
-      BETTER_AUTH_TEST_ALLOW_TRUNCATE: "true"
-      BETTER_AUTH_URL: http://placeholder.test/
-      BETTER_AUTH_SERVER_NAME: ci-placeholder
-      BETTER_AUTH_SERVER_SECRET: ci-placeholder-secret
-      BETTER_AUTH_MICROSOFT_TENANT_ID: e97247bf-8fbb-4f1e-8610-2efb7a7342ea
-      BETTER_AUTH_MICROSOFT_CLIENT_ID: ci-placeholder
-      BETTER_AUTH_MICROSOFT_CLIENT_SECRET: ci-placeholder
-      BETTER_AUTH_SMTP_TRANSPORTER_HOST: localhost
-      BETTER_AUTH_SMTP_TRANSPORTER_PORT: 1025
-      BETTER_AUTH_SMTP_TRANSPORTER_SECURE: "false"
-      BETTER_AUTH_SMTP_TRANSPORTER_USER: ci@example.test
-      BETTER_AUTH_SMTP_TRANSPORTER_PASS: ci-placeholder
-      BETTER_AUTH_SMTP_TRANSPORTER_FROM: CI <ci@example.test>
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install
-        run: bun install --frozen-lockfile
-
-      - name: Lint
-        run: bun run lint
-
-      # Consistencia del historial (journal + snapshots). No conecta a la DB.
-      - name: Check migrations history
-        run: bun x drizzle-kit check
-
-      # schema.ts cambiado sin `database:generate`: generate crea una migración
-      # nueva y el diff la delata. `timeout`: ante un rename drizzle-kit pide
-      # confirmación interactiva; sin TTY no debe colgar el job.
-      - name: Check schema drift
-        run: |
-          timeout 120 bun x drizzle-kit generate
-          if [ -n "$(git status --porcelain -- database/migrations)" ]; then
-            git status --porcelain -- database/migrations
-            echo "schema.ts tiene cambios sin migración: corre bun run database:generate"
-            exit 1
-          fi
-
-      # PostgreSQL 17 limpio: aplica TODAS las migraciones versionadas. Nunca
-      # `push` aquí — push sincroniza el schema y no prueba las migraciones.
-      - name: Apply migrations
-        run: bun run database:up
-
-      - name: Database health check
-        run: bun run database:check
-        env:
-          NODE_ENV: testing
-
-      - name: Test
-        run: bun run test
+    uses: ./.github/workflows/ci.yaml
 
   build-push:
     needs: ci
@@ -119,14 +41,21 @@ jobs:
             ghcr.io/${{ github.repository }}:dev
             ghcr.io/${{ github.repository }}:${{ github.sha }}
           # Sólo NEXT_PUBLIC_*: Next la compila en el bundle del cliente. Las
-          # vars de servidor entran en runtime desde Dokploy.
+          # vars de servidor entran en runtime desde Dokploy. Es pública: va
+          # como variable de repo, no como secret.
           build-args: |
-            NEXT_PUBLIC_BETTER_AUTH_URL=${{ secrets.NEXT_PUBLIC_BETTER_AUTH_URL_DEV }}
+            NEXT_PUBLIC_BETTER_AUTH_URL=${{ vars.NEXT_PUBLIC_BETTER_AUTH_URL_DEV }}
             APP_VERSION=${{ github.sha }}
 
   deploy-dev:
     needs: build-push
     runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: ${{ vars.DOMAIN_DEV }}
+    # Secrets de environment, no de repo: sólo los ve un job de `main` dentro
+    # de este environment. Un workflow en otra rama no puede leer la API key
+    # de Dokploy (que controla todo el servidor, no sólo esta app).
     env:
       DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
       DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
@@ -140,20 +69,20 @@ jobs:
       - name: Update image tag
         run: |
           bunx @dokploy/cli application save-docker-provider \
-            --applicationId ${{ secrets.DOKPLOY_APP_ID_DEV }} \
+            --applicationId ${{ secrets.DOKPLOY_APP_ID }} \
             --dockerImage ghcr.io/${{ github.repository }}:dev \
             --username "" \
             --password "" \
             --registryUrl "ghcr.io"
 
       - name: Deploy to Dokploy
-        run: bunx @dokploy/cli application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID_DEV }}
+        run: bunx @dokploy/cli application deploy --applicationId ${{ secrets.DOKPLOY_APP_ID }}
 
       # 200 no basta: si el contenedor nuevo muere migrando, el anterior sigue
       # respondiendo. Se exige que el que responde sea este commit.
       - name: Health check
         env:
-          HEALTH_URL: ${{ secrets.DOMAIN_DEV }}/api/health
+          HEALTH_URL: ${{ vars.DOMAIN_DEV }}/api/health
           EXPECTED_VERSION: ${{ github.sha }}
         run: |
           # 45 × 10s ≈ 7,5 min: el primer deploy tardó ~4 min (intento 24/30)
