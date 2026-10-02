@@ -13,7 +13,7 @@ import {
   XIcon,
 } from "lucide-react";
 
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth/client";
 import { useUserSession } from "@/hooks/use-user-session";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";

@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth/client";
 import { Input } from "@/components/ui/input";
 import { Controller, useForm } from "react-hook-form";
 import { useId, useState } from "react";

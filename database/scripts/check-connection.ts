@@ -1,9 +1,9 @@
-import { Result } from "@/env/core/result";
 import { drizzlePostgreClient } from "../clients/postgre";
 import { SQL } from "bun";
 import { DrizzleQueryError } from "drizzle-orm";
 
-const postgrePing = async (): Promise<Result<Record<string, unknown>[], Error>> => {
+// true si PostgreSQL respondió a la consulta; false con la causa ya logueada.
+const postgrePing = async (): Promise<boolean> => {
   try {
     console.info("Running database connection check...");
 
@@ -20,25 +20,23 @@ const postgrePing = async (): Promise<Result<Record<string, unknown>[], Error>> 
     console.log("✓ Database connection successful");
     console.table(result);
 
-    return Result.success(result);
+    return true;
   } catch (error: unknown) {
 
     if (error instanceof DrizzleQueryError) {
       if (error.cause instanceof SQL.PostgresError) {
         console.error("PostgreSQL error:", error.cause.code);
         console.error("PostgreSQL message:", error.cause.message);
-        return Result.failure(error.cause);
+        return false;
       }
       // Sin PostgresError: no hubo respuesta del servidor (ECONNREFUSED, DNS,
       // timeout). La causa real va en `cause`, el mensaje sólo trae la query.
       console.error("✗ Database connection failed:", error.cause ?? error.message);
-      return Result.failure(error);
+      return false;
     }
 
     console.error("✗ Database connection failed:", error);
-    return Result.failure(
-      error instanceof Error ? error : new Error(String(error)),
-    );
+    return false;
   }
 };
 

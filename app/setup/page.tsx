@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { CommandIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { env } from "@/env";
+import { env } from "@/env/server";
 import { microsoftConfigured, smtpConfigured } from "@/lib/providers";
 import { checkDatabase, needsSetup } from "@/lib/setup";
 import { SetupForm } from "./setup-form";

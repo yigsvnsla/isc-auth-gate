@@ -1,7 +1,7 @@
 import { LoginForm } from "./sign-in-form";
 import { CommandIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { auth } from "@/lib/auth/auth";
+import { betterAuthServer as auth } from "@/lib/auth/server";
 import { headers as NextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";

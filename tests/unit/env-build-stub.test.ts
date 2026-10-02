@@ -1,11 +1,16 @@
 import { afterEach, describe, expect, it } from "bun:test";
 
-// Regresión de seguridad: `getEnv()` devuelve un stub cuando NO hay ninguna
-// variable de la app, para que `next build` compile sin secretos. Ese stub no
-// debe poder llegar a producción: si hay una sola variable presente, el parse
-// falla y el error se relanza, y `entrypoint.ts` aborta el arranque.
-describe("getEnv tolera el build pero no una config rota", () => {
+// Regresión de seguridad: `next build` compila sin secretos, así que t3-env
+// salta la validación en esa fase (NEXT_PHASE=phase-production-build). Fuera
+// del build no debe saltarla: un contenedor con env incompleto tiene que
+// fallar al importar `@/env/server` — es lo que hace abortar a entrypoint.ts.
+//
+// La validación vive en cada preset de env/server/schemas (env/server sólo los
+// combina con `extends`), y cada preset valida al evaluarse: cada caso lo
+// importa de nuevo con una query única y el env ya preparado.
+describe("presets de @/env/server toleran el build pero no una config rota", () => {
   const original = { ...process.env };
+  let n = 0;
 
   afterEach(() => {
     process.env = { ...original };
@@ -13,53 +18,55 @@ describe("getEnv tolera el build pero no una config rota", () => {
 
   const borrarApp = () => {
     for (const key of Object.keys(process.env)) {
-      if (key.startsWith("BETTER_AUTH_") || key === "REDIS_URL") {
+      if (key.startsWith("BETTER_AUTH_") || key === "REDIS_URL" || key === "NEXT_PHASE") {
         delete process.env[key];
       }
     }
   };
 
-  it("devuelve el stub cuando no hay ninguna variable de la app", async () => {
+  const preset = (nombre: string) =>
+    import(`@/env/server/schemas/${nombre}.schema?stub=${++n}`);
+
+  it("no lanzan durante next build aunque no haya ninguna variable", async () => {
     borrarApp();
-    const { getEnv } = await import(`@/env?caso=stub-${Date.now()}`);
-    const env = getEnv();
-    // Valores de relleno: si alguno se cuela a runtime, el síntoma es obvio
-    // (baseURL build.invalid) en vez de silencioso.
-    expect(env.BETTER_AUTH_URL).toBe("http://build.invalid");
-    expect(env.BETTER_AUTH_SERVER_SECRET).toBe("build-only-not-a-real-secret");
-    expect(env.BETTER_AUTH_DATABASE_PORT).toBe(5432);
+    process.env.NEXT_PHASE = "phase-production-build";
+    for (const p of ["captcha", "database", "microsoft", "oauth", "server", "smtp"]) {
+      await expect(preset(p)).resolves.toBeDefined();
+    }
   });
 
-  it("relanza el error si hay una variable de la app pero está incompleta", async () => {
+  it("server lanza fuera del build si faltan URL, nombre y secret", async () => {
     borrarApp();
-    // Una sola variable presente = alguien configuró algo = runtime. El stub
-    // escondería el resto de las faltantes.
-    process.env.BETTER_AUTH_URL = "https://auth.example.com";
-    const { getEnv } = await import(`@/env?caso=rota-${Date.now()}`);
-    expect(() => getEnv()).toThrow();
+    await expect(preset("server")).rejects.toThrow();
   });
 
-  it("relanza con SÓLO vars de DB presentes (el caso que filtraba el stub)", async () => {
+  it("database lanza fuera del build si falta la conexión", async () => {
+    borrarApp();
+    await expect(preset("database")).rejects.toThrow();
+  });
+
+  it("server lanza con SÓLO vars de DB presentes (el caso parcial de Dokploy)", async () => {
     borrarApp();
     // Configuración parcial real: Dokploy con las cinco de DB pegadas pero sin
-    // BETTER_AUTH_URL. El criterio "alguna variable de la app" debe disparar
-    // el throw, no devolver un stub con baseURL build.invalid.
+    // BETTER_AUTH_URL ni BETTER_AUTH_SERVER_SECRET.
     process.env.BETTER_AUTH_DATABASE_HOST = "db.example.com";
     process.env.BETTER_AUTH_DATABASE_NAME = "app";
     process.env.BETTER_AUTH_DATABASE_PORT = "5432";
     process.env.BETTER_AUTH_DATABASE_USER = "u";
     process.env.BETTER_AUTH_DATABASE_PASS = "p";
-    const { getEnv } = await import(`@/env?caso=solodb-${Date.now()}`);
-    expect(() => getEnv()).toThrow();
+    await expect(preset("database")).resolves.toBeDefined();
+    await expect(preset("server")).rejects.toThrow();
   });
 
-  it("no monta providers de mentira en el stub", async () => {
+  it("los opcionales (Microsoft, SMTP, captcha) no exigen nada fuera del build", async () => {
     borrarApp();
-    const { getEnv } = await import(`@/env?caso=providers-${Date.now()}`);
-    const env = getEnv();
-    // Sin esto, `lib/providers.ts` leería truthy durante el build y
-    // auth.tsx registraría un plugin de Microsoft con credenciales falsas.
-    expect(env.BETTER_AUTH_MICROSOFT_CLIENT_ID).toBeUndefined();
-    expect(env.BETTER_AUTH_SMTP_TRANSPORTER_HOST).toBeUndefined();
+    // Sin esto Dokploy sin Microsoft/SMTP no arrancaría, y lib/providers.ts
+    // no podría decidir "no configurado".
+    const ms = await preset("microsoft");
+    const smtp = await preset("smtp");
+    const cap = await preset("captcha");
+    expect(ms.microsoftProviderEnviroment.BETTER_AUTH_MICROSOFT_CLIENT_ID).toBeUndefined();
+    expect(smtp.smtpEnviroment.BETTER_AUTH_SMTP_TRANSPORTER_HOST).toBeUndefined();
+    expect(cap.captchaEnviroment.BETTER_AUTH_CAPTCHA_ENABLED).toBe(false);
   });
 });

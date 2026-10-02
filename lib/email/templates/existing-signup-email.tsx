@@ -14,7 +14,7 @@ interface Props {
   user: { name: string; email: string };
 }
 
-export default function ExistingSignupEmail({ user }: Props) {
+export const ExistingSignupEmail = ({ user }: Props) => {
   return (
     <Html>
       <Preview>Sign-up attempt detected for your account</Preview>

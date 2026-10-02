@@ -1,12 +1,10 @@
-import { auth } from "@/lib/auth/auth";
+import { betterAuthServer as auth } from "@/lib/auth/server";
 import { db } from "@/database";
 import { oauthConsents } from "@/database/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ userId: string; consentId: string }> },
+export async function GET(_request: Request,{ params }: { params: Promise<{ userId: string; consentId: string }> },
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session || session.user.role !== "admin") {
@@ -31,10 +29,7 @@ export async function GET(
   return Response.json(rows[0]);
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ userId: string; consentId: string }> },
-) {
+export async function PATCH(request: Request,{ params }: { params: Promise<{ userId: string; consentId: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session || session.user.role !== "admin") {
     return Response.json({ error: "Forbidden" }, { status: 403 });

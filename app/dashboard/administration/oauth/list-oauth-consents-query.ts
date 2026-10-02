@@ -1,4 +1,4 @@
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth/client";
 import useSWR from "swr";
 
 export type ListOAuthConsentsQuery = Parameters<typeof authClient.oauth2.getConsents>[0];

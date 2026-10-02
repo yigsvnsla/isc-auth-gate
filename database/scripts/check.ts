@@ -4,6 +4,6 @@
 // historial de migraciones, no la conexión. CI lo corre como paso aparte.
 import { checkConnection } from "./check-connection";
 
-const result = await checkConnection();
+const connected = await checkConnection();
 
-process.exit(result.isSuccess() ? 0 : 1);
+process.exit(connected ? 0 : 1);

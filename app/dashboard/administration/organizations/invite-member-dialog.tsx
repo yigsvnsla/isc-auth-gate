@@ -32,7 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { UserPlusIcon } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth/client";
 
 const emailSchema = z.string().email("Email inválido");
 

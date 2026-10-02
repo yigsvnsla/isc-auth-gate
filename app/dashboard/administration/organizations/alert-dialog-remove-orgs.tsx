@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import React, { FC, useState } from "react";
 import { toast } from "@/components/ui/sonner";
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth/client";
 import { useOrganizations } from "@/hooks/use-admin-roles";
 import { useSetAtom } from "jotai";
 import { selectListOrgsAtom } from "@/atoms/select-list-orgs-atom";

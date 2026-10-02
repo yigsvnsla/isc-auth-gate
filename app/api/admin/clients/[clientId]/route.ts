@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth/auth";
+import { betterAuthServer as auth } from "@/lib/auth/server";
 import { db } from "@/database";
 import { oauthClients } from "@/database/schema";
 import { eq } from "drizzle-orm";

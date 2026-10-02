@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { testAuth } from "@/lib/auth.test";
-import { env } from "@/env";
+import { env } from "@/env/server";
 import { cleanupTestDb } from "@/tests/database";
 
 // CAPTCHA nativo: feature flag + proveedor por env. Por defecto desactivado,

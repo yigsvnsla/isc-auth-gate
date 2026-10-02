@@ -1,10 +1,6 @@
 import { defineConfig } from "drizzle-kit";
-import { ApplicationConfigFactory } from "@/env/core/factories";
-import { environmentSchema } from "@/env/core/schemas";
 
-const environment = environmentSchema.parse(process.env.NODE_ENV);
-
-const config = ApplicationConfigFactory.create(environment);
+import { env } from "@/env/server";
 
 export default defineConfig({
   dialect: "postgresql",
@@ -12,11 +8,11 @@ export default defineConfig({
   schema: ["./database/schema.ts"],
 
   dbCredentials: {
-    host: config.database.HOST,
-    port: config.database.PORT,
-    database: config.database.NAME,
-    ssl: config.database.SSL,
-    user: config.database.USER,
-    password: config.database.PASS,
+    host: env.BETTER_AUTH_DATABASE_HOST,
+    port: env.BETTER_AUTH_DATABASE_PORT,
+    database: env.BETTER_AUTH_DATABASE_NAME,
+    ssl: env.BETTER_AUTH_DATABASE_SSL,
+    user: env.BETTER_AUTH_DATABASE_USER,
+    password: env.BETTER_AUTH_DATABASE_PASS,
   },
 });

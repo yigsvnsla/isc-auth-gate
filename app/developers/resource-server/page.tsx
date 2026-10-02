@@ -97,8 +97,8 @@ curl -s ${issuer}/jwks | jq .`}
         </p>
         <CodeBlock
           language="ts"
-          code={`import { serverClient } from "@/lib/auth/server-client";
-import { env } from "@/env";
+          code={`import { serverClient } from "@/lib/auth/server/resource-client";
+import { env } from "@/env/server";
 
 const baseUrl = env.BETTER_AUTH_URL.replace(/\\/+$/, "");
 

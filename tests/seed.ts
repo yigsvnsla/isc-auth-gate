@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { seed, reset } from "drizzle-seed";
-import { env } from "@/env";
+import { env } from "@/env/server";
 import * as schema from "@/database/schema";
 
 const seedPool = new Pool({

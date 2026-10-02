@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/database";
 import { oauthClients, organizations, users } from "@/database/schema";
-import { auth } from "@/lib/auth/auth";
+import { betterAuthServer as auth } from "@/lib/auth/server";
 
 /**
  * Read-only cross-org listing of every registered OAuth client for the

@@ -1,6 +1,6 @@
 import "server-only";
 import { connection } from "next/server";
-import { getEnv } from "@/env";
+import { env } from "@/env/server";
 
 /**
  * Fachada de configuración pública leída por Server Components.
@@ -12,6 +12,6 @@ export async function getPublicAuthConfig() {
   await connection();
 
   return {
-    baseUrl: getEnv().BETTER_AUTH_URL.replace(/\/+$/, ""),
+    baseUrl: env.BETTER_AUTH_URL.replace(/\/+$/, ""),
   };
 }

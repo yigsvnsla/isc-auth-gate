@@ -12,7 +12,6 @@
 import { sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
 
-import { getEnv } from "@/env";
 
 // Serializa migraciones entre réplicas: la segunda espera el lock y, al
 // obtenerlo, ya no encuentra pendientes. Postgres lo libera al cerrar la
@@ -95,17 +94,16 @@ async function main() {
     process.exit(1);
   }
 
-  // Valida el env completo ANTES de esperar la DB o migrar. `env/index.ts`
-  // devuelve un stub de build cuando no hay ninguna variable presente, así que
-  // sin esto un contenedor arrancado sin env serviría con baseURL
-  // `build.invalid` en vez de fallar. Este es el sitio correcto para esa
-  // guarda: corre en el runtime y antes de que nada use el stub.
+  // Valida el env completo ANTES de esperar la DB o migrar. t3-env valida al
+  // importar `@/env/server`, y fuera de `next build` (sin NEXT_PHASE) no se
+  // salta la validación: un env incompleto lanza aquí. Sin este import el
+  // contenedor arrancaría y fallaría recién en la primera petición.
   //
   // ponytail: aquí, no en instrumentation.ts. El server.js de Next standalone
   // no invoca el hook `register()` — verificado: 0 referencias a
   // "instrumentation" en el server.js embebido en la imagen.
   try {
-    getEnv();
+    await import("@/env/server");
   } catch (err) {
     console.error(
       `[entrypoint] Variables de entorno inválidas o incompletas.\n${

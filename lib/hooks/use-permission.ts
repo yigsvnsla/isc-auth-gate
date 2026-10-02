@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth/client";
 
 type PermissionKey = `${string}.${string}`;
 

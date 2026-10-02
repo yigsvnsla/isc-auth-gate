@@ -16,7 +16,7 @@ interface Props {
   url: string;
 }
 
-export default function VerificationEmail({ user, url }: Props) {
+export const VerificationEmail = ({ user, url }: Props) => {
   return (
     <Html>
       <Preview>Verify your email address for ISC Auth</Preview>

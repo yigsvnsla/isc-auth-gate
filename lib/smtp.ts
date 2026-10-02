@@ -1,5 +1,5 @@
 import { createTransport } from "nodemailer";
-import { env } from "@/env";
+import { env } from "@/env/server";
 import { smtpConfigured } from "@/lib/providers";
 
 const transport = createTransport({

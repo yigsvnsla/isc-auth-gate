@@ -1,0 +1,55 @@
+import type { BetterAuthPlugin } from "better-auth";
+import { oauthProvider } from "@better-auth/oauth-provider";
+import { env } from "@/env/server";
+import { members } from "@/database/schema";
+
+import { and, eq, inArray } from "drizzle-orm";
+// `db` (node-postgres), no el cliente Bun SQL: `next build` evalúa esto en
+// workers de Node, y aquel tiene una sola conexión (es para el entrypoint).
+import { db } from "@/database";
+
+export const BetterAuthOAuthProviderServerConfig = oauthProvider({
+  loginPage: "/auth/sign-in",
+  consentPage: "/auth/consent",
+  allowDynamicClientRegistration:
+    env.BETTER_AUTH_OAUTH_DYNAMIC_CLIENT_REGISTRATION,
+  allowUnauthenticatedClientRegistration: false,
+  scopes: ["openid", "profile", "email", "offline_access"],
+  cachedTrustedClients: new Set(env.BETTER_AUTH_OAUTH_TRUSTED_CLIENTS),
+  resources: env.BETTER_AUTH_OAUTH_RESOURCES,
+  clientReference: async ({ session }) => {
+    const activeOrg = (
+      session?.session as { activeOrganizationId?: string | null }
+    )?.activeOrganizationId;
+    return activeOrg ?? undefined;
+  },
+  clientPrivileges: async ({ session, user }) => {
+    if (user?.role === "admin") return true;
+    const sessionRecord = session as
+      { activeOrganizationId?: string | null; userId?: string } | undefined;
+    const activeOrg = sessionRecord?.activeOrganizationId;
+    const userId = sessionRecord?.userId;
+    if (!activeOrg || !userId) return false;
+    const [memberRow] = await db
+      .select({ id: members.id })
+      .from(members)
+      .where(
+        and(
+          eq(members.organizationId, activeOrg),
+          eq(members.userId, userId),
+          inArray(members.role, ["owner", "admin"]),
+        ),
+      )
+      .limit(1);
+    return Boolean(memberRow);
+  },
+  resourcePrivileges: async ({ user }) => user?.role === "admin",
+  rateLimit: {
+    token: { window: 60, max: 60 },
+    authorize: { window: 60, max: 30 },
+    introspect: { window: 60, max: 100 },
+    revoke: { window: 60, max: 30 },
+    register: { window: 60, max: 5 },
+    userinfo: { window: 60, max: 60 },
+  },
+}) satisfies BetterAuthPlugin;

@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/sidebar";
 import { redirect } from "next/navigation";
 import { PropsWithChildren } from "react";
-import { auth } from "@/lib/auth/auth";
+import { betterAuthServer as auth } from "@/lib/auth/server";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cookies as NextCookies, headers as NextHeaders } from "next/headers";
 import { DashboardBreadcrumb } from "./dashboard-breadcrumb";

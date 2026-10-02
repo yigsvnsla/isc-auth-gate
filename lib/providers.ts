@@ -1,17 +1,17 @@
-import { env } from "@/env";
+import { env } from "@/env/server";
 
 /**
  * Qué proveedores opcionales están realmente configurados.
  *
- * ponytail: un solo lugar decide "habilitado/no". `lib/auth/auth.tsx` registra
+ * ponytail: un solo lugar decide "habilitado/no". `lib/auth/server/config/plugins/` registra
  * plugins con estos flags y `app/setup/page.tsx` los muestra en el panel de
  * estado, así que la UI y el runtime nunca discrepan.
  *
  * - Microsoft exige tenantId CONCRETO: `microsoftEntraId({ tenantId: "common" })`
  *   lanza "requires a concrete Microsoft Entra tenant GUID" y tumba cada página
  *   de auth. Por eso el GUID es parte del flag, no un default.
- * - Para añadir GitHub/Google: añade sus vars a env/*.schema.ts, un flag aquí y
- *   el bloque condicional en el array `plugins` de lib/auth/auth.tsx.
+ * - Para añadir GitHub/Google: añade sus vars a env/server/schemas/, un flag aquí y
+ *   su archivo condicional en lib/auth/server/config/plugins/.
  */
 export const microsoftConfigured = Boolean(
   env.BETTER_AUTH_MICROSOFT_CLIENT_ID &&

@@ -4,7 +4,7 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { testDb } from "@/tests/database";
 // (antes importaba también `auth` de producción sin usarlo: arrastraba el pool
 // de PostgreSQL real al grafo de los tests)
-import { env } from "@/env";
+import { env } from "@/env/server";
 import { microsoftConfigured } from "@/lib/providers";
 import {
   admin as adminPlugin,

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # maildev (local email capture)
 .maildev/
+
+# Copia del .env para probar `next build` sin variables (como en docker build).
+-env

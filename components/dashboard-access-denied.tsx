@@ -13,7 +13,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth/client";
 
 /**
  * Pantalla de acceso denegado (403 visual).

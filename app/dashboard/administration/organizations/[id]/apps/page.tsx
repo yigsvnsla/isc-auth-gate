@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeftIcon, GlobeIcon } from "lucide-react";
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth/client";
 import { toast } from "@/components/ui/sonner";
 import { useOrganizations } from "@/hooks/use-admin-roles";
 import { AuthClientsPage } from "../../../oauth/page-clients";

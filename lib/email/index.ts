@@ -1,4 +1,4 @@
-import { env } from "@/env";
+import { env } from "@/env/server";
 import { smtpConfigured } from "@/lib/providers";
 import { createEmailClient } from "@opencoredev/email-sdk";
 import { smtp } from "@opencoredev/email-sdk/smtp";

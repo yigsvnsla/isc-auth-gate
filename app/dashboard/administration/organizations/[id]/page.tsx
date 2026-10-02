@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { InviteMemberDialog } from "../invite-member-dialog";
 import { useOrganizations } from "@/hooks/use-admin-roles";
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth/client";
 import useSWR from "swr";
 import { toast } from "@/components/ui/sonner";
 import { format } from "date-fns";

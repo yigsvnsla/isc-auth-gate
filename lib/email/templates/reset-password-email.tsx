@@ -16,7 +16,7 @@ interface Props {
   url: string;
 }
 
-export default function ResetPasswordEmail({ user, url }: Props) {
+export const ResetPasswordEmail = ({ user, url }: Props) => {
   return (
     <Html>
       <Preview>Reset your ISC Auth password</Preview>
@@ -46,8 +46,8 @@ export default function ResetPasswordEmail({ user, url }: Props) {
                   </Button>
                 </Section>
                 <Text className="text-sm text-gray-500 dark:text-gray-400">
-                  This link expires in 20 minutes. If you didn&apos;t request this,
-                  you can safely ignore this email.
+                  This link expires in 20 minutes. If you didn&apos;t request
+                  this, you can safely ignore this email.
                 </Text>
                 <Hr className="my-6 border-gray-200 dark:border-gray-700" />
                 <Text className="text-xs text-gray-400 dark:text-gray-500">
@@ -60,7 +60,7 @@ export default function ResetPasswordEmail({ user, url }: Props) {
       </Tailwind>
     </Html>
   );
-}
+};
 
 ResetPasswordEmail.PreviewProps = {
   user: { name: "John Doe", email: "john@example.com" },

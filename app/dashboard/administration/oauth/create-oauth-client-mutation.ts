@@ -1,4 +1,4 @@
-import { authClient } from "@/lib/auth/auth-client";
+import { authClient } from "@/lib/auth/client";
 import { OAuthClient } from "@better-auth/oauth-provider";
 import { BetterFetchError } from "better-auth/client";
 import useSWRMutation from "swr/mutation";

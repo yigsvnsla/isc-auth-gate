@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { db } from "@/database";
 import { organizations } from "@/database/schema";
-import { auth } from "@/lib/auth/auth";
+import { betterAuthServer as auth } from "@/lib/auth/server";
 import { withOrgAdminAccess } from "@/lib/admin-org-access";
 
 /**

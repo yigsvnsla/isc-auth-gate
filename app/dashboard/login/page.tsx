@@ -2,7 +2,7 @@ import { CommandIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { DashboardLoginForm } from "@/app/dashboard/login/form-login";
 import { Card } from "@/components/ui/card";
-import { auth } from "@/lib/auth/auth";
+import { betterAuthServer as auth } from "@/lib/auth/server";
 import { headers as NextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
 import { needsSetup } from "@/lib/setup";
