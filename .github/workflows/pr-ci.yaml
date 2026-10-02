@@ -1,0 +1,20 @@
+name: PR CI
+
+# Sin `edited`: editar el título no debe re-correr el CI. Si lo re-corriera
+# saltándolo, el check quedaría "skipped" sobre el mismo commit, y GitHub
+# cuenta un skipped como aprobado. El título lo valida pr-lint.yaml.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yaml
