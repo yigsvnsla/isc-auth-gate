@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { CommandIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { env } from "@/env/server";
-import { microsoftConfigured, smtpConfigured } from "@/lib/providers";
+// import { env } from "@/env/server";
 import { checkDatabase, needsSetup } from "@/lib/setup";
 import { SetupForm } from "./setup-form";
 
@@ -31,20 +30,20 @@ export default async function SetupPage() {
       state: dbOk ? ("ok" as const) : ("error" as const),
       detail: dbOk ? "Conectada" : "Sin respuesta",
     },
-    {
-      label: "Microsoft OAuth",
-      state: microsoftConfigured ? ("ok" as const) : ("off" as const),
-      detail: microsoftConfigured ? "Configurado" : "No configurado",
-    },
-    {
-      label: "SMTP (correo)",
-      state: smtpConfigured ? ("ok" as const) : ("off" as const),
-      detail: smtpConfigured ? "Configurado" : "No configurado",
-    },
+    // {
+    //   label: "Microsoft OAuth",
+    //   state: microsoftConfigured ? ("ok" as const) : ("off" as const),
+    //   detail: microsoftConfigured ? "Configurado" : "No configurado",
+    // },
+    // {
+    //   label: "SMTP (correo)",
+    //   state: smtpConfigured ? ("ok" as const) : ("off" as const),
+    //   detail: smtpConfigured ? "Configurado" : "No configurado",
+    // },
   ];
 
   // Callback de Azure: solo tiene sentido si el provider está habilitado.
-  const microsoftCallbackUrl = `${env.BETTER_AUTH_URL.replace(/\/+$/, "")}/api/auth/callback/microsoft`;
+  // const microsoftCallbackUrl = `${env.BETTER_AUTH_URL.replace(/\/+$/, "")}/api/auth/callback/microsoft`;
 
   return (
     <main className="flex min-h-svh flex-col gap-6 p-6 md:p-10">
@@ -70,7 +69,7 @@ export default async function SetupPage() {
                 className="flex items-center justify-between gap-2"
               >
                 <span className="text-muted-foreground">{label}</span>
-                <span
+                {/* <span
                   className={
                     state === "ok"
                       ? "text-green-600 dark:text-green-400"
@@ -80,10 +79,10 @@ export default async function SetupPage() {
                   }
                 >
                   {state === "ok" ? "✓" : state === "off" ? "○" : "✗"} {detail}
-                </span>
+                </span> */}
               </div>
             ))}
-            {microsoftConfigured ? (
+            {/* {microsoftConfigured ? (
               <p className="text-xs text-muted-foreground break-all pt-2 border-t">
                 Callback de Microsoft (regístralo en Azure Portal → Redirect
                 URIs): <code className="font-mono">{microsoftCallbackUrl}</code>
@@ -94,7 +93,7 @@ export default async function SetupPage() {
                 entrar con correo y contraseña; habilítalos después en las
                 variables de entorno del deploy.
               </p>
-            )}
+            )} */}
           </section>
 
           <SetupForm dbOk={dbOk} />

@@ -13,7 +13,6 @@ import {
   BetterAuthSessionServerConfig,
   BetterAuthUserServerConfig,
 } from "@/lib/auth/server/config";
-import { logProviderWarnings } from "@/lib/providers";
 
 /**
  * Instancia única de Better Auth (servidor).
@@ -25,7 +24,6 @@ import { logProviderWarnings } from "@/lib/providers";
  *
  * @see https://www.better-auth.com/docs
  */
-logProviderWarnings();
 
 export const betterAuthServer = betterAuth({
   ...BetterAuthServerConfig,

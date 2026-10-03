@@ -58,15 +58,43 @@ describe("presets de @/env/server toleran el build pero no una config rota", () 
     await expect(preset("server")).rejects.toThrow();
   });
 
-  it("los opcionales (Microsoft, SMTP, captcha) no exigen nada fuera del build", async () => {
+  it("los opcionales (SMTP, captcha) no exigen nada fuera del build", async () => {
     borrarApp();
-    // Sin esto Dokploy sin Microsoft/SMTP no arrancaría, y lib/providers.ts
-    // no podría decidir "no configurado".
-    const ms = await preset("microsoft");
     const smtp = await preset("smtp");
     const cap = await preset("captcha");
-    expect(ms.microsoftProviderEnviroment.BETTER_AUTH_MICROSOFT_CLIENT_ID).toBeUndefined();
     expect(smtp.smtpEnviroment.BETTER_AUTH_SMTP_TRANSPORTER_HOST).toBeUndefined();
     expect(cap.captchaEnviroment.BETTER_AUTH_CAPTCHA_ENABLED).toBe(false);
+  });
+
+  describe("Microsoft es obligatorio y el tenant debe ser un GUID", () => {
+    const microsoft = (tenant: string) => {
+      process.env.BETTER_AUTH_MICROSOFT_CLIENT_ID = "client";
+      process.env.BETTER_AUTH_MICROSOFT_CLIENT_SECRET = "secret";
+      process.env.BETTER_AUTH_MICROSOFT_AUTHORITY = "https://login.microsoftonline.com/";
+      process.env.BETTER_AUTH_MICROSOFT_PROFILE_PHOTO_SIZE = "648";
+      process.env.BETTER_AUTH_MICROSOFT_TENANT_ID = tenant;
+    };
+
+    it("lanza fuera del build sin las variables de Microsoft", async () => {
+      borrarApp();
+      await expect(preset("microsoft")).rejects.toThrow();
+    });
+
+    // microsoftEntraId lanza con un tenant no-GUID al construir el plugin:
+    // validarlo en el schema lo convierte en un fallo de arranque legible.
+    it("rechaza un tenant no-GUID (common)", async () => {
+      borrarApp();
+      microsoft("common");
+      await expect(preset("microsoft")).rejects.toThrow();
+    });
+
+    it("acepta un tenant GUID", async () => {
+      borrarApp();
+      microsoft("e97247bf-8fbb-4f1e-8610-2efb7a7342ea");
+      const ms = await preset("microsoft");
+      expect(ms.microsoftProviderEnviroment.BETTER_AUTH_MICROSOFT_TENANT_ID).toBe(
+        "e97247bf-8fbb-4f1e-8610-2efb7a7342ea",
+      );
+    });
   });
 });

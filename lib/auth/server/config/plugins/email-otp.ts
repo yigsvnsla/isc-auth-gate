@@ -1,5 +1,5 @@
 import { env } from "@/env/server";
-import { email } from "@/lib/email";
+import { client as email } from "@/lib/email";
 import type { BetterAuthPlugin } from "better-auth";
 import { emailOTP } from "better-auth/plugins";
 
