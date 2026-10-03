@@ -1,5 +1,5 @@
 import { env } from "@/env/server";
-import { email } from "@/lib/email";
+import { client as emailClient } from "@/lib/email";
 import type { BetterAuthPlugin } from "better-auth";
 import { twoFactor } from "better-auth/plugins";
 
@@ -20,7 +20,7 @@ export const BetterAuthTwoFactorServerConfig = twoFactor({
     allowedAttempts: 5,
     storeOTP: "encrypted",
     sendOTP: async ({ user, otp }) => {
-      await email.send({
+      await emailClient.send({
         from: env.BETTER_AUTH_SMTP_TRANSPORTER_FROM,
         to: user.email,
         subject: "Tu código de verificación (2FA)",

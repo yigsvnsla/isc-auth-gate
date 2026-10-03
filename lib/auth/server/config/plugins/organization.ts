@@ -2,7 +2,7 @@ import type { BetterAuthPlugin } from "better-auth";
 import { organization } from "better-auth/plugins";
 import { accessControl as ac, orgRoles as roles } from "@/lib/permissions";
 import { env } from "@/env/server";
-import { email } from "@/lib/email";
+import { client as email } from "@/lib/email";
 
 export const BetterAuthOrganizationServerConfig =
   organization({

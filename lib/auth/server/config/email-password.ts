@@ -1,7 +1,7 @@
 import { render } from "@react-email/render";
 import type { BetterAuthOptions } from "better-auth";
 import { ResetPasswordEmail } from "@/lib/email/templates/reset-password-email";
-import { email } from "@/lib/email";
+import { client as email } from "@/lib/email";
 import { env } from "@/env/server";
 import { ExistingSignupEmail } from "@/lib/email/templates/existing-signup-email";
 
